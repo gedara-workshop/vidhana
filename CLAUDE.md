@@ -15,6 +15,14 @@ narrowness is a design decision, not an oversight.
 
 ## Where things stand
 
+**Phase 2 is complete** — all 137 gazettes summarised via OpenAI `gpt-5.6-luna`
+for $0.16 (`PHASE2.md`). Provider is OpenAI by Dinal's choice; `OPENAI_API_KEY`
+lives in `.env`. Do not add Anthropic SDK calls to this project without asking.
+
+The accuracy check in `vidhana validate` grades the model against fields Phase 1
+derives deterministically. **Trust it over `PHASE0.md` §6**, and note that on its
+first run it caught four bugs in Phase 1 rather than in the model.
+
 **The resolver is built** (`vidhana/resolve.py`): the amendment graph is turned
 into rule threads with in-force state, so `vidhana rule <no> --as-of <date>`
 answers "what is the rule right now". This is the product differentiator and it

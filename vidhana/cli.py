@@ -11,13 +11,18 @@
     python -m vidhana threads              list the rule threads
     python -m vidhana rule 2500/106        the rule this gazette belongs to, resolved
     python -m vidhana rule 2481/22 --as-of 2026-08-01
+    python -m vidhana structure [--limit N]  LLM summaries + audience (costs money)
+    python -m vidhana validate               grade the model against Phase 1 fields
+    python -m vidhana batch submit           half price, async, parallel server-side
+    python -m vidhana batch status [ID]
+    python -m vidhana batch collect [ID]
 """
 from __future__ import annotations
 
 import argparse
 import sys
 
-from . import db, listing, pipeline, resolve
+from . import db, listing, pipeline, resolve, structure
 
 
 def cmd_init(a):
@@ -218,6 +223,102 @@ def cmd_rule(a):
               f"does not carry, so this history may be incomplete")
 
 
+def cmd_structure(a):
+    con = db.connect(a.db)
+    if a.only:
+        todo = [{"no": n} for n in a.only]
+    else:
+        todo = con.execute(
+            "SELECT no FROM gazette WHERE (? OR no NOT IN (SELECT no FROM gazette_summary)) "
+            "ORDER BY published_date DESC", (1 if a.force else 0,)).fetchall()
+    if a.subject:
+        todo = [r for r in todo if con.execute(
+            "SELECT subject FROM gazette WHERE no=?", (r["no"],)).fetchone()["subject"] in a.subject]
+    if a.limit:
+        todo = todo[:a.limit]
+    if not todo:
+        print("nothing to do"); return
+
+    print(f"{len(todo)} gazettes -> {a.model}\n")
+    tin = tout = done = failed = 0
+    for r in todo:
+        try:
+            row = structure.summarise(con, r["no"], model=a.model)
+        except Exception as e:
+            failed += 1
+            print(f"  FAIL {r['no']}: {type(e).__name__}: {e}")
+            continue
+        done += 1
+        tin += row["input_tokens"] or 0
+        tout += row["output_tokens"] or 0
+        print(f"  ok {r['no']:>9}  [{row['confidence']}]  {row['summary'][:74]}")
+    # gpt-5.6-luna list price; keeps the running total honest and visible
+    cost = tin / 1e6 * 0.20 + tout / 1e6 * 1.20
+    print(f"\nsummarised {done}, failed {failed}")
+    print(f"tokens {tin:,} in / {tout:,} out   approx ${cost:.4f} at gpt-5.6-luna list price")
+
+
+def cmd_batch(a):
+    con = db.connect(a.db)
+    if a.action == "submit":
+        nos = [r["no"] for r in con.execute(
+            "SELECT no FROM gazette WHERE (? OR no NOT IN (SELECT no FROM gazette_summary)) "
+            "ORDER BY published_date DESC", (1 if a.force else 0,))]
+        if a.limit:
+            nos = nos[:a.limit]
+        if not nos:
+            print("nothing pending"); return
+        if a.dry_run:
+            body = structure._request_body(con, nos[0], a.model)
+            print(f"would submit {len(nos)} requests to /v1/responses as {a.model}")
+            print(f"first custom_id : {nos[0].replace('/', '-')}")
+            print(f"prompt chars    : {len(body['input'][0]['content']):,}")
+            print(f"schema fields   : {list(body['text']['format']['schema']['properties'])}")
+            print("\n(dry run — nothing submitted, nothing spent)")
+            return
+        bid = structure.submit_batch(con, nos, model=a.model)
+        print(f"submitted {len(nos)} requests as batch {bid}")
+        print(f"poll with: python3 -m vidhana batch status {bid}")
+        return
+
+    bid = a.id or (con.execute(
+        "SELECT id FROM batch_job ORDER BY submitted_at DESC LIMIT 1").fetchone() or {})
+    bid = bid if isinstance(bid, str) else (bid["id"] if bid else None)
+    if not bid:
+        sys.exit("no batch job recorded — submit one first")
+
+    if a.action == "status":
+        st = structure.poll_batch(con, bid)
+        print(f"{st['id']}  {st['status']}")
+        if st["total"]:
+            print(f"  {st['completed']}/{st['total']} completed, {st['failed']} failed")
+    else:
+        r = structure.collect_batch(con, bid)
+        if r["status"] != "completed":
+            print(f"batch is {r['status']} — nothing to collect yet"); return
+        print(f"collected {r['collected']}, failed {r['failed']}")
+
+
+def cmd_validate(a):
+    con = db.connect(a.db)
+    res = structure.check(con)
+    n = con.execute("SELECT COUNT(*) c FROM gazette_summary").fetchone()["c"]
+    if not n:
+        sys.exit("no summaries yet — run `vidhana structure` first")
+    print(f"grading {n} summaries against fields Phase 1 derived deterministically\n")
+    for field, (ok, tot) in res.items():
+        pct = f"{100*ok//tot}%" if tot else "n/a"
+        print(f"  {field:<16} {ok:>3}/{tot:<3} agree  ({pct})")
+    dis = con.execute(
+        "SELECT no, field, deterministic, model_value FROM summary_check "
+        "WHERE agrees=0 ORDER BY field, no").fetchall()
+    if dis:
+        print(f"\ndisagreements ({len(dis)}) — the model is not necessarily the wrong one:")
+        for d in dis:
+            print(f"  {d['no']:>9}  {d['field']:<15} phase1={str(d['deterministic'])[:34]!r}  "
+                  f"model={str(d['model_value'])[:34]!r}")
+
+
 def cmd_search(a):
     con = db.connect(a.db)
     rows = con.execute(
@@ -261,6 +362,26 @@ def main(argv=None):
 
     s = sub.add_parser("show"); s.add_argument("no"); s.set_defaults(fn=cmd_show)
     c = sub.add_parser("chain"); c.add_argument("no"); c.set_defaults(fn=cmd_chain)
+
+    st = sub.add_parser("structure")
+    st.add_argument("--limit", type=int)
+    st.add_argument("--force", action="store_true", help="re-summarise even if already done")
+    st.add_argument("--subject", nargs="*")
+    st.add_argument("--model", default=structure.DEFAULT_MODEL)
+    st.add_argument("--only", nargs="*", metavar="NO",
+                    help="summarise just these gazette numbers, e.g. 2481/22")
+    st.set_defaults(fn=cmd_structure)
+
+    sub.add_parser("validate").set_defaults(fn=cmd_validate)
+
+    b = sub.add_parser("batch")
+    b.add_argument("action", choices=["submit", "status", "collect"])
+    b.add_argument("id", nargs="?", help="batch id; defaults to the most recent")
+    b.add_argument("--limit", type=int)
+    b.add_argument("--force", action="store_true")
+    b.add_argument("--dry-run", action="store_true", help="build and inspect, submit nothing")
+    b.add_argument("--model", default=structure.DEFAULT_MODEL)
+    b.set_defaults(fn=cmd_batch)
 
     q = sub.add_parser("search"); q.add_argument("query")
     q.add_argument("--limit", type=int, default=10); q.set_defaults(fn=cmd_search)

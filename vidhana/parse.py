@@ -33,7 +33,13 @@ ROLE_RE = re.compile(
     r"|(?:Acting\s+)?Minister of Finance"
     r"(?:\s*,?\s*Economic Stabilization and National Policies"
     r"|\s*,?\s*Planning and Economic Development"
-    r"|\s+and Planning)?)", re.I)
+    r"|\s+and Planning)?"
+    # Older gazettes (2006-2015) are signed by the President acting under
+    # Article 44(2) of the Constitution, and the Tax Appeals Commission rules by
+    # its Chairman. Omitting these cost 26 of 137 signatories.
+    # "President," in the operative clause, "President." in the signature block.
+    r"|President(?=\s*[,.]|\s*$)"
+    r"|Chairman[A-Za-z, ]{0,40}Commission)", re.I)
 
 # Cross-references. The corpus writes these many ways; capture the relation word
 # that precedes or follows so the edge can be typed rather than just "cites".
@@ -107,14 +113,14 @@ def authority(text: str) -> tuple[str | None, str | None]:
     """
     flat = re.sub(r"\s+", " ", text)
     m = re.search(r"\b[I1]\s*,\s*([A-Z][A-Za-z.\-' ]{4,60}?)\s*,\s*"
-                  r"(?:Acting\s+)?(?=Commissioner|Minister)", flat)
+                  r"(?:Acting\s+)?(?=Commissioner|Minister|President|Chairman)", flat)
     name = m.group(1).strip() if m else None
     if not name:
         # No operative "I, ..." form (1487/03, 1991/35, 2217/07 are drafted
         # impersonally); fall back to the signature block.
         m2 = re.search(r"([A-Z][A-Za-z.\-' ]{4,60}?)\s*,\s*"
                        r"(?:Acting\s+)?(?=Commissioner[- ]General of Inland Revenue"
-                       r"|Minister of Finance)", flat)
+                       r"|Minister of Finance|President\s*[,.]|Chairman)", flat)
         name = m2.group(1).strip() if m2 else None
     if name:
         # The fallback can run backwards across a sentence boundary
@@ -218,6 +224,22 @@ def dates(text: str) -> list[dict]:
         if not iso:
             continue
         window = re.sub(r"\s+", " ", text[max(0, m.start() - 130):m.start()]).lower()
+
+        # A date immediately after a gazette citation belongs to the *cited*
+        # document, not this one. 2217/07 reads "operate effective from April 1,
+        # 2020 and rescind the Regulations published in ... No. 2104/4 of
+        # December 31, 2018" — taking the minimum of everything typed
+        # `effective` picked 2018, the rescinded gazette's own date.
+        if re.search(r"no\.?\s*\d{3,4}\s*[/$]\s*\d{1,3}\s*,?\s*(?:of|dated)\s*$", window):
+            continue
+
+        # Square brackets mark historical asides, not this document's operative
+        # date: 2316/13 carries "[With effect from 01.01.2012, any specified
+        # institution ...]" while itself taking effect in October 2022.
+        opened = text.rfind("[", 0, m.start())
+        if opened != -1 and text.find("]", opened) > m.start():
+            continue
+
         kind = None
         for k, pat in DATE_KINDS:
             if re.search(pat, window, re.I):

@@ -1,0 +1,4 @@
+# Phase 1 (scrape/extract/resolve) needs nothing but the standard library and
+# poppler-utils. These are only for the Phase 2 structuring pass.
+openai>=1.109
+pydantic>=2
