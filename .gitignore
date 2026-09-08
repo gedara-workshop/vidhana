@@ -1,0 +1,12 @@
+# Source gazette PDFs. Not tracked: they are redistributable government documents
+# but bulky and always re-fetchable from data/manifest.csv (source_url + sha256).
+data/gazettes/*.pdf
+
+# Extracted text scratch
+data/text/
+
+.venv/
+__pycache__/
+*.pyc
+.env
+.DS_Store
