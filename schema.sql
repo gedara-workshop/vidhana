@@ -35,7 +35,32 @@ CREATE TABLE IF NOT EXISTS gazette (
     text_path       TEXT,
     text_chars      INTEGER,
     needs_ocr       INTEGER NOT NULL DEFAULT 0,  -- any page with a big image and no text
-    parse_warnings  TEXT                          -- newline-separated, for triage
+    parse_warnings  TEXT,                         -- newline-separated, for triage
+
+    -- resolved state, derived from the amendment graph (see resolve.py).
+    -- Recomputed wholesale by `vidhana resolve`; never hand-edited.
+    thread_id       INTEGER REFERENCES rule_thread(thread_id),
+    status          TEXT,     -- in_force | rescinded | standalone
+    rescinded_by    TEXT,     -- gazette number that rescinded this one
+    rescinded_from  TEXT,     -- ISO date the rescission takes effect
+    effective_from  TEXT      -- best single effective date; falls back to published
+);
+
+-- A rule thread is a connected component of the amendment graph: the set of
+-- gazettes that between them define one rule over time. The current state of a
+-- rule generally exists in no single document, which is the whole reason this
+-- table exists.
+CREATE TABLE IF NOT EXISTS rule_thread (
+    thread_id     INTEGER PRIMARY KEY,
+    label         TEXT,
+    subject       TEXT,
+    enabling_act  TEXT,
+    root_no       TEXT,      -- earliest document in the thread
+    head_no       TEXT,      -- latest document still in force
+    first_date    TEXT,
+    last_date     TEXT,
+    size          INTEGER,   -- documents in the thread that are in the listing
+    unresolved    INTEGER    -- edges pointing at gazettes the listing does not carry
 );
 
 -- Dates are per-provision, sometimes retroactive, sometimes several per document.
@@ -66,6 +91,8 @@ CREATE TABLE IF NOT EXISTS gazette_page (
     PRIMARY KEY (no, page)
 );
 
+CREATE INDEX IF NOT EXISTS idx_gazette_thread    ON gazette(thread_id);
+CREATE INDEX IF NOT EXISTS idx_gazette_status    ON gazette(status);
 CREATE INDEX IF NOT EXISTS idx_gazette_subject   ON gazette(subject);
 CREATE INDEX IF NOT EXISTS idx_gazette_published ON gazette(published_date);
 CREATE INDEX IF NOT EXISTS idx_ref_dst           ON gazette_reference(dst_no);

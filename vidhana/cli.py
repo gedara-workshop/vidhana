@@ -6,14 +6,18 @@
     python -m vidhana status               what is in the database
     python -m vidhana show 2481/22         one gazette, with its graph edges
     python -m vidhana search "tax invoice" full-text search
-    python -m vidhana chain 2500/106       walk the amendment chain
+    python -m vidhana chain 2500/106       walk the raw amendment edges
+    python -m vidhana resolve              rebuild rule threads and in-force state
+    python -m vidhana threads              list the rule threads
+    python -m vidhana rule 2500/106        the rule this gazette belongs to, resolved
+    python -m vidhana rule 2481/22 --as-of 2026-08-01
 """
 from __future__ import annotations
 
 import argparse
 import sys
 
-from . import db, listing, pipeline
+from . import db, listing, pipeline, resolve
 
 
 def cmd_init(a):
@@ -144,6 +148,76 @@ def cmd_chain(a):
         print(f"  {date}  {no:>9}  {via:<22} {title}")
 
 
+def cmd_resolve(a):
+    con = db.connect(a.db)
+    r = resolve.resolve(con)
+    print(f"rule threads   : {r['threads']}")
+    print(f"in a thread    : {r['threaded']}")
+    print(f"standalone     : {r['standalone']}")
+    print(f"rescinded      : {r['rescinded']}")
+
+
+def cmd_threads(a):
+    con = db.connect(a.db)
+    rows = con.execute(
+        "SELECT * FROM rule_thread ORDER BY size DESC, first_date").fetchall()
+    if not rows:
+        sys.exit("no threads — run `vidhana resolve` first")
+    for t in rows:
+        flag = f"  ({t['unresolved']} unresolved)" if t["unresolved"] else ""
+        print(f"#{t['thread_id']:<3} {t['size']:>2} docs  {t['first_date'][:4]}-{t['last_date'][:4]}"
+              f"  [{t['subject']}]  head={t['head_no']}{flag}")
+        print(f"      {t['label'][:96]}")
+
+
+def cmd_rule(a):
+    """The resolved view: what defines this rule, what still stands, what is current."""
+    con = db.connect(a.db)
+    g = con.execute("SELECT * FROM gazette WHERE no=?", (a.no,)).fetchone()
+    if not g:
+        sys.exit(f"no such gazette: {a.no}")
+    if g["status"] is None:
+        sys.exit("state not resolved — run `vidhana resolve` first")
+    if g["thread_id"] is None:
+        print(f"{a.no} is standalone — it neither amends nor is amended by anything held.")
+        print(f"  {g['published_date']}  effective {g['effective_from']}  [{g['subject']}]")
+        print(f"  {g['title']}")
+        return
+
+    t = con.execute("SELECT * FROM rule_thread WHERE thread_id=?", (g["thread_id"],)).fetchone()
+    print(f"rule thread #{t['thread_id']}  [{t['subject']}]  {t['first_date'][:4]}-{t['last_date'][:4]}"
+          f"  {t['size']} documents")
+    print(f"  {t['enabling_act'] or ''}")
+    print()
+
+    if a.as_of:
+        rows = resolve.operative_on(con, t["thread_id"], a.as_of)
+        print(f"operative on {a.as_of}:")
+        for r in rows:
+            mark = "*" if r["no"] == t["head_no"] else " "
+            print(f"  {mark} {r['no']:>9}  effective {r['effective_from']}  {r['title'][:62]}")
+        if not rows:
+            print("  (nothing — the rule had not taken effect yet)")
+        return
+
+    for r in con.execute(
+            "SELECT * FROM gazette WHERE thread_id=? ORDER BY published_date",
+            (t["thread_id"],)):
+        mark = "*" if r["no"] == t["head_no"] else " "
+        note = ""
+        if r["status"] == "rescinded":
+            note = f"  rescinded by {r['rescinded_by']} from {r['rescinded_from']}"
+        eff = r["effective_from"]
+        eff_note = f"  effective {eff}" if eff != r["published_date"] else ""
+        print(f"{mark} {r['published_date']}  {r['no']:>9}  {r['status']:<10}{eff_note}{note}")
+        print(f"      {r['title'][:92]}")
+
+    print(f"\ncurrent: {t['head_no']}")
+    if t["unresolved"]:
+        print(f"warning: {t['unresolved']} reference(s) point at gazettes the IRD listing "
+              f"does not carry, so this history may be incomplete")
+
+
 def cmd_search(a):
     con = db.connect(a.db)
     rows = con.execute(
@@ -176,6 +250,14 @@ def main(argv=None):
     f.set_defaults(fn=cmd_fetch)
 
     sub.add_parser("status").set_defaults(fn=cmd_status)
+    sub.add_parser("resolve").set_defaults(fn=cmd_resolve)
+    sub.add_parser("threads").set_defaults(fn=cmd_threads)
+
+    r = sub.add_parser("rule")
+    r.add_argument("no")
+    r.add_argument("--as-of", dest="as_of", metavar="YYYY-MM-DD",
+                   help="what was operative on this date")
+    r.set_defaults(fn=cmd_rule)
 
     s = sub.add_parser("show"); s.add_argument("no"); s.set_defaults(fn=cmd_show)
     c = sub.add_parser("chain"); c.add_argument("no"); c.set_defaults(fn=cmd_chain)
