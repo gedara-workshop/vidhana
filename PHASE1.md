@@ -3,7 +3,8 @@
 Scrape the IRD gazette listing, fetch every PDF, extract text, parse metadata,
 and build the amendment graph. No LLM anywhere in this phase.
 
-**Status: complete.** All 137 gazettes fetched and parsed, 0 failures.
+**Status: complete.** All 137 gazettes fetched and parsed, 0 failures, and the
+amendment graph resolved into 19 rule threads.
 
 ## Running it
 
@@ -54,6 +55,62 @@ the evidence are in `PHASE0.md` and `CORPUS-NOTES.md`.
 | Some content is inside images | `extract.page_report`, flags pages for OCR without doing it |
 | The listing is not purely tax/VAT | `parse.subject`, classified from the Act rather than the title |
 
+## Resolved state
+
+The amendment graph on its own is an edge list. `resolve` turns it into the thing
+a reader wants: **rule threads** — connected components over `amends`, `rescinds`
+and `last_amended_by` — plus in-force status per document.
+
+```
+rule threads   : 19
+in a thread    : 74
+standalone     : 63
+rescinded      : 17
+```
+
+A plain `cites` edge deliberately does not thread: several gazettes cite the same
+depreciation-rates gazette (`1606/30`) without having anything to do with each
+other.
+
+```bash
+python3 -m vidhana resolve                     # recompute, idempotent
+python3 -m vidhana threads                     # list the threads
+python3 -m vidhana rule 2481/22                # the whole history, with status
+python3 -m vidhana rule 2481/22 --as-of 2026-09-09
+```
+
+The worked example is the one from the README:
+
+```
+rule thread #19  [vat]  2025-2026  3 documents
+  2025-11-17    2463/05  rescinded   effective 2026-01-01  rescinded by 2481/22 from 2026-07-01
+  2026-03-27    2481/22  in_force    effective 2026-10-01
+* 2026-08-06   2500/106  in_force
+current: 2500/106
+```
+
+**`2481/22` is effective 2026-10-01 — a fact stated in neither document.** It is
+published with a July date; `2500/106` moves it to October and says nothing about
+invoices. The resolver types the two dates in `2500/106` as `sets_effective_date`
+and `replaces_effective_date` rather than treating either as its own effective
+date, then propagates the former onto its target.
+
+That makes `--as-of` answer correctly: on 2026-09-09 the new invoice format is
+**not** yet in force, and on 2026-10-15 it is.
+
+### What the resolver deliberately does not do
+
+- **It does not merge amended text.** "Substitute paragraph (i) of item (2) of the
+  Schedule" is a textual operation on a document we hold only as a PDF.
+  Reconstructing consolidated text is a separate problem, probably an LLM one.
+- **"In force" means "not rescinded by anything we hold"**, which is weaker than a
+  legal determination. With 13 edges pointing outside the listing, a rescission we
+  cannot see would not show up. Threads carrying such edges report an `unresolved`
+  count, and `rule` warns on them.
+- **`effective_from` falls back to the publication date** when a document states
+  no effective date. That is a floor, not a truth. Every candidate date stays in
+  `gazette_date` with the clause it came from.
+
 ## Deliberate non-goals
 
 - **No OCR is performed.** Pages are flagged (`gazette.needs_ocr`) and left. Three
@@ -84,6 +141,6 @@ the evidence are in `PHASE0.md` and `CORPUS-NOTES.md`.
 python3 -m unittest discover -s tests -v
 ```
 
-20 regression tests over the parsers. Every fixture is a real string from a real
+33 regression tests over the parsers and the resolver. Every fixture is a real string from a real
 gazette, including the ones that look like typos — `Notificaiton`, `No. 2456 /02`,
 `1,` for `I,` — because those are in the source documents.

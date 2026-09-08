@@ -160,10 +160,17 @@ class TestDateTyping(unittest.TestCase):
                                   "get the approval."))
 
     def test_metadata_only_amendment_form(self):
-        # 2500/106 phrases it as an amendment to another gazette's date.
-        kinds = self._kinds('1. The effective date of "July 01, 2026", is hereby amended '
-                            'as "October 01, 2026";')
-        self.assertIn(("effective", "2026-10-01"), kinds)
+        """2500/106 sets a date on *another* gazette rather than on itself.
+
+        Neither date here is this document's own effective date, so neither is
+        typed `effective`: October is the value it sets on 2481/22, July is the
+        value it replaces. The resolver propagates the former onto the target.
+        """
+        kinds = self._kinds('1. The effective date of \u201cJuly 01, 2026\u201d, is hereby '
+                            'amended as \u201cOctober 01, 2026\u201d;')
+        self.assertIn(("sets_effective_date", "2026-10-01"), kinds)
+        self.assertIn(("replaces_effective_date", "2026-07-01"), kinds)
+        self.assertNotIn(("effective", "2026-10-01"), kinds)
 
 
 class TestSubject(unittest.TestCase):

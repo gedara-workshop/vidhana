@@ -53,14 +53,18 @@ _RANK = {"last_amended_by": 0, "rescinds": 1, "amends": 2, "cites": 3}
 # Date kinds, most specific first — "rescinded with effect from" must beat "effect from".
 DATE_KINDS = (
     ("rescind_effective", r"(?:rescind|revoke|repeal)\w*\s+(?:[^.\n]{0,60}?)?with\s+effect\s+from"),
-    # "effective date of ... is hereby amended as ..." is the metadata-only
-    # amendment form (2500/106). Both the old and the new date match here; which
-    # one is current is settled by the amendment graph, not by this regex. The
-    # stored context string keeps them distinguishable.
+    # The metadata-only amendment form (2500/106):
+    #   The effective date of "July 01, 2026", is hereby amended as "October 01, 2026"
+    # Neither date is this document's own effective date. October is the value it
+    # *sets on another gazette*, July is the value it replaces. Both patterns are
+    # anchored to the end of the window so they only fire on the date that
+    # immediately follows the phrase.
+    ("sets_effective_date",     r"amended\s+(?:as|to)\s*[\u201c\u2018\"']?\s*$"),
+    ("replaces_effective_date", r"effective\s+date\s+of\s*[\u201c\u2018\"']?\s*$"),
     ("effective",         r"(?:with\s+effect\s+from|effective\s+from|come\s+into\s+effect\s+from"
                           r"|shall\s+come\s+into\s+(?:force|operation)\s+(?:on|from)"
                           r"|operate\s+effective\s+from|effective\s+from\s+the\s+taxable\s+period"
-                          r"|with\s+effects\s+from|effective\s+date\s+of|amended\s+as)"),
+                          r"|with\s+effects\s+from)"),
     ("deadline",         r"(?:on\s+or\s+before|not\s+later\s+than|no\s+later\s+than|by\s+the\s+twentieth)"),
 )
 _MONTH = (r"(?:January|February|March|April|May|June|July|August|September|October|"

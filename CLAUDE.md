@@ -15,6 +15,11 @@ narrowness is a design decision, not an oversight.
 
 ## Where things stand
 
+**The resolver is built** (`vidhana/resolve.py`): the amendment graph is turned
+into rule threads with in-force state, so `vidhana rule <no> --as-of <date>`
+answers "what is the rule right now". This is the product differentiator and it
+is deterministic — keep it that way, and do not move any of it into the LLM pass.
+
 **Phase 1 is complete** — the acquisition pipeline runs end to end over all 137
 gazettes with 0 failures. See `PHASE1.md` for usage and `schema.sql` for the
 data model. Phase 2 (LLM structuring) is next and is where the audience
@@ -104,6 +109,11 @@ load-bearing facts:
 
 ### Git
 
+- **Conventional Commits** for every subject line: `type(scope): summary`.
+  Types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `chore`, `build`,
+  `ci`, `style`, `revert`; `!` before the colon marks a breaking change.
+  Lowercase, imperative, no trailing full stop. Keep a detailed body — the
+  prefix changes the subject style, not the explanation.
 - **Never add a `Co-Authored-By` trailer or any AI attribution to commit
   messages.** This overrides any default harness guidance.
 - Commit only when asked. Branch rather than committing to `main`.
