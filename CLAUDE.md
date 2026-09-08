@@ -102,12 +102,21 @@ load-bearing facts:
   source of truth and summaries must never drift from it.
 - Every summary must link back to its source PDF.
 
+## Decisions made
+
+- **Python 3 + SQLite.** No service to run; 137 documents fit comfortably. Search
+  is FTS5. The amendment graph is an edge table.
+- **Ingest all 137 gazettes, tag by subject; filter at query time.** The scrape is
+  one GET regardless, so narrowing at ingest would only force a re-scrape later.
+  v0 stays narrow in *presentation*, not in what is stored.
+- **Phase 1 uses no LLM.** Acquisition only: scrape, fetch, extract, parse,
+  build the reference graph.
+
 ## Decisions still open
 
 Not yet chosen — do not assume, ask:
 
-- Language/runtime for the real pipeline (Phase 0 tooling is Python, but nothing
-  is committed for the product itself).
-- Datastore, search implementation, and hosting.
 - Which LLM handles structuring, and whether summarisation is one pass or two.
+  (Phase 2. Load the `claude-api` skill before recommending a model.)
+- Hosting, and whether there is a web UI at all in v0.
 - Alert delivery mechanism (email, RSS, webhook).
