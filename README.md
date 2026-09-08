@@ -8,31 +8,58 @@ Part of [Gedara Workshop](https://github.com/gedara-workshop).
 
 Every time the Sri Lankan government changes a tax rule, a customs duty, a labour regulation, or almost anything else, it becomes official the moment a Gazette is published. Gazettes are numbered documents put out by the Department of Government Printing (and individual ministries), and they exist only as PDFs, sometimes real text, sometimes scanned images of paper, browsable by date but not searchable by topic.
 
-A real example: [Gazette No. 2481/22](https://www.ird.gov.lk/en/publications/Gazette_Documents/2026_2481-22_E.pdf), issued March 27, 2026 by the Commissioner General of Inland Revenue, mandates a new standardised tax invoice format for every VAT-registered business starting July 1, 2026. If you run a business and don't happen to check the right government page on the right week, you find out about this after you're already non-compliant, not because you did anything wrong, but because the only place this existed was a PDF nobody told you to read.
+A real example, and one that turned out to prove the point better than intended: [Gazette No. 2481/22](https://www.ird.gov.lk/en/publications/Gazette_Documents/2026_2481-22_E.pdf), issued March 27, 2026 by the Commissioner General of Inland Revenue, mandates a new standardised tax invoice format for every VAT-registered business. It said July 1, 2026. Then [Gazette No. 2500/106](https://www.ird.gov.lk/en/publications/Gazette_Documents/2026_2500_106_E.pdf) moved that date to October 1, 2026, in two sentences, in a separate PDF, that only makes sense if you already have the first one in front of you.
+
+This README said July for a while, because that is what the document said when it was written. That is the problem, in miniature.
+
+If you run a business and don't happen to check the right government page on the right week, you find out about this after you're already non-compliant, not because you did anything wrong, but because the only place this existed was a PDF nobody told you to read.
 
 Vidhana reads these documents so you don't have to, and tells you the ones that actually affect you, in plain language, the day they're published.
-
-## Status
-
-Early and building in public. This repo starts with the plan, not a finished product, commits will show the real build as it happens, evenings at a time. No live product yet, check the roadmap below for where things stand.
 
 ## How it works
 
 ```
 Government sites  ->  Scraper  ->  Text extraction  ->  LLM structuring  ->  Search + alerts
-  (daily check)      (fetch new     (PDF text, OCR      (gazette number,    (find what
-                       PDFs)         fallback for        date, authority,    affects you)
-                                     scans)               plain-English
-                                                           summary, tags)
+  (daily check)      (fetch new     (PDF text,          (gazette number,    (find what
+                       PDFs)         selective OCR       date, authority,    affects you)
+                                     for embedded        plain-English
+                                     forms)              summary, tags)
+                                            |
+                                            v
+                                    Amendment graph
+                              (what amends what, what is
+                               rescinded, what is in force)
 ```
 
 Every summary links back to the original PDF. The summary is a convenience, the PDF is the source of truth, the two never get to drift apart.
+
+The amendment graph is not a nice-to-have. Roughly half of the gazettes read in Phase 0 amend or rescind another gazette, and the current state of a rule frequently exists in no single document. Answering "what is the rule right now, and from when" is the part nobody else does.
 
 ## v0 scope
 
 Starting narrow, on purpose. The general gazette archive spans multiple languages and inconsistent scan quality, that's a much bigger problem than a first version should try to solve. Vidhana v0 covers only **IRD tax and VAT gazettes**, a single ministry, a single topic, already published as clean, real-text PDFs. Wider ministries (Customs, Labour, general Extraordinary Gazettes) come later, once the pipeline is proven here.
 
+One caveat found in Phase 0: the IRD listing is not purely tax and VAT, it carries the odd casino licensing regulation too, so v0 filters on subject rather than trusting the source.
+
+## What Phase 0 found
+
+Twenty-one real gazettes spanning 2007 to 2026, read end to end before any pipeline code. Full notes in [PHASE0.md](PHASE0.md) and [CORPUS-NOTES.md](CORPUS-NOTES.md). The findings that changed the plan:
+
+- **Acquisition is easier than expected.** One request returns all 137 gazettes, 2006 to 2026. No pagination, no JavaScript, no rate limiting to work around. Volume is 3 to 6 gazettes a year.
+- **Nothing is a scan.** Every document is real text back to 2007, so the OCR fallback isn't needed wholesale. It is needed selectively, for the occasional form embedded as an image inside an otherwise-text PDF.
+- **The hard part is not the PDFs, it's the semantics.** Effective dates are frequently retroactive, sometimes several per document, and sometimes changed later by a different gazette. Dates sit in the middle and at the end of documents, not at the top.
+- **Who a gazette affects is usually not written in it.** Nine of the twenty-one never say who they bind. That has to be inferred from the enabling Act, of which there are only five across the whole corpus.
+
+## Status
+
+Early and building in public. This repo starts with the plan, not a finished product, commits will show the real build as it happens, evenings at a time. No live product yet, check the roadmap below for where things stand.
+
+Stack is Python and SQLite. No service to run, the whole corpus is 137 documents.
+
 ## Roadmap
 
-- [ ] **Phase 0, Feasibility.** Read 15-20 real gazettes by hand, gauge language mix and scan quality, hand-write summaries for 5 as an evaluation set.
-- [ ] **Phase 1, Acquisition.** Scraper for the IRD gazette listing page,
+- [x] **Phase 0, Feasibility.** Read 15-20 real gazettes by hand, gauge language mix and scan quality, write summaries for 5 as an evaluation set.
+- [ ] **Phase 1, Acquisition.** Scraper for the IRD gazette listing page, fetch every gazette PDF, extract text, parse the header metadata, and build the amendment graph from the cross-references in the text.
+- [ ] **Phase 2, Structuring.** LLM pass over the cleaned text for a plain-English summary, the affected audience grounded on the enabling Act, effective dates, and tags.
+- [ ] **Phase 3, Search.** Full-text and topic search across the corpus, with the resolved state of a rule rather than just the documents that mention it.
+- [ ] **Phase 4, Alerts.** Daily check, notify on what is new and what it changes.
