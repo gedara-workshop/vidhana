@@ -15,6 +15,11 @@ narrowness is a design decision, not an oversight.
 
 ## Where things stand
 
+**Phase 1 is complete** — the acquisition pipeline runs end to end over all 137
+gazettes with 0 failures. See `PHASE1.md` for usage and `schema.sql` for the
+data model. Phase 2 (LLM structuring) is next and is where the audience
+inference and summaries belong.
+
 **Phase 0 is complete.** 21 gazettes acquired, machine-surveyed and read in full
 (`CORPUS-NOTES.md`). Open questions closed. Ready for Phase 1.
 
@@ -88,7 +93,10 @@ load-bearing facts:
 
 ### Code
 
-- Python 3, standard library only so far — no dependencies added yet.
+- `vidhana/` is the pipeline package; run it as `python3 -m vidhana <cmd>`.
+- Python 3, standard library only — no dependencies, and none needed so far.
+- Tests: `python3 -m unittest discover -s tests`. Fixtures are real gazette
+  strings, typos included; do not "fix" them.
 - Requires `poppler-utils` (`pdftotext`, `pdfinfo`, `pdfimages`) on PATH.
 - `scripts/phase0_fetch.py` is a **Phase 0 throwaway helper**, not the Phase 1
   scraper. It exists to make the sample reproducible. Do not grow it into the
