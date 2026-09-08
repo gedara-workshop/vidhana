@@ -433,6 +433,60 @@ carries, the "we tell you the day it's published" promise breaks silently.
 
 ---
 
+## 7b. ⚠ Corrections from running Phase 1 at full scale
+
+The findings above came from a 21-document sample. Processing all 137 corrected
+three of them. Recording this rather than quietly editing, because the pattern
+matters: **a 15% sample was right about structure and wrong about rare events.**
+
+### There IS a scanned gazette
+
+§3 said "no document is a scan". Across all 137 that is false. `1599/13` (2009)
+is a **single JPEG with zero text layer** — `pdftotext` returns one byte.
+Producer is Ghostscript, not the usual Distiller/Adobe pipeline.
+
+It also defeated the first detector, which required an image wider than 1000px:
+this scan is only 810px. The rule now flags any page carrying an image and
+essentially no text, regardless of image size.
+
+Full-scale OCR-needed list is three documents: `1599/13` (whole-page scan),
+`2414/14` pp. 5-7 and `2064/59` (rasterised forms inside text PDFs). Still ~2%
+of the corpus, so the conclusion — OCR selectively, not wholesale — survives.
+
+### The amendment graph does NOT fully close
+
+§3 said all 12 cross-references resolved, and inferred the graph closes. At full
+scale, **13 of 106 edges (12%) point at gazettes absent from the IRD listing**:
+
+```
+224/03   751/20   1024/08  1205/27  1310/10  1439/01  1439/02
+1441/17  1441/18  1447/10  1447/42  1680/21  1791/08
+```
+
+Most are pre-2006 and the listing simply starts at 2006 — but `1439/01`,
+`1439/02`, `1441/17`, `1441/18`, `1447/10` and `1447/42` are 2006 gazettes the
+listing skips while carrying `1439/03`. So **the IRD listing is a curated
+selection, not a complete archive.**
+
+> **Consequence:** dangling edges are a permanent feature, not a bug to fix.
+> Store them, show them as unresolved rather than pretending the chain ends, and
+> treat "this is the complete history of this rule" as a claim the data does not
+> yet support. Closing them needs a second source, which is the still-open
+> completeness question in §7.
+
+### The listing date can disagree with the PDF
+
+`1565/19`: the listing says 06 Sep 2008, the PDF header says "FRIDAY, SEPTEMBER
+05, 2008". 5 September 2008 was a Friday and 6 September was a Saturday, so the
+PDF is internally consistent and the listing is the one in error.
+
+> **Consequence:** §3 made the listing authoritative for identity, which still
+> holds — the number is the key. But for the *date*, the PDF header is better
+> evidence, and the weekday is a free checksum. The pipeline stores both and
+> raises a warning when they differ; it happens once in 137.
+
+---
+
 ## 8. What to look for while reading
 
 The machine survey answered the mechanical questions. These are the ones only a

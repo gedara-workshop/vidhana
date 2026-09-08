@@ -2,8 +2,12 @@
 # but bulky and always re-fetchable from data/manifest.csv (source_url + sha256).
 data/gazettes/*.pdf
 
-# Extracted text scratch
+# Extracted text and the database. Both are derived: rebuildable from the
+# listing with `python3 -m vidhana sync && python3 -m vidhana fetch`.
 data/text/
+data/vidhana.db
+data/vidhana.db-wal
+data/vidhana.db-shm
 
 .venv/
 __pycache__/
