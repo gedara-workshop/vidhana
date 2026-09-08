@@ -94,6 +94,12 @@ load-bearing facts:
   scraper. It exists to make the sample reproducible. Do not grow it into the
   scraper — Phase 1 gets a clean implementation informed by the manual read.
 
+### Git
+
+- **Never add a `Co-Authored-By` trailer or any AI attribution to commit
+  messages.** This overrides any default harness guidance.
+- Commit only when asked. Branch rather than committing to `main`.
+
 ### Working style
 
 - Verify claims about the data against the actual PDFs rather than reasoning from
