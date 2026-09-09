@@ -159,6 +159,36 @@ def _headline(d: dict) -> str:
     return f"{d['no']} {subject} {verb} {d['target_no']}".strip()
 
 
+def _entry_title(e: dict) -> str:
+    """A grouped entry says what the gazette *does*, so a reader can decide from
+    the title alone whether to open it.
+
+    Built as clauses rather than a list of labels: "rescinded and new gazette
+    2463/05" reads as though 2463/05 were the new one, which is the opposite of
+    what happened.
+    """
+    subject = f"[{e['subject']}] " if e["subject"] else ""
+    acts = {}
+    for kind, target, _ in e.get("acts_on", ()):
+        acts.setdefault(kind, []).append(target)
+    if not acts:
+        return f"{e['no']} {subject}new: {e['title']}".strip()
+
+    clauses = []
+    for kind in ("rescinds", "amends"):
+        if kind in acts:
+            clauses.append(f"{kind} {', '.join(sorted(set(acts[kind])))}")
+    if "effective_change" in acts:
+        moved = sorted(set(acts["effective_change"]))
+        # "amends 2481/22 and changes when it takes effect" — naming the same
+        # gazette twice in one title is noise, so the pronoun is used when the
+        # effective-date change lands on a gazette already named.
+        named = {t for ts in (acts.get("rescinds", []), acts.get("amends", [])) for t in ts}
+        subj = "it" if clauses and set(moved) <= named else ", ".join(moved)
+        clauses.append(f"changes when {subj} takes effect")
+    return f"{e['no']} {subject}{' and '.join(clauses)}".strip()
+
+
 def whatsnew(con, since: str | None = None, subject=None, kind=None,
              limit: int = 50) -> list[dict]:
     """Events, newest first, described. `since` filters on the gazette's
@@ -176,3 +206,133 @@ def whatsnew(con, since: str | None = None, subject=None, kind=None,
     sql += " ORDER BY e.event_date DESC, e.no DESC, e.kind LIMIT ?"
     params.append(limit)
     return [describe(con, dict(r)) for r in con.execute(sql, params)]
+
+
+# ---------------------------------------------------------------------------
+# Atom 1.0. Written by hand rather than with a library: the feed is four
+# elements deep, the project has no dependencies, and xml.etree gives correct
+# escaping without adding one.
+# ---------------------------------------------------------------------------
+
+FEED_TITLE = "Vidhana — Sri Lankan IRD tax and VAT gazettes"
+FEED_HOME = "https://github.com/gedara-workshop/vidhana"
+LISTING_URL = ("https://www.ird.gov.lk/en/publications/sitepages/"
+               "gazette.aspx?menuid=1602")
+
+
+# Most significant first. A gazette that moves another's effective date is the
+# thing to say about it; that it also exists is not.
+KIND_RANK = ("effective_change", "rescinds", "amends", "published")
+
+
+def group(events: list[dict]) -> list[dict]:
+    """One feed entry per gazette, not one per event.
+
+    2500/106 raises three events — it is new, it amends 2481/22, and it moves
+    that gazette's effective date. They are three facts about one document, and
+    a feed reader would show them as three notifications with near-identical
+    text. So the feed groups them and the entry says everything the gazette
+    does; `whatsnew` keeps them separate, because there the granularity is the
+    point.
+    """
+    by_no: dict[str, dict] = {}
+    for e in events:
+        g = by_no.get(e["no"])
+        if g is None:
+            g = by_no[e["no"]] = dict(e, kinds=[], acts_on=[])
+        g["kinds"].append(e["kind"])
+        if e["target_no"]:
+            g["acts_on"].append((e["kind"], e["target_no"], e["target_title"]))
+    out = []
+    for g in by_no.values():
+        g["kinds"] = sorted(set(g["kinds"]), key=KIND_RANK.index)
+        g["kind"] = g["kinds"][0]
+        g["headline"] = _headline(g)
+        out.append(g)
+    out.sort(key=lambda g: (g["event_date"], g["no"]), reverse=True)
+    return out
+
+
+def _entry_body(e: dict) -> str:
+    """The entry text. Plain prose, because a feed reader shows it as-is and a
+    reader who gets an alert should not have to open a PDF to learn whether it
+    concerns them."""
+    lines = []
+    if e["summary"]:
+        lines.append(e["summary"])
+    for kind, target, target_title in dict.fromkeys(e.get("acts_on", ())):
+        if kind == "effective_change":
+            lines.append(f"This changes when {target} takes effect. "
+                         f"Check the date before acting on {target} itself.")
+        else:
+            verb = "Amends" if kind == "amends" else "Rescinds"
+            tgt = f"{verb} {target}"
+            if target_title:
+                tgt += f" — {target_title}"
+            lines.append(tgt + ".")
+    if e["head_no"] and e["head_no"] != e["no"]:
+        lines.append(f"The current document in this rule is now {e['head_no']} "
+                     f"({e['head_date']}).")
+    if e["effective_from"]:
+        lines.append(f"Effective from {e['effective_from']}.")
+    if e["audience"]:
+        lines.append("Affects: " + "; ".join(e["audience"]) + ".")
+    if e["confidence"] and e["confidence"] != "high":
+        # Say so in the feed, not just in the database. A summary the model was
+        # unsure of should not reach a reader looking as certain as one it was.
+        lines.append(f"(Summary confidence: {e['confidence']}. "
+                     f"The gazette itself is the source of truth.)")
+    lines.append(f"Source: {e['url']}")
+    return "\n\n".join(lines)
+
+
+def atom(con, events: list[dict], *, feed_id: str, title: str,
+         self_url: str | None = None, updated: str | None = None) -> str:
+    from xml.etree import ElementTree as ET
+
+    ns = "http://www.w3.org/2005/Atom"
+    ET.register_namespace("", ns)
+    feed = ET.Element(f"{{{ns}}}feed")
+
+    def sub(parent, tag, text=None, **attrib):
+        el = ET.SubElement(parent, f"{{{ns}}}{tag}", attrib)
+        if text is not None:
+            el.text = text
+        return el
+
+    sub(feed, "title", title)
+    sub(feed, "id", feed_id)
+    sub(feed, "link", href=FEED_HOME)
+    if self_url:
+        sub(feed, "link", href=self_url, rel="self")
+    sub(feed, "subtitle",
+        "What changed in the Sri Lankan Inland Revenue gazettes, and what the "
+        "rule is now. Derived from " + LISTING_URL)
+    # The feed's updated time is the newest event's, not now(). A nightly run
+    # that finds nothing must not restamp the feed — clients treat that as
+    # activity, and a quiet corpus should look quiet.
+    sub(feed, "updated", updated or (
+        _atom_time(events[0]["event_date"]) if events
+        else _atom_time(dt.date.today().isoformat())))
+    author = sub(feed, "author")
+    sub(author, "name", "Vidhana")
+
+    for e in events:
+        entry = sub(feed, "entry")
+        sub(entry, "title", _entry_title(e))
+        sub(entry, "id", f"tag:vidhana,2026:gazette:{e['no']}")
+        sub(entry, "link", href=e["url"])
+        sub(entry, "updated", _atom_time(e["event_date"]))
+        sub(entry, "published", _atom_time(e["event_date"]))
+        if e["subject"]:
+            sub(entry, "category", term=e["subject"])
+        sub(entry, "content", _entry_body(e), type="text")
+
+    return ('<?xml version="1.0" encoding="utf-8"?>\n'
+            + ET.tostring(feed, encoding="unicode") + "\n")
+
+
+def _atom_time(date: str) -> str:
+    """Atom wants an RFC 3339 timestamp; gazettes carry a date. Midnight UTC is
+    the honest reading — a gazette is published on a day, not at an instant."""
+    return f"{date}T00:00:00Z"
