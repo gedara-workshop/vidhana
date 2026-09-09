@@ -1,81 +1,118 @@
 @import "tailwindcss";
 
-/* Design tokens from design/*.dc.html. Declared as CSS variables rather than
-   Tailwind theme keys so light and dark can swap them without a class on every
-   element, and so a token change is one line. */
+/* Archival. One ink, one paper, and nothing else.
+ *
+ * State is carried by weight, italics, opacity and a ruled underline rather
+ * than by colour — which is how printed law has always signalled itself, and
+ * which happens to survive every colour-vision difference and a monochrome
+ * printout. The word is always present, so opacity is emphasis rather than
+ * meaning. */
+
 @theme {
-  --font-sans: "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: Spectral, Georgia, "Times New Roman", serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 :root {
-  --fg: #14161c; --dim: #5b6070; --bg: #f5f6f9; --surface: #ffffff;
-  --line: #e4e6ec; --accent: #3444d1; --accent-soft: #eef0fd;
-  --ok: #0f7a52; --ok-soft: #e8f5ef;
-  --sup: #a9680b; --sup-soft: #fdf3e2;
-  --res: #ab3a3a; --res-soft: #fbeceb;
-  --shadow: 0 1px 2px rgb(20 22 28 / 5%), 0 1px 1px rgb(20 22 28 / 3%);
+  --paper: #faf7f0;
+  --ink: #1b1a17;
+  --wash: #f2eee3;
+  --hair: rgb(27 26 23 / 13%);
+  --hair-strong: rgb(27 26 23 / 26%);
   color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --fg: #e9eaf0; --dim: #949ab0; --bg: #0e0f13; --surface: #17191f;
-    --line: #262a33; --accent: #8a95ff; --accent-soft: #1c1f33;
-    --ok: #4fc79a; --ok-soft: #12271f;
-    --sup: #e8b25f; --sup-soft: #2a2213;
-    --res: #ef8f8f; --res-soft: #2c1a1a;
-    --shadow: none;
+    --paper: #14130f;
+    --ink: #eae5d8;
+    --wash: #1c1b16;
+    --hair: rgb(234 229 216 / 15%);
+    --hair-strong: rgb(234 229 216 / 30%);
   }
 }
 :root[data-theme="dark"] {
-  --fg: #e9eaf0; --dim: #949ab0; --bg: #0e0f13; --surface: #17191f;
-  --line: #262a33; --accent: #8a95ff; --accent-soft: #1c1f33;
-  --ok: #4fc79a; --ok-soft: #12271f;
-  --sup: #e8b25f; --sup-soft: #2a2213;
-  --res: #ef8f8f; --res-soft: #2c1a1a;
-  --shadow: none;
+  --paper: #14130f;
+  --ink: #eae5d8;
+  --wash: #1c1b16;
+  --hair: rgb(234 229 216 / 15%);
+  --hair-strong: rgb(234 229 216 / 30%);
 }
 
-body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); }
-::selection { background: var(--accent-soft); }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+}
+::selection { background: var(--wash); }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 
-/* Component classes. Tailwind utilities cover layout; these carry the token
-   colours, which utilities would otherwise repeat on every element. */
 @layer components {
-  .card { background: var(--surface); border: 1px solid var(--line);
-          box-shadow: var(--shadow); }
-  .card:hover { border-color: var(--accent); }
-  .panel { background: var(--surface); border: 1px solid var(--line);
-           box-shadow: var(--shadow); }
-  .pill { display: inline-flex; align-items: center; gap: .375rem;
-          padding: .1875rem .625rem .1875rem .5rem; border-radius: 9999px;
-          font-size: 11px; font-weight: 600; letter-spacing: .04em;
-          text-transform: uppercase; white-space: nowrap; }
-  .pill-dot { width: 6px; height: 6px; border-radius: 9999px;
-              background: currentColor; flex-shrink: 0; }
-  .pill-current, .pill-as-of { background: var(--ok-soft); color: var(--ok); }
-  .pill-superseded { background: var(--sup-soft); color: var(--sup); }
-  .pill-rescinded { background: var(--res-soft); color: var(--res); }
-  .chip { display: inline-flex; align-items: center; gap: .3125rem;
-          padding: .125rem .5625rem; border-radius: 9999px; font-size: 11px;
-          border: 1px solid var(--line); color: var(--dim); white-space: nowrap; }
-  .chip-warn { background: var(--sup-soft); color: var(--sup);
-               border-color: transparent; font-weight: 500; }
-  .kicker { font-size: 10.5px; font-weight: 600; letter-spacing: .07em;
-            text-transform: uppercase; color: var(--dim); }
-  .btn { display: inline-flex; align-items: center; gap: .375rem;
-         padding: .4375rem .8125rem; border-radius: .4375rem; font-size: 12.5px;
-         font-weight: 500; border: 1px solid var(--line); color: var(--dim);
-         background: none; cursor: pointer; }
-  .btn:hover { border-color: var(--accent); color: var(--accent); }
-  .btn[aria-pressed="true"] { border-color: var(--accent);
-         background: var(--accent-soft); color: var(--accent); }
-  .btn-primary { display: inline-block; padding: .5625rem 1rem;
-         border-radius: .4375rem; background: var(--accent); color: var(--surface);
-         font-size: 13px; font-weight: 600; }
-  .clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-             overflow: hidden; }
-  .link { color: var(--accent); }
-  .link:hover { text-decoration: underline; }
+  .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+  /* Small caps set in mono — the register printed statute uses for labels. */
+  .label {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    opacity: .55;
+  }
+
+  /* The state mark. No colour: the word carries the meaning, the rule under it
+     carries the emphasis, and opacity ranks the three against each other. */
+  .mark {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    padding-bottom: 2px;
+    border-bottom: 2px solid currentColor;
+  }
+  .mark-current { opacity: .95; font-weight: 500; }
+  .mark-as-of { opacity: .95; font-weight: 500; }
+  .mark-superseded { opacity: .68; }
+  .mark-rescinded { opacity: .44; }
+
+  /* The consequence — the one sentence a reader acts on. Italic rather than
+     coloured, which is the same move a law report makes for an editorial note. */
+  .conseq { font-style: italic; opacity: .84; }
+
+  .entry { border-bottom: 1px solid var(--hair); }
+  .entry:hover { background: var(--wash); }
+
+  .tag {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border: 1px solid var(--hair-strong);
+    opacity: .7;
+    white-space: nowrap;
+  }
+  .tag-warn { border-style: dashed; opacity: .9; }
+
+  .field {
+    background: transparent;
+    border: 0;
+    border-bottom: 1.5px solid var(--ink);
+    padding: 4px 0 8px;
+    width: 100%;
+    font-family: var(--font-sans);
+    font-size: 24px;
+    color: var(--ink);
+  }
+  .field::placeholder { opacity: .32; }
+  .field:focus { outline: none; border-bottom-width: 2.5px; }
+
+  .link { text-decoration: underline; text-underline-offset: 3px;
+          text-decoration-thickness: 1px; text-decoration-color: var(--hair-strong); }
+  .link:hover { text-decoration-color: currentColor; }
+
+  .clamp-2 { display: -webkit-box; -webkit-line-clamp: 2;
+             -webkit-box-orient: vertical; overflow: hidden; }
 }
