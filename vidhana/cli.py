@@ -5,7 +5,12 @@
     python -m vidhana fetch [--limit N]    fetch + parse gazettes not yet processed
     python -m vidhana status               what is in the database
     python -m vidhana show 2481/22         one gazette, with its graph edges
-    python -m vidhana search "tax invoice" full-text search
+    python -m vidhana search "tax invoice"   full-text search, with resolved state
+    python -m vidhana search "tax invoice" --rules      one result per rule
+    python -m vidhana search "lease" --audience notaries --in-force
+    python -m vidhana search "transfer pricing" --as-of 2015-01-01
+    python -m vidhana facets                 the facet lists worth filtering on
+    python -m vidhana reindex                rebuild the index and facets
     python -m vidhana chain 2500/106       walk the raw amendment edges
     python -m vidhana resolve              rebuild rule threads and in-force state
     python -m vidhana threads              list the rule threads
@@ -22,7 +27,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from . import db, listing, pipeline, resolve, structure
+from . import db, listing, pipeline, resolve, search, structure
 
 
 def cmd_init(a):
@@ -305,10 +310,12 @@ def cmd_validate(a):
     n = con.execute("SELECT COUNT(*) c FROM gazette_summary").fetchone()["c"]
     if not n:
         sys.exit("no summaries yet — run `vidhana structure` first")
-    print(f"grading {n} summaries against fields Phase 1 derived deterministically\n")
+    print(f"grading {n} summaries\n")
+    print("  three fields Phase 1 also derives by rule, plus whether the model stayed")
+    print("  inside the audience candidates its Act allows\n")
     for field, (ok, tot) in res.items():
         pct = f"{100*ok//tot}%" if tot else "n/a"
-        print(f"  {field:<16} {ok:>3}/{tot:<3} agree  ({pct})")
+        print(f"  {field:<18} {ok:>3}/{tot:<3} agree  ({pct})")
     dis = con.execute(
         "SELECT no, field, deterministic, model_value FROM summary_check "
         "WHERE agrees=0 ORDER BY field, no").fetchall()
@@ -319,18 +326,67 @@ def cmd_validate(a):
                   f"model={str(d['model_value'])[:34]!r}")
 
 
+def _search_filters(a):
+    return dict(subject=a.subject, tag=a.tag, audience=a.audience, act=a.act,
+                since=a.since, until=a.until, in_force=a.in_force, as_of=a.as_of)
+
+
 def cmd_search(a):
     con = db.connect(a.db)
-    rows = con.execute(
-        "SELECT f.no, g.published_date, g.subject, g.title, "
-        "snippet(gazette_fts, 2, '[', ']', '...', 12) s "
-        "FROM gazette_fts f JOIN gazette g ON g.no=f.no "
-        "WHERE gazette_fts MATCH ? ORDER BY rank LIMIT ?", (a.query, a.limit)).fetchall()
+    if a.rules:
+        return _print_rules(con, a)
+    rows = search.search(con, a.query, a.limit, **_search_filters(a))
     if not rows:
-        print("no matches")
+        print("no matches"); return
     for r in rows:
-        print(f"\n{r['no']:>9}  {r['published_date']}  [{r['subject']}]\n"
-              f"  {r['title'][:96]}\n  …{r['s']}…")
+        print(f"\n{r['no']:>9}  {r['published_date']}  [{r['subject']}]  {r['standing']}")
+        print(f"  {r['title'][:96]}")
+        if r["summary"]:
+            print(f"  {r['summary'][:150]}")
+        if r["snip"]:
+            print(f"  {r['snip']}")
+
+
+def _print_rules(con, a):
+    """One result per rule: the current document as the answer, the documents
+    that produced it as the history."""
+    out = search.rules(con, a.query, a.limit, **_search_filters(a))
+    if not out:
+        print("no matches"); return
+    for t in out:
+        c = t["current"]
+        print(f"\n[{t['subject']}]  {t['size']} document(s) in this rule")
+        print(f"  current: {c['no']}  {c['published_date']}"
+              f"  effective {c['effective_from']}")
+        print(f"  {(c['summary'] or c['title'])[:150]}")
+        others = [m for m in t["matches"] if m["no"] != c["no"]]
+        if others:
+            print("  matched earlier in this rule: "
+                  + ", ".join(f"{m['no']} ({m['published_date'][:4]})" for m in others))
+
+
+def cmd_reindex(a):
+    con = db.connect(a.db)
+    db.init(con)
+    r = search.reindex(con)
+    if r["rebuilt"]:
+        print("full-text index columns changed — index was rebuilt from scratch")
+    print(f"indexed {r['indexed']} documents, {r['tags']} tags, {r['audiences']} audiences")
+    if r["ungrounded"] or r["no_map"]:
+        print(f"  {r['ungrounded']} audience string(s) did not ground on their Act's map"
+              f"{f', {r["no_map"]} had no map' if r['no_map'] else ''}")
+
+
+def cmd_facets(a):
+    con = db.connect(a.db)
+    f = search.facets(con, a.min_uses)
+    for name in ("subject", "audience", "status", "tag"):
+        rows = f[name]
+        extra = (f" (used {a.min_uses}+ times; rarer tags still filter and search)"
+                 if name == "tag" else "")
+        print(f"\n{name}{extra}")
+        for r in rows:
+            print(f"  {r['n']:>4}  {r['name']}")
 
 
 def main(argv=None):
@@ -383,8 +439,28 @@ def main(argv=None):
     b.add_argument("--model", default=structure.DEFAULT_MODEL)
     b.set_defaults(fn=cmd_batch)
 
-    q = sub.add_parser("search"); q.add_argument("query")
-    q.add_argument("--limit", type=int, default=10); q.set_defaults(fn=cmd_search)
+    q = sub.add_parser("search")
+    q.add_argument("query")
+    q.add_argument("--limit", type=int, default=10)
+    q.add_argument("--rules", action="store_true",
+                   help="one result per rule, answered by its current document")
+    q.add_argument("--subject", nargs="*", help="vat income-tax stamp-duty esc ...")
+    q.add_argument("--tag", nargs="*", help="see `vidhana facets`")
+    q.add_argument("--audience", nargs="*", help="see `vidhana facets`")
+    q.add_argument("--act", help="substring of the enabling Act")
+    q.add_argument("--since", metavar="YYYY-MM-DD")
+    q.add_argument("--until", metavar="YYYY-MM-DD")
+    q.add_argument("--in-force", dest="in_force", action="store_true",
+                   help="drop what another gazette has rescinded")
+    q.add_argument("--as-of", dest="as_of", metavar="YYYY-MM-DD",
+                   help="what stood on this date, by effective date not publication")
+    q.set_defaults(fn=cmd_search)
+
+    sub.add_parser("reindex").set_defaults(fn=cmd_reindex)
+
+    fc = sub.add_parser("facets")
+    fc.add_argument("--min-uses", dest="min_uses", type=int, default=3)
+    fc.set_defaults(fn=cmd_facets)
 
     a = p.parse_args(argv)
     a.fn(a)

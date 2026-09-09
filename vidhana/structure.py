@@ -53,7 +53,68 @@ ACT_AUDIENCE = {
     "Economic Service Charge Act": [
         "businesses liable to the Economic Service Charge",
     ],
+    # The five above are the Acts CORPUS-NOTES.md found across the 21-document
+    # sample. Running the full 137 turned up seven more, each of which left the
+    # model to infer an audience with no candidates at all — and it marked every
+    # one of those documents `low` confidence, correctly. These lists are read
+    # off the gazettes themselves, so they cover what the corpus actually
+    # contains under each Act rather than the Act's full statutory scope.
+    "Social Security Contribution Levy Act": [
+        "businesses liable to the Social Security Contribution Levy",
+    ],
+    "Default Taxes (Special Provisions) Act": [
+        "taxpayers with tax already in default",
+    ],
+    "Tax Appeals Commission Act": [
+        "taxpayers appealing a Commissioner-General determination",
+        "authorised representatives appearing before the Tax Appeals Commission",
+    ],
+    "Debits Tax Act": [
+        "holders of current and savings accounts",
+        "banks and financial institutions collecting debits tax",
+    ],
+    "Turnover Tax Act": [
+        "businesses liable to turnover tax",
+    ],
+    "Stamp Duty Act": [
+        "parties to leases, transfers and other stampable instruments",
+        "notaries",
+    ],
+    # The Finance Act is a grab-bag: in this corpus it carries a departure levy
+    # and a motor vehicle concessionary levy, which share no audience. Listing
+    # both is honest about that; inventing a single "persons liable under the
+    # Finance Act" would be a category, not an audience.
+    "Finance Act": [
+        "travellers leaving Sri Lanka",
+        "persons claiming the permitted motor vehicle concession",
+    ],
 }
+
+# The Act name is parsed from the PDF and the PDF is not always right: the
+# corpus contains "Value Addded Tax Act" (a typo in the source, preserved) and
+# "A Value Added Tax Act" (a parse artifact). Substring lookup misses both, so
+# two plainly-VAT gazettes were summarised with no audience candidates at all.
+# `subject` is classified from the Act *and* the title and survives that, so it
+# is the fallback.
+ACT_SUBJECT = {
+    "vat": "Value Added Tax Act",
+    "income-tax": "Inland Revenue Act",
+    "stamp-duty": "Stamp Duty (Special Provisions) Act",
+    "betting-gaming": "Casino Business (Regulation) Act",
+    "esc": "Economic Service Charge Act",
+    "sscl": "Social Security Contribution Levy Act",
+}
+
+
+def audience_candidates(act: str | None, subject: str | None = None) -> list[str] | None:
+    """The audience list the model may narrow within, or None if the Act is
+    genuinely unmapped. Never returns an invented candidate."""
+    act = act or ""
+    hit = next((v for k, v in ACT_AUDIENCE.items() if k.lower() in act.lower()), None)
+    if hit:
+        return hit
+    mapped = ACT_SUBJECT.get(subject or "")
+    return ACT_AUDIENCE.get(mapped) if mapped else None
 
 SYSTEM = """You summarise Sri Lankan government gazettes for a compliance alerting product.
 
@@ -157,10 +218,11 @@ def build_prompt(con: sqlite3.Connection, no: str) -> str:
     g = con.execute("SELECT * FROM gazette WHERE no=?", (no,)).fetchone()
     if not g:
         raise KeyError(no)
-    text = open(g["text_path"]).read()
+    with open(g["text_path"]) as fh:
+        text = fh.read()
 
     act = (g["enabling_act"] or "").replace("The ", "")
-    candidates = next((v for k, v in ACT_AUDIENCE.items() if k.lower() in act.lower()), None)
+    candidates = audience_candidates(act, g["subject"])
 
     parts = [
         f"GAZETTE {g['no']}, published {g['published_date']}.",
@@ -194,7 +256,8 @@ def build_prompt(con: sqlite3.Connection, no: str) -> str:
                 (r["src_no"],)).fetchone()
             if not amender or not amender["text_path"]:
                 continue
-            body = open(amender["text_path"]).read()
+            with open(amender["text_path"]) as fh:
+                body = fh.read()
             if len(body) > 6000:      # amendments are short; long ones get their head
                 body = body[:6000] + "\n[... truncated, see the gazette itself ...]"
             parts.append(f"\n--- TEXT OF {amender['no']} ({amender['published_date']}), "
@@ -369,6 +432,7 @@ def check(con: sqlite3.Connection) -> dict:
     rows = con.execute(
         "SELECT g.no, g.effective_from, g.enabling_act, g.authority, "
         "       s.effective_date AS m_eff, s.enabling_act AS m_act, s.authority AS m_auth, "
+        "       s.audience AS m_audience, g.subject, "
         "       (SELECT MIN(date) FROM gazette_date d WHERE d.no=g.no AND d.kind='effective') AS stated_eff "
         "FROM gazette g JOIN gazette_summary s ON s.no=g.no").fetchall()
     for r in rows:
@@ -394,9 +458,24 @@ def check(con: sqlite3.Connection) -> dict:
             con.execute("INSERT OR REPLACE INTO summary_check VALUES (?,?,?,?,?)",
                         (r["no"], "authority", r["authority"], r["m_auth"],
                          int(_same_person(r["authority"], r["m_auth"]))))
+        # Audience is the one field with no deterministic counterpart in the
+        # text — it is not in the documents at all. What can be checked is
+        # whether the model stayed inside the candidate list it was given, which
+        # is the instruction most likely to be quietly disobeyed. Documents
+        # whose Act has no map are skipped: there was nothing to obey, and
+        # scoring them would grade our curation as the model's error.
+        from .search import ground_audience
+        cands = audience_candidates((r["enabling_act"] or "").replace("The ", ""), r["subject"])
+        strings = json.loads(r["m_audience"] or "[]")
+        if cands and strings:
+            results = [ground_audience(r["enabling_act"], a, r["subject"]) for a in strings]
+            con.execute("INSERT OR REPLACE INTO summary_check VALUES (?,?,?,?,?)",
+                        (r["no"], "audience_grounded", "; ".join(cands),
+                         "; ".join(strings),
+                         int(all(why == "grounded" for _, why in results))))
     con.commit()
     out = {}
-    for f in ("effective_date", "enabling_act", "authority"):
+    for f in ("effective_date", "enabling_act", "authority", "audience_grounded"):
         tot = con.execute("SELECT COUNT(*) c FROM summary_check WHERE field=?", (f,)).fetchone()["c"]
         ok = con.execute("SELECT COUNT(*) c FROM summary_check WHERE field=? AND agrees=1",
                          (f,)).fetchone()["c"]

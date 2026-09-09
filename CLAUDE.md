@@ -15,6 +15,18 @@ narrowness is a design decision, not an oversight.
 
 ## Where things stand
 
+**Phase 3 is complete** — search is built on the amendment graph, not beside
+it (`vidhana/search.py`, `PHASE3.md`). Every hit carries its resolved standing,
+`--rules` collapses a thread into its current document, `--as-of` answers what
+stood on a date. **No LLM runs at query time and none should be added** — the
+resolver is the differentiator precisely because it is deterministic.
+
+Facets are derived, never the model's raw strings. Over the real corpus 225 of
+319 tags are used exactly once and 95 of 105 audience strings are unique, so
+tags are folded to a key with a display form and audience is grounded back to
+the enabling Act. `vidhana reindex` rebuilds both from stored text — no network
+call, nothing to pay for.
+
 **Phase 2 is complete** — all 137 gazettes summarised via OpenAI `gpt-5.6-luna`
 for $0.16 (`PHASE2.md`). Provider is OpenAI by Dinal's choice; `OPENAI_API_KEY`
 lives in `.env`. Do not add Anthropic SDK calls to this project without asking.
@@ -65,9 +77,16 @@ load-bearing facts:
   standalone statements. `effective_date` is derived, per-provision and mutable —
   never a scraped scalar. See `CORPUS-NOTES.md`.
 - **"Who does this affect" is not in the documents.** 9 of 21 state no audience
-  at all. It must be *inferred* from the enabling Act, and there are only five
-  Acts across the corpus — use a curated Act→audience map to ground it, and let
-  the model only narrow within that. Never let it invent an audience.
+  at all. It must be *inferred* from the enabling Act, and there are **twelve**
+  Acts across the full 137 (five was the Phase 0 sample; PHASE0.md and
+  CORPUS-NOTES.md still say five and are describing the sample) — use the
+  curated `ACT_AUDIENCE` map to ground it, and let the model only narrow within
+  that. Never let it invent an audience. Look up candidates via
+  `structure.audience_candidates`, which falls back to `subject`: the Act name
+  is parsed from the PDF and the corpus contains "Value Addded Tax Act" and "A
+  Value Added Tax Act", so a substring lookup silently loses the map. It did,
+  for 12 documents, and their low confidence scores read as model uncertainty
+  for a whole phase. `vidhana validate` now grades this as a fourth field.
 - **Dates are scattered through the body, not at the top.** Reading the first
   page captures the signature date and misses the effective date and every
   deadline. Whole document must reach extraction.
@@ -149,12 +168,14 @@ load-bearing facts:
   v0 stays narrow in *presentation*, not in what is stored.
 - **Phase 1 uses no LLM.** Acquisition only: scrape, fetch, extract, parse,
   build the reference graph.
+- **Phase 3 uses no LLM either.** Search reads what Phases 1 and 2 stored.
+- **Facets are rebuilt wholesale, not incrementally.** The canonical tag display
+  form is a corpus-level fact: adding one document can change how an existing
+  tag is spelled, and an incremental update leaves both spellings in the list.
 
 ## Decisions still open
 
 Not yet chosen — do not assume, ask:
 
-- Which LLM handles structuring, and whether summarisation is one pass or two.
-  (Phase 2. Load the `claude-api` skill before recommending a model.)
 - Hosting, and whether there is a web UI at all in v0.
 - Alert delivery mechanism (email, RSS, webhook).

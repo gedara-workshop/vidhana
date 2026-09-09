@@ -22,6 +22,7 @@ def init(con: sqlite3.Connection) -> None:
     with open(SCHEMA) as f:
         con.executescript(f.read())
     migrate(con)
+    migrate_fts(con)
     con.commit()
 
 
@@ -38,7 +39,8 @@ def migrate(con: sqlite3.Connection) -> list[str]:
     """
     import re
     wanted: dict[str, list[tuple[str, str]]] = {}
-    sql = open(SCHEMA).read()
+    with open(SCHEMA) as f:
+        sql = f.read()
     for m in re.finditer(r"CREATE TABLE IF NOT EXISTS (\w+)\s*\((.*?)\n\);", sql, re.S):
         table, body = m.group(1), m.group(2)
         cols = []
@@ -109,6 +111,35 @@ def replace_children(con: sqlite3.Connection, table: str, no: str, rows: list[di
         [[r.get(c) for c in cols] for r in rows])
 
 
-def index_fts(con: sqlite3.Connection, no: str, title: str, body: str) -> None:
+def index_fts(con: sqlite3.Connection, no: str, title: str, body: str,
+              summary: str | None = None) -> None:
     con.execute("DELETE FROM gazette_fts WHERE no=?", (no,))
-    con.execute("INSERT INTO gazette_fts (no, title, body) VALUES (?,?,?)", (no, title, body))
+    con.execute("INSERT INTO gazette_fts (no, title, summary, body) VALUES (?,?,?,?)",
+                (no, title, summary, body))
+
+
+def migrate_fts(con: sqlite3.Connection) -> bool:
+    """Rebuild gazette_fts if schema.sql declares columns it does not have.
+
+    fts5 has no ALTER TABLE ... ADD COLUMN, so unlike `migrate` this cannot be
+    additive: the table is dropped and recreated empty. That is safe only
+    because the index is derived — the text it indexes is on disk and the
+    summaries are in gazette_summary — but it does leave search returning
+    nothing until `vidhana reindex` runs, so callers are told it happened.
+    """
+    import re
+    with open(SCHEMA) as f:
+        sql = f.read()
+    m = re.search(r"CREATE VIRTUAL TABLE IF NOT EXISTS gazette_fts USING fts5\((.*?)\);",
+                  sql, re.S)
+    if not m:
+        return False
+    wanted = [c.split()[0] for c in m.group(1).split(",")
+              if c.strip() and not c.strip().startswith("tokenize")]
+    have = [r[1] for r in con.execute("PRAGMA table_info(gazette_fts)")]
+    if not have or have == wanted:
+        return False
+    con.execute("DROP TABLE gazette_fts")
+    con.executescript(m.group(0))
+    con.commit()
+    return True
