@@ -99,11 +99,14 @@ def replace_children(con: sqlite3.Connection, table: str, no: str, rows: list[di
                 else "DELETE FROM gazette_reference WHERE src_no=?", (no,))
     if not rows:
         return
-    cols = list(rows[0])
+    # Union of keys, not the first row's. Rows are not uniformly shaped: only
+    # pages that were OCR'd carry `ocr_chars`, so taking the first row's keys
+    # silently dropped that column for every document whose page 1 needed no OCR.
+    cols = list(dict.fromkeys(k for r in rows for k in r))
     con.executemany(
         f"INSERT OR IGNORE INTO {table} ({', '.join(cols)}) "
         f"VALUES ({', '.join('?' * len(cols))})",
-        [[r[c] for c in cols] for r in rows])
+        [[r.get(c) for c in cols] for r in rows])
 
 
 def index_fts(con: sqlite3.Connection, no: str, title: str, body: str) -> None:
