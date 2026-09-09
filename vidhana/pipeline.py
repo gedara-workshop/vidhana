@@ -15,7 +15,11 @@ TEXT_DIR = os.path.join(ROOT, "data", "text")
 def sync_listing(con, url: str = listing.LISTING_URL) -> int:
     rows = listing.parse(listing.fetch(url))
     for r in rows:
-        db.upsert_gazette(con, r)
+        # Stamped explicitly rather than left to the column default: a gazette
+        # backfilled from the archive that later shows up in the listing has
+        # genuinely become a listing document, and should stop being flagged as
+        # recovered from elsewhere.
+        db.upsert_gazette(con, dict(r, source="ird-listing", source_detail=None))
     con.commit()
     return len(rows)
 
