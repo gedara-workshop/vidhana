@@ -147,6 +147,23 @@ class Search(unittest.TestCase):
         self.assertIn("current document in a 3-document rule", by_no["2500/106"]["standing"])
         self.assertEqual(by_no["2088/25"]["standing"], "standalone")
 
+    def test_an_incomplete_chain_is_disclosed_in_the_standing(self):
+        # "In force" means "not rescinded by another document we hold", and the
+        # corpus is known to be missing gazettes the IRD listing omits. Where a
+        # rule's history has a hole the claim is weaker than it reads, and the
+        # reader is told at the point the claim is made.
+        ref(self.con, "2500/106", "9999/99", "amends")     # a gazette we do not hold
+        resolve.resolve(self.con)
+        search.reindex(self.con)
+        r = {x["no"]: x for x in search.search(self.con, "tax invoice", 10)}["2500/106"]
+        self.assertFalse(r["chain_complete"])
+        self.assertIn("history incomplete", r["standing"])
+
+    def test_a_complete_chain_says_nothing_extra(self):
+        r = {x["no"]: x for x in search.search(self.con, "tax invoice", 10)}["2500/106"]
+        self.assertTrue(r["chain_complete"])
+        self.assertNotIn("incomplete", r["standing"])
+
     def test_in_force_drops_what_was_rescinded(self):
         nos = [r["no"] for r in search.search(self.con, "tax invoice", 10, in_force=True)]
         self.assertNotIn("2463/05", nos)
