@@ -53,7 +53,68 @@ ACT_AUDIENCE = {
     "Economic Service Charge Act": [
         "businesses liable to the Economic Service Charge",
     ],
+    # The five above are the Acts CORPUS-NOTES.md found across the 21-document
+    # sample. Running the full 137 turned up seven more, each of which left the
+    # model to infer an audience with no candidates at all — and it marked every
+    # one of those documents `low` confidence, correctly. These lists are read
+    # off the gazettes themselves, so they cover what the corpus actually
+    # contains under each Act rather than the Act's full statutory scope.
+    "Social Security Contribution Levy Act": [
+        "businesses liable to the Social Security Contribution Levy",
+    ],
+    "Default Taxes (Special Provisions) Act": [
+        "taxpayers with tax already in default",
+    ],
+    "Tax Appeals Commission Act": [
+        "taxpayers appealing a Commissioner-General determination",
+        "authorised representatives appearing before the Tax Appeals Commission",
+    ],
+    "Debits Tax Act": [
+        "holders of current and savings accounts",
+        "banks and financial institutions collecting debits tax",
+    ],
+    "Turnover Tax Act": [
+        "businesses liable to turnover tax",
+    ],
+    "Stamp Duty Act": [
+        "parties to leases, transfers and other stampable instruments",
+        "notaries",
+    ],
+    # The Finance Act is a grab-bag: in this corpus it carries a departure levy
+    # and a motor vehicle concessionary levy, which share no audience. Listing
+    # both is honest about that; inventing a single "persons liable under the
+    # Finance Act" would be a category, not an audience.
+    "Finance Act": [
+        "travellers leaving Sri Lanka",
+        "persons claiming the permitted motor vehicle concession",
+    ],
 }
+
+# The Act name is parsed from the PDF and the PDF is not always right: the
+# corpus contains "Value Addded Tax Act" (a typo in the source, preserved) and
+# "A Value Added Tax Act" (a parse artifact). Substring lookup misses both, so
+# two plainly-VAT gazettes were summarised with no audience candidates at all.
+# `subject` is classified from the Act *and* the title and survives that, so it
+# is the fallback.
+ACT_SUBJECT = {
+    "vat": "Value Added Tax Act",
+    "income-tax": "Inland Revenue Act",
+    "stamp-duty": "Stamp Duty (Special Provisions) Act",
+    "betting-gaming": "Casino Business (Regulation) Act",
+    "esc": "Economic Service Charge Act",
+    "sscl": "Social Security Contribution Levy Act",
+}
+
+
+def audience_candidates(act: str | None, subject: str | None = None) -> list[str] | None:
+    """The audience list the model may narrow within, or None if the Act is
+    genuinely unmapped. Never returns an invented candidate."""
+    act = act or ""
+    hit = next((v for k, v in ACT_AUDIENCE.items() if k.lower() in act.lower()), None)
+    if hit:
+        return hit
+    mapped = ACT_SUBJECT.get(subject or "")
+    return ACT_AUDIENCE.get(mapped) if mapped else None
 
 SYSTEM = """You summarise Sri Lankan government gazettes for a compliance alerting product.
 
@@ -160,7 +221,7 @@ def build_prompt(con: sqlite3.Connection, no: str) -> str:
     text = open(g["text_path"]).read()
 
     act = (g["enabling_act"] or "").replace("The ", "")
-    candidates = next((v for k, v in ACT_AUDIENCE.items() if k.lower() in act.lower()), None)
+    candidates = audience_candidates(act, g["subject"])
 
     parts = [
         f"GAZETTE {g['no']}, published {g['published_date']}.",
