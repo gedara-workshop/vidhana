@@ -1,15 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { Consequence, Mark, MetaRow } from "@/components/Standing";
+import DetailPane from "@/components/DetailPane";
 import { buildIndex, runSearch, type SearchIndex } from "@/lib/search";
-import { toSlug } from "@/lib/standing";
+import { formatDate, standingOf, toSlug } from "@/lib/standing";
 import type { Bodies, CorpusIndex, Gazette } from "@/lib/types";
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-const PAGE = 25;
+const PAGE = 60;
 
 type Status = "current" | "inforce" | "rescinded";
 
@@ -19,9 +19,13 @@ interface Facets {
   status: [string, number][];
 }
 
-/* One column, ruled. The dashboard sidebar is gone: facets sit in a strip
- * under the search line the way a newspaper sets its sections, which keeps the
- * page a single measure and the eye on one thing at a time. */
+/* Three panes: filters, results, detail. The detail opens beside the list
+ * rather than navigating away, because the question people actually have —
+ * "is this still the rule?" — is answered by comparing a document with its
+ * siblings, and losing the list to answer it is the wrong trade.
+ *
+ * The static /gazette/[slug] pages still exist and are what a search engine
+ * and a shared link land on. This is the workspace; those are the documents. */
 export default function SearchApp({ corpus, facets }: { corpus: CorpusIndex; facets: Facets }) {
   const [q, setQ] = useState("");
   const [rules, setRules] = useState(false);
@@ -29,11 +33,13 @@ export default function SearchApp({ corpus, facets }: { corpus: CorpusIndex; fac
   const [audience, setAudience] = useState<string | null>(null);
   const [status, setStatus] = useState<Status | null>(null);
   const [asOf, setAsOf] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
   const [bodies, setBodies] = useState<Bodies | null>(null);
-  const [bodiesPending, setPending] = useState(true);
+  const [pending, setPending] = useState(true);
   const [shown, setShown] = useState(PAGE);
-  const [openFacets, setOpenFacets] = useState(false);
-  const firstRun = useRef(true);
+  const [railOpen, setRailOpen] = useState(false);
+  const boot = useRef(true);
+  const box = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
@@ -43,10 +49,11 @@ export default function SearchApp({ corpus, facets }: { corpus: CorpusIndex; fac
     setAudience(p.get("audience"));
     setStatus((p.get("status") as Status | null) ?? null);
     setAsOf(p.get("as_of"));
+    setSelected(p.get("no"));
   }, []);
 
   useEffect(() => {
-    if (firstRun.current) { firstRun.current = false; return; }
+    if (boot.current) { boot.current = false; return; }
     const p = new URLSearchParams();
     if (q) p.set("q", q);
     if (rules) p.set("mode", "rules");
@@ -54,10 +61,12 @@ export default function SearchApp({ corpus, facets }: { corpus: CorpusIndex; fac
     if (audience) p.set("audience", audience);
     if (status) p.set("status", status);
     if (asOf) p.set("as_of", asOf);
+    if (selected) p.set("no", selected);
     const qs = p.toString();
     window.history.replaceState(null, "", qs ? `?${qs}` : window.location.pathname);
-    setShown(PAGE);
-  }, [q, rules, subject, audience, status, asOf]);
+  }, [q, rules, subject, audience, status, asOf, selected]);
+
+  useEffect(() => { setShown(PAGE); }, [q, rules, subject, audience, status, asOf]);
 
   useEffect(() => {
     let live = true;
@@ -77,208 +86,222 @@ export default function SearchApp({ corpus, facets }: { corpus: CorpusIndex; fac
       query: q, rules, subject, audience, status, asOf }),
     [corpus.gazettes, index, byNo, q, rules, subject, audience, status, asOf]);
 
-  const bare = !q && !subject && !audience && !status && !asOf;
-  const filters: [string, string | null, () => void][] = [
-    [subject ?? "", subject, () => setSubject(null)],
-    [audience ?? "", audience, () => setAudience(null)],
-    [status ?? "", status, () => setStatus(null)],
+  // Keyboard: slash focuses search, j/k walk the list, escape clears selection.
+  // A dense list is only fast if the hands stay off the mouse.
+  const move = useCallback((delta: number) => {
+    if (!results.length) return;
+    const i = results.findIndex((g) => g.no === selected);
+    const next = results[Math.max(0, Math.min(results.length - 1, i < 0 ? 0 : i + delta))];
+    if (next) setSelected(next.no);
+  }, [results, selected]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const typing = e.target instanceof HTMLElement &&
+        /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
+      if (e.key === "/" && !typing) { e.preventDefault(); box.current?.focus(); return; }
+      if (e.key === "Escape") { (e.target as HTMLElement)?.blur?.(); setSelected(null); return; }
+      if (typing) return;
+      if (e.key === "j") { e.preventDefault(); move(1); }
+      if (e.key === "k") { e.preventDefault(); move(-1); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [move]);
+
+  const active = selected ? byNo.get(selected) ?? null : null;
+  const chips: [string, () => void][] = [
+    ...(subject ? [[subject, () => setSubject(null)] as [string, () => void]] : []),
+    ...(audience ? [[audience, () => setAudience(null)] as [string, () => void]] : []),
+    ...(status ? [[status, () => setStatus(null)] as [string, () => void]] : []),
+    ...(asOf ? [[`as of ${asOf}`, () => setAsOf(null)] as [string, () => void]] : []),
   ];
 
   return (
-    <main className="mx-auto max-w-[820px] px-6 pb-10 pt-9 md:px-14">
-      <label className="label block" htmlFor="q">Search</label>
-      <input
-        id="q" type="search" value={q} onChange={(e) => setQ(e.target.value)}
-        placeholder="tax invoice"
-        className="field mt-[6px]"
-      />
+    <div className="flex h-full">
+      {/* ── rail ─────────────────────────────────────────────────────── */}
+      <aside className={`rail shrink-0 overflow-y-auto p-2 ${railOpen ? "absolute inset-y-0 left-0 z-20" : "hidden"} md:block`}>
+        <FacetGroup title="Standing" items={facets.status} active={status}
+          label={{ current: "Current documents", inforce: "In force", rescinded: "Rescinded" }}
+          dot={{ current: "var(--ok)", inforce: "var(--ok)", rescinded: "var(--res)" }}
+          onPick={(k) => setStatus(status === k ? null : (k as Status))} />
+        <FacetGroup title="Subject" items={facets.subject} active={subject}
+          onPick={(k) => setSubject(subject === k ? null : k)} />
+        <FacetGroup title="Who it affects" items={facets.audience.slice(0, 9)} active={audience}
+          onPick={(k) => setAudience(audience === k ? null : k)} />
+        <div className="mt-3 border-t px-2 pt-3 text-[11px] leading-relaxed"
+             style={{ borderColor: "var(--line)", color: "var(--faint)" }}>
+          {corpus.counts.recovered} of {corpus.counts.gazettes} recovered from the
+          Internet Archive. {corpus.counts.unresolved_threads} rule
+          {corpus.counts.unresolved_threads === 1 ? " has" : "s have"} a hole in its history.
+        </div>
+      </aside>
 
-      {/* the section strip */}
-      <div className="mt-3 flex flex-wrap items-baseline gap-x-5 gap-y-2 border-b pb-3"
-           style={{ borderColor: "var(--hair)" }}>
-        <button className="label !opacity-100 underline underline-offset-4"
-                style={{ textDecorationColor: rules ? "currentColor" : "transparent" }}
-                aria-pressed={rules} onClick={() => setRules(!rules)}>
-          {rules ? "By rule" : "By document"}
-        </button>
-        <button className="label !opacity-100 underline underline-offset-4"
-                style={{ textDecorationColor: asOf ? "currentColor" : "transparent" }}
-                aria-pressed={!!asOf} onClick={() => setAsOf(asOf ? null : "2015-01-01")}>
-          {asOf ? `As of ${asOf}` : "As of today"}
-        </button>
-        <button className="label !opacity-100 underline underline-offset-4"
-                style={{ textDecorationColor: openFacets ? "currentColor" : "transparent" }}
-                aria-expanded={openFacets} onClick={() => setOpenFacets(!openFacets)}>
-          Narrow
-        </button>
-        <span className="grow" />
-        <span className="mono text-[11.5px] opacity-50">
-          {results.length} {rules ? "rule" : "document"}{results.length === 1 ? "" : "s"}
-          {bodiesPending && q ? " · full text still loading" : ""}
-        </span>
-      </div>
+      {/* ── list ─────────────────────────────────────────────────────── */}
+      <section className="flex min-w-0 grow flex-col">
+        <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2"
+             style={{ borderColor: "var(--line)" }}>
+          <button className="btn md:hidden" onClick={() => setRailOpen(!railOpen)}
+                  aria-pressed={railOpen}>Filters</button>
+          <div className="relative min-w-0 grow">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--faint)"
+                 strokeWidth="2" strokeLinecap="round" aria-hidden
+                 className="pointer-events-none absolute left-[10px] top-[9px]">
+              <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+            </svg>
+            <input ref={box} id="q" type="search" value={q} className="input"
+                   onChange={(e) => setQ(e.target.value)}
+                   placeholder="Search full text…" aria-label="Search gazettes" />
+            <span className="kbd pointer-events-none absolute right-[8px] top-[8px] hidden sm:block">/</span>
+          </div>
+          <button className="btn" aria-pressed={rules} onClick={() => setRules(!rules)}
+                  title="Collapse to one result per rule">
+            {rules ? "By rule" : "By document"}
+          </button>
+          <button className="btn" aria-pressed={!!asOf}
+                  onClick={() => setAsOf(asOf ? null : "2015-01-01")} title="Time travel">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 strokeWidth="2" strokeLinecap="round" aria-hidden>
+              <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
+            </svg>
+            <span className="hidden lg:inline">{asOf ? asOf : "As of today"}</span>
+          </button>
+        </div>
 
-      {asOf && (
-        <div className="mt-3 flex flex-wrap items-center gap-3 border-b pb-3"
-             style={{ borderColor: "var(--hair)" }}>
-          <span className="text-[15px] italic">Showing the rule as it stood on</span>
-          <input type="date" value={asOf} aria-label="As-of date"
-                 onChange={(e) => setAsOf(e.target.value || null)}
-                 className="mono border-b bg-transparent pb-[2px] text-[13px]"
-                 style={{ borderColor: "var(--ink)" }} />
-          <span className="text-[13px] italic opacity-60">
-            tested on the effective date, not publication
+        {(asOf || chips.length > 0) && (
+          <div className="flex shrink-0 flex-wrap items-center gap-2 border-b px-3 py-[6px]"
+               style={{ borderColor: "var(--line)" }}>
+            {asOf && (
+              <>
+                <span className="text-[11.5px]" style={{ color: "var(--sup)" }}>
+                  as it stood on
+                </span>
+                <input type="date" value={asOf} aria-label="As-of date"
+                       onChange={(e) => setAsOf(e.target.value || null)}
+                       className="mono rounded-[5px] border px-[6px] py-[2px] text-[11.5px]"
+                       style={{ borderColor: "var(--line)", background: "var(--bg)" }} />
+                <span className="text-[11px]" style={{ color: "var(--faint)" }}>
+                  effective date, not publication
+                </span>
+              </>
+            )}
+            {chips.map(([label, clear]) => (
+              <button key={label} className="tag" onClick={clear} title="Remove filter">
+                {label} <span style={{ color: "var(--faint)" }}>✕</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="flex shrink-0 items-center gap-3 border-b px-3 py-[5px]"
+             style={{ borderColor: "var(--line)" }}>
+          <span className="mono text-[11px]" style={{ color: "var(--faint)" }}>
+            {results.length} {rules ? "rule" : "document"}{results.length === 1 ? "" : "s"}
+          </span>
+          {pending && q && (
+            <span className="text-[11px]" style={{ color: "var(--sup)" }}>
+              indexing full text…
+            </span>
+          )}
+          <span className="grow" />
+          <span className="hidden items-center gap-1 text-[11px] lg:flex"
+                style={{ color: "var(--faint)" }}>
+            <span className="kbd">j</span><span className="kbd">k</span> to move
           </span>
         </div>
-      )}
 
-      {openFacets && (
-        <FacetStrip
-          facets={facets} subject={subject} audience={audience} status={status}
-          onSubject={(s) => setSubject(subject === s ? null : s)}
-          onAudience={(a) => setAudience(audience === a ? null : a)}
-          onStatus={(s) => setStatus(status === s ? null : (s as Status))}
-        />
-      )}
-
-      {filters.some(([, v]) => v) && (
-        <p className="mt-3 flex flex-wrap items-center gap-2 text-[13px] italic opacity-75">
-          Narrowed to
-          {filters.filter(([, v]) => v).map(([label, , clear]) => (
-            <button key={label} className="tag not-italic" onClick={clear}
-                    title="Remove this filter">{label} ✕</button>
-          ))}
-        </p>
-      )}
-
-      {bare ? <Opening counts={corpus.counts} onPick={(p) => {
-        setQ(p.q ?? ""); setRules(!!p.rules);
-        setAsOf(p.asOf ?? null); setAudience(p.audience ?? null);
-      }} /> : (
-        <>
+        <div className="min-h-0 grow overflow-y-auto">
           {results.length === 0 ? (
-            <p className="mt-10 text-[17px] italic opacity-65">
-              {q ? <>Nothing matches “{q}”.</> : "Nothing matches these filters."}{" "}
-              {bodiesPending
-                ? "The full text is still loading — try again in a moment."
-                : "Every word of every gazette is searched, and all terms must appear."}
-            </p>
+            <div className="px-4 py-16 text-center">
+              <p className="text-[14px] font-medium">
+                {q ? `Nothing matches “${q}”` : "Nothing matches these filters"}
+              </p>
+              <p className="mt-1 text-[12.5px]" style={{ color: "var(--dim)" }}>
+                {pending ? "The full text is still loading."
+                         : "Every word of every gazette is searched, and all terms must appear."}
+              </p>
+            </div>
           ) : (
             <>
-              <ol className="mt-1">
-                {results.slice(0, shown).map((g) => (
-                  <li key={g.no}><Entry g={g} asOf={asOf} /></li>
-                ))}
-              </ol>
+              {results.slice(0, shown).map((g) => (
+                <Row key={g.no} g={g} asOf={asOf} selected={g.no === selected}
+                     onSelect={() => setSelected(g.no)} />
+              ))}
               {results.length > shown && (
-                <button className="label !opacity-100 mt-6 underline underline-offset-4"
-                        onClick={() => setShown((s) => s + PAGE)}>
-                  Show {Math.min(PAGE, results.length - shown)} more of {results.length}
-                </button>
+                <div className="p-3">
+                  <button className="btn w-full justify-center"
+                          onClick={() => setShown((s) => s + PAGE)}>
+                    Show {Math.min(PAGE, results.length - shown)} more
+                  </button>
+                </div>
               )}
             </>
           )}
-        </>
-      )}
-    </main>
+        </div>
+      </section>
+
+      {/* ── detail ───────────────────────────────────────────────────── */}
+      <DetailPane g={active} corpus={corpus} byNo={byNo} asOf={asOf}
+                  onClose={() => setSelected(null)} onOpen={(no) => setSelected(no)} />
+    </div>
   );
 }
 
-function Entry({ g, asOf }: { g: Gazette; asOf: string | null }) {
+function Row({ g, asOf, selected, onSelect }: {
+  g: Gazette; asOf: string | null; selected: boolean; onSelect: () => void;
+}) {
+  const s = standingOf(g, asOf);
   return (
-    <Link className="entry block py-[22px]" href={`/gazette/${toSlug(g.no)}/`}>
-      <div className="flex items-baseline gap-[14px]">
-        <span className="mono text-[15px] font-medium">{g.no}</span>
+    <button className="rowitem" aria-selected={selected} onClick={onSelect}>
+      <div className="flex items-center gap-2">
+        <span className="mono shrink-0 text-[12px] font-semibold">{g.no}</span>
+        <span className={`state state-${s.kind}`}>{s.pill}</span>
         <span className="grow" />
-        <Mark g={g} asOf={asOf} />
+        <span className="mono shrink-0 text-[10.5px]" style={{ color: "var(--faint)" }}>
+          {formatDate(g.published_date)}
+        </span>
       </div>
-      <h2 className="mt-[7px] max-w-[640px] text-[21px] leading-[1.32]">{g.title}</h2>
-      <Consequence g={g} asOf={asOf} />
-      {g.summary && (
-        <p className="clamp-2 mt-2 max-w-[640px] text-[14.5px] opacity-[.68]">{g.summary}</p>
-      )}
-      <MetaRow g={g} missing={g.missing_refs} />
-    </Link>
+      <p className="clamp-1 mt-[3px] text-[13px] font-medium">{g.title}</p>
+      <div className="mt-[4px] flex items-center gap-[6px]">
+        <span className="tag">{g.subject}</span>
+        {g.thread_size > 1 && <span className="tag">{g.thread_size} in rule</span>}
+        {g.missing_refs.length > 0 && (
+          <span className="tag tag-warn" title="A gazette this rule references is not held">
+            gap
+          </span>
+        )}
+        {g.confidence && g.confidence !== "high" && (
+          <span className="tag">{g.confidence} conf.</span>
+        )}
+        {g.source !== "ird-listing" && <span className="tag">recovered</span>}
+        {s.consequence && (
+          <span className="clamp-1 text-[11.5px]"
+                style={{ color: s.kind === "rescinded" ? "var(--res)" : "var(--sup)" }}>
+            {s.consequence}
+          </span>
+        )}
+      </div>
+    </button>
   );
 }
 
-function FacetStrip(props: {
-  facets: Facets; subject: string | null; audience: string | null; status: Status | null;
-  onSubject: (s: string) => void; onAudience: (a: string) => void; onStatus: (s: string) => void;
+function FacetGroup({ title, items, active, onPick, label, dot }: {
+  title: string; items: [string, number][]; active: string | null;
+  onPick: (k: string) => void;
+  label?: Record<string, string>; dot?: Record<string, string>;
 }) {
-  const LABEL: Record<string, string> = {
-    current: "current documents", inforce: "in force", rescinded: "rescinded",
-  };
-  const group = (title: string, items: [string, number][], active: string | null,
-                 pick: (k: string) => void, label?: Record<string, string>) => (
-    <div>
-      <p className="label">{title}</p>
-      <ul className="mt-[6px]">
-        {items.map(([k, n]) => (
-          <li key={k}>
-            <button onClick={() => pick(k)} aria-pressed={active === k}
-                    className="flex w-full items-baseline gap-3 py-[3px] text-left text-[14px]"
-                    style={active === k ? { fontWeight: 600 } : { opacity: 0.8 }}>
-              <span className="grow truncate">{label?.[k] ?? k}</span>
-              <span className="mono text-[11px] opacity-50">{n}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
   return (
-    <div className="mt-4 grid gap-8 border-b pb-5 md:grid-cols-3"
-         style={{ borderColor: "var(--hair)" }}>
-      {group("Standing", props.facets.status, props.status, props.onStatus, LABEL)}
-      {group("Subject", props.facets.subject, props.subject, props.onSubject)}
-      {group("Who it affects", props.facets.audience.slice(0, 8), props.audience, props.onAudience)}
-    </div>
-  );
-}
-
-function Opening({ counts, onPick }: {
-  counts: CorpusIndex["counts"];
-  onPick: (p: { q?: string; rules?: boolean; asOf?: string; audience?: string }) => void;
-}) {
-  const jobs: [string, string, { q?: string; rules?: boolean; asOf?: string; audience?: string }][] = [
-    ["What is the rule right now?",
-     "Search, then read by rule. One entry per rule, answered by the document current today.",
-     { q: "tax invoice", rules: true }],
-    ["What applied back in 2015?",
-     "Set an as-of date. Effective dates are often retroactive, so this is not the same as filtering by publication.",
-     { q: "transfer pricing", asOf: "2015-01-01" }],
-    ["Does this affect me?",
-     "Narrow by audience — notaries, employers, VAT-registered businesses — inferred from the enabling Act.",
-     { audience: "notaries" }],
-  ];
-  return (
-    <div className="mt-9">
-      <p className="max-w-[600px] text-[19px] leading-[1.55]">
-        Half of these gazettes amend or rescind another one, so the current state of a rule
-        frequently exists in <em>no single document</em>. Search returns the rule — not the
-        documents that mention it.
-      </p>
-      <ol className="mt-8 border-t" style={{ borderColor: "var(--hair)" }}>
-        {jobs.map(([q, how, pick], i) => (
-          <li key={q} className="entry">
-            <button className="w-full py-[18px] text-left" onClick={() => onPick(pick)}>
-              <span className="mono mr-3 text-[12px] opacity-45">{i + 1}</span>
-              <span className="text-[19px]">{q}</span>
-              <span className="mt-[5px] block max-w-[580px] text-[14.5px] italic opacity-[.68]">
-                {how}
-              </span>
-            </button>
-          </li>
-        ))}
-      </ol>
-      <p className="mt-8 max-w-[640px] text-[14px] italic leading-relaxed opacity-[.68]">
-        <strong className="not-italic font-semibold">What this cannot tell you.</strong>{" "}
-        The IRD listing omits gazettes from inside its own date range — {counts.recovered} were
-        recovered from the Internet Archive and are marked as such. A gazette nobody indexes,
-        which rescinds one we hold, would be invisible here. Where a rule’s history has a hole,
-        entries say so.
-      </p>
+    <div className="mb-3">
+      <p className="sec px-2 pb-1">{title}</p>
+      {items.map(([k, n]) => (
+        <button key={k} className="facet" aria-pressed={active === k} onClick={() => onPick(k)}>
+          {dot?.[k]
+            ? <span className="h-[6px] w-[6px] shrink-0 rounded-full" style={{ background: dot[k] }} />
+            : <span className="h-[6px] w-[6px] shrink-0" />}
+          <span className="grow truncate">{label?.[k] ?? k}</span>
+          <span className="n">{n}</span>
+        </button>
+      ))}
     </div>
   );
 }
