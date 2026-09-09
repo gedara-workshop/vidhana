@@ -20,41 +20,38 @@ export default function FeedsPage() {
   const subjects = facetCounts().subject;
 
   return (
-    <article className="mx-auto max-w-[820px] px-6 pb-10 pt-8 md:px-14">
-      <Link className="label !opacity-100 underline underline-offset-4" href="/">
-        ← Search the corpus
-      </Link>
-      <h1 className="mt-6 text-[34px] leading-tight">Feeds</h1>
-      <p className="mt-3 max-w-[620px] text-[17px] leading-[1.6]">
-        Atom feeds, updated nightly. Each entry says what a gazette does, who it affects, and
-        which document is currently the rule — and where a rule’s history has a hole, it says
-        that too.
-      </p>
+    <div className="h-full overflow-y-auto">
+      <div className="mx-auto max-w-3xl px-5 py-6">
+        <h1 className="text-[20px] font-bold tracking-tight">Feeds</h1>
+        <p className="mt-1 max-w-[600px] text-[13px]" style={{ color: "var(--dim)" }}>
+          Atom feeds, updated nightly. Each entry says what a gazette does, who it affects and
+          which document is currently the rule — and where a rule’s history has a hole, it says
+          that too.
+        </p>
 
-      <ul className="mt-8 border-t" style={{ borderColor: "var(--hair-strong)" }}>
-        <li className="entry">
-          <a className="flex items-baseline justify-between gap-4 py-[14px]"
-             href={`${BASE}/feeds/all.xml`}>
-            <span className="text-[19px]">Everything</span>
-            <span className="mono text-[12px] opacity-50">{counts.gazettes} gazettes</span>
+        <div className="mt-5 overflow-hidden rounded-[8px] border" style={{ borderColor: "var(--line)" }}>
+          <a className="flex items-center justify-between gap-4 border-b px-4 py-3 hover:bg-[var(--raised)]"
+             style={{ borderColor: "var(--line-soft)" }} href={`${BASE}/feeds/all.xml`}>
+            <span className="text-[13.5px] font-medium">Everything</span>
+            <span className="mono text-[11.5px]" style={{ color: "var(--faint)" }}>
+              {counts.gazettes} gazettes
+            </span>
           </a>
-        </li>
-        {subjects.map(([s, n]) => (
-          <li key={s} className="entry">
-            <a className="flex items-baseline justify-between gap-4 py-[14px]"
-               href={`${BASE}/feeds/${s}.xml`}>
-              <span className="text-[19px]">{s}</span>
-              <span className="mono text-[12px] opacity-50">{n}</span>
+          {subjects.map(([name, n]) => (
+            <a key={name} className="flex items-center justify-between gap-4 border-b px-4 py-3 last:border-0 hover:bg-[var(--raised)]"
+               style={{ borderColor: "var(--line-soft)" }} href={`${BASE}/feeds/${name}.xml`}>
+              <span className="text-[13.5px]">{name}</span>
+              <span className="mono text-[11.5px]" style={{ color: "var(--faint)" }}>{n}</span>
             </a>
-          </li>
-        ))}
-      </ul>
+          ))}
+        </div>
 
-      <p className="mt-8 max-w-[640px] text-[14px] italic leading-relaxed opacity-[.68]">
-        Feeds were chosen over email deliberately: at three to six gazettes a year an inbox
-        pipeline is mostly unused plumbing, and a feed holds no personal data, needs no server,
-        and composes with everything else later.
-      </p>
-    </article>
+        <p className="mt-4 max-w-[620px] text-[11.5px] leading-relaxed" style={{ color: "var(--faint)" }}>
+          Feeds were chosen over email deliberately: at three to six gazettes a year an inbox
+          pipeline is mostly unused plumbing, and a feed holds no personal data, needs no server,
+          and composes with everything else later.
+        </p>
+      </div>
+    </div>
   );
 }

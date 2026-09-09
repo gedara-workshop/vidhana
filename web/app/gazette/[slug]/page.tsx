@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { Consequence, GapTag, Mark } from "@/components/Standing";
+
 import { allGazettes, gazette, missingFrom, thread, threadMembers } from "@/lib/corpus";
 import { formatDate, fromSlug, standingOf, toSlug } from "@/lib/standing";
 
@@ -48,128 +48,130 @@ export default async function GazettePage(
   const s = standingOf(g);
 
   return (
-    <article className="mx-auto max-w-[820px] px-6 pb-10 pt-8 md:px-14">
-      <Link className="label !opacity-100 underline underline-offset-4" href="/">
-        ← Search the corpus
-      </Link>
+    <div className="h-full overflow-y-auto">
+      <article className="mx-auto max-w-3xl px-5 py-6">
+        <Link className="navlink -ml-[10px]" href="/">← Back to search</Link>
 
-      <div className="mt-6 border-b pb-4" style={{ borderColor: "var(--hair-strong)" }}>
-        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
-          <span className="mono text-[17px] font-medium">{g.no}</span>
-          <span className="mono text-[12px] opacity-50">
-            {formatDate(g.published_date)}
-            {g.effective_from && g.effective_from !== g.published_date &&
-              ` · effective ${formatDate(g.effective_from)}`}
-          </span>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="mono text-[15px] font-semibold">{g.no}</span>
+          <span className={`state state-${s.kind}`}>{s.pill}</span>
           <span className="grow" />
-          <Mark g={g} />
-        </div>
-        <h1 className="mt-3 max-w-[680px] text-[30px] leading-[1.22]">{g.title}</h1>
-        <Consequence g={g} />
-      </div>
-
-      {g.summary && (
-        <p className="mt-5 max-w-[660px] text-[17px] leading-[1.6]">{g.summary}</p>
-      )}
-      {g.confidence && g.confidence !== "high" && (
-        <p className="mt-3 max-w-[660px] text-[13.5px] italic opacity-60">
-          This summary was generated with {g.confidence} confidence. Read the gazette before
-          relying on it.
-        </p>
-      )}
-
-      <p className="mt-6 flex flex-wrap items-center gap-5">
-        <a className="text-[16px] font-semibold link" href={g.source_url} rel="noopener">
-          Open the gazette PDF →
-        </a>
-        {head && head.no !== g.no && (
-          <Link className="text-[16px] italic link" href={`/gazette/${toSlug(head.no)}/`}>
-            Go to {head.no}, the current document →
-          </Link>
-        )}
-      </p>
-
-      <div className="mt-5 flex flex-wrap items-center gap-[10px]">
-        <span className="tag">{g.subject}</span>
-        {t ? <span className="tag">{t.size} in this rule</span> : <span className="tag">standalone</span>}
-        {g.source !== "ird-listing" && (
-          <span className="tag" title="Not in the IRD listing; recovered from the Internet Archive">
-            recovered
+          <span className="mono text-[11px]" style={{ color: "var(--faint)" }}>
+            {formatDate(g.published_date)}
           </span>
+        </div>
+
+        <h1 className="mt-2 text-[22px] font-bold leading-snug tracking-tight">{g.title}</h1>
+        {s.consequence && (
+          <p className="mt-[6px] text-[13px] font-medium"
+             style={{ color: s.kind === "rescinded" ? "var(--res)" : "var(--sup)" }}>
+            {s.consequence}
+          </p>
         )}
-        <GapTag missing={missing} />
-      </div>
 
-      {missing.length > 0 && (
-        <p className="mt-5 border-l-2 border-dashed py-1 pl-4 text-[14.5px] italic leading-relaxed"
-           style={{ borderColor: "var(--hair-strong)" }}>
-          <strong className="not-italic font-semibold">This rule’s history is incomplete.</strong>{" "}
-          <span className="mono not-italic text-[13.5px]">{missing.join(", ")}</span>{" "}
-          {missing.length > 1 ? "are" : "is"} referenced by a document we hold but missing from the
-          IRD listing, so a change made by a gazette we do not hold would not appear below.
-        </p>
-      )}
-
-      {t && (
-        <>
-          <h2 className="label mt-10">The rule, in sequence</h2>
-          <ol className="mt-4 border-l pl-6" style={{ borderColor: "var(--hair-strong)" }}>
-            {members.map((m) => {
-              const isHead = m.no === t.head_no;
-              return (
-                <li key={m.no} className="relative py-[11px]">
-                  <span className="absolute -left-[30px] top-[19px] h-[9px] w-[9px] rounded-full"
-                        style={isHead
-                          ? { background: "var(--ink)" }
-                          : { border: "1.5px solid var(--ink)", background: "var(--paper)" }} />
-                  <div className="flex flex-wrap items-baseline gap-x-[13px] gap-y-1">
-                    <Link className="mono text-[14px] link"
-                          style={{ fontWeight: isHead ? 600 : 400 }}
-                          href={`/gazette/${toSlug(m.no)}/`}>{m.no}</Link>
-                    <span className="mono text-[11.5px] opacity-50">
-                      {formatDate(m.published_date)}
-                    </span>
-                    <span className="text-[14.5px] italic opacity-80">
-                      {standingOf(m).kind === "current" ? "the rule now"
-                        : standingOf(m).kind === "rescinded" ? "rescinded" : "superseded"}
-                    </span>
-                    {m.no === g.no && <span className="tag not-italic">you are here</span>}
-                  </div>
-                  <p className="mt-1 max-w-[600px] text-[14px] opacity-[.62]">{m.title}</p>
-                </li>
-              );
-            })}
-          </ol>
-          <p className="mt-4">
-            <Link className="text-[15px] italic link" href={`/rule/${t.thread_id}/`}>
-              See this rule on its own page →
-            </Link>
-          </p>
-        </>
-      )}
-
-      <div className="mt-10 grid gap-8 border-t pt-6 md:grid-cols-2"
-           style={{ borderColor: "var(--hair)" }}>
-        <div>
-          <h2 className="label">Who this affects</h2>
-          <p className="mt-2 text-[16px]">
-            {g.audience.length ? g.audience.join("; ") : "Not stated."}
-          </p>
-          <p className="mt-2 text-[13px] italic opacity-60">
-            Inferred from the enabling Act — gazettes rarely state who they bind, and the model
-            may only narrow within the Act’s known audiences.
-          </p>
-        </div>
-        <div>
-          <h2 className="label">Enabling Act</h2>
-          <p className="mt-2 text-[16px]">{g.enabling_act ?? "Not parsed."}</p>
-          {g.source !== "ird-listing" && (
-            <p className="mt-2 text-[13px] italic opacity-60">
-              Recovered from the Internet Archive — this gazette is not in the IRD listing.
-            </p>
+        <div className="mt-3 flex flex-wrap items-center gap-[6px]">
+          <span className="tag">{g.subject}</span>
+          {t && <span className="tag">{t.size} in rule</span>}
+          {g.confidence && g.confidence !== "high" && (
+            <span className="tag">{g.confidence} confidence</span>
           )}
+          {g.source !== "ird-listing" && (
+            <span className="tag" title="Not in the IRD listing; recovered from the Internet Archive">
+              recovered
+            </span>
+          )}
+          {missing.length > 0 && <span className="tag tag-warn">history incomplete</span>}
         </div>
-      </div>
-    </article>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <a className="btn btn-primary" href={g.source_url} rel="noopener">Open the gazette PDF</a>
+          {head && head.no !== g.no && (
+            <Link className="btn" href={`/gazette/${toSlug(head.no)}/`}>
+              Go to {head.no}, current
+            </Link>
+          )}
+          {t && <Link className="btn" href={`/rule/${t.thread_id}/`}>See the whole rule</Link>}
+        </div>
+
+        {g.summary && (
+          <div className="mt-5 rounded-[8px] border p-4" style={{ borderColor: "var(--line)",
+               background: "var(--panel)" }}>
+            <p className="sec">Summary</p>
+            <p className="mt-2 text-[14px] leading-relaxed">{g.summary}</p>
+            {g.confidence && g.confidence !== "high" && (
+              <p className="mt-2 text-[11.5px]" style={{ color: "var(--sup)" }}>
+                Generated with {g.confidence} confidence. Read the gazette before relying on it.
+              </p>
+            )}
+          </div>
+        )}
+
+        {missing.length > 0 && (
+          <p className="mt-3 rounded-[8px] px-4 py-3 text-[12.5px] leading-relaxed"
+             style={{ background: "var(--sup-bg)", color: "var(--sup)" }}>
+            <strong>This rule’s history is incomplete.</strong>{" "}
+            <span className="mono">{missing.join(", ")}</span>{" "}
+            {missing.length > 1 ? "are" : "is"} referenced by a document we hold but missing from
+            the IRD listing, so a change made by a gazette we do not hold would not appear below.
+          </p>
+        )}
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-[8px] border p-4" style={{ borderColor: "var(--line)" }}>
+            <p className="sec">Who this affects</p>
+            <p className="mt-2 text-[13px]">
+              {g.audience.length ? g.audience.join("; ") : "Not stated."}
+            </p>
+            <p className="mt-2 text-[11.5px] leading-relaxed" style={{ color: "var(--faint)" }}>
+              Inferred from the enabling Act — gazettes rarely state who they bind, and the model
+              may only narrow within the Act’s known audiences.
+            </p>
+          </div>
+          <div className="rounded-[8px] border p-4" style={{ borderColor: "var(--line)" }}>
+            <p className="sec">Enabling Act</p>
+            <p className="mt-2 text-[13px]">{g.enabling_act ?? "Not parsed."}</p>
+            <p className="mt-2 text-[11.5px]" style={{ color: "var(--faint)" }}>
+              Effective {formatDate(g.effective_from) || "—"}
+            </p>
+          </div>
+        </div>
+
+        {t && (
+          <>
+            <p className="sec mt-6 mb-2">The rule, over time · {members.length} documents</p>
+            <div className="overflow-hidden rounded-[8px] border" style={{ borderColor: "var(--line)" }}>
+              {members.map((m) => {
+                const ms = standingOf(m);
+                const here = m.no === g.no;
+                return (
+                  <Link key={m.no} href={`/gazette/${toSlug(m.no)}/`}
+                        className="block border-b px-4 py-[10px] last:border-0 hover:bg-[var(--raised)]"
+                        style={{ borderColor: "var(--line-soft)",
+                                 background: here ? "var(--raised)" : undefined }}>
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="mono text-[12px] font-semibold">{m.no}</span>
+                      <span className={`state state-${ms.kind}`}>{ms.pill}</span>
+                      {here && <span className="tag">you are here</span>}
+                      <span className="grow" />
+                      <span className="mono text-[10.5px]" style={{ color: "var(--faint)" }}>
+                        {formatDate(m.published_date)}
+                      </span>
+                    </span>
+                    <span className="clamp-1 mt-[3px] block text-[12.5px]"
+                          style={{ color: "var(--dim)" }}>{m.title}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        <p className="mt-6 text-[11.5px] leading-relaxed" style={{ color: "var(--faint)" }}>
+          Summaries are machine-written; the gazette is the source of truth. “In force” means not
+          rescinded by another gazette in this corpus — weaker than a legal determination. Not
+          legal advice.
+        </p>
+      </article>
+    </div>
   );
 }
