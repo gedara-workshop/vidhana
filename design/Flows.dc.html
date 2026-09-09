@@ -1,0 +1,169 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Schibsted Grotesk", system-ui, -apple-system, sans-serif;
+           font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    a { color: var(--accent); } a:hover { color: var(--accent); }
+    .k { font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--dim); }
+    .step { border: 1px solid var(--line); border-radius: 9px; padding: 13px 14px 14px; width: 222px;
+            flex-shrink: 0; background: var(--surface); }
+    .wire { border: 1px solid var(--line); border-radius: 6px; background: var(--bg); padding: 8px 9px; margin-top: 10px; }
+    .bar { height: 5px; border-radius: 1px; background: var(--line); }
+  </style>
+</helmet>
+
+<div style="{{theme}} background: var(--bg); color: var(--fg); min-height: 1220px; padding: 34px 44px 46px;">
+
+  <div style="font-size: 20px; font-weight: 620; letter-spacing: -0.01em;">End-to-end flows</div>
+  <div style="color: var(--dim); font-size: 14px; margin-top: 6px; max-width: 780px;">
+    Three journeys that cover what people actually arrive to do. Each names the moment the product either
+    earns its keep or fails quietly — marked <span style="color: {{accentc}}; font-weight: 600;">◆</span>.
+  </div>
+
+  <sc-for list="{{journeys}}" as="j" hint-placeholder-count="3">
+    <div style="margin-top: 34px;">
+      <div style="display: flex; align-items: baseline; gap: 12px;">
+        <span style="font-size: 15px; font-weight: 640;">{{j.name}}</span>
+        <span style="color: var(--dim); font-size: 13px;">{{j.who}}</span>
+      </div>
+
+      <div style="display: flex; align-items: stretch; gap: 0; margin-top: 12px; flex-wrap: nowrap;">
+        <sc-for list="{{j.steps}}" as="s" hint-placeholder-count="5">
+          <div style="display: flex; align-items: center;">
+            <div class="step" style="{{s.border}}">
+              <div style="display: flex; align-items: baseline; gap: 7px;">
+                <span style="{{s.num}}">{{s.i}}</span>
+                <span style="font-size: 12.5px; font-weight: 620;">{{s.screen}}</span>
+              </div>
+
+              <div class="wire">
+                <sc-for list="{{s.bars}}" as="b" hint-placeholder-count="3">
+                  <div class="bar" style="{{b}}"></div>
+                </sc-for>
+              </div>
+
+              <div style="margin-top: 9px; font-size: 12px; line-height: 1.5; color: var(--dim);">{{s.does}}</div>
+
+              <sc-if value="{{s.critical}}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top: 9px; padding-top: 8px; border-top: 1px solid var(--line);
+                            font-size: 11.5px; line-height: 1.5; color: {{accentc}};">
+                  <span style="font-weight: 700;">◆</span> {{s.moment}}
+                </div>
+              </sc-if>
+            </div>
+
+            <sc-if value="{{s.arrow}}" hint-placeholder-val="{{ true }}">
+              <svg width="26" height="14" viewBox="0 0 26 14" fill="none" style="flex-shrink: 0;"
+                   stroke="{{dimc}}" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 7h22"/><path d="M18 2.5 23 7l-5 4.5"/>
+              </svg>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="margin-top: 11px; font-size: 12.5px; color: var(--dim); line-height: 1.55; max-width: 940px;">
+        <strong style="color: var(--fg); font-weight: 620;">Fails if:</strong> {{j.fails}}
+      </div>
+    </div>
+  </sc-for>
+
+  <!-- entry points -->
+  <div style="margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--line);">
+    <div class="k">How people arrive</div>
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; margin-top: 12px; max-width: 1180px;">
+      <sc-for list="{{entries}}" as="e" hint-placeholder-count="4">
+        <div>
+          <div style="font-size: 13px; font-weight: 620;">{{e.from}}</div>
+          <div style="margin-top: 5px; font-size: 12.5px; color: var(--dim); line-height: 1.55;">{{e.note}}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Theme"}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const c = this.props.dark
+      ? { fg:"#e9eaf0", dim:"#949ab0", bg:"#0e0f13", surface:"#17191f", line:"#262a33",
+          accent:"#8a95ff", panel:"#0e0f13" }
+      : { fg:"#14161c", dim:"#5b6070", bg:"#f5f6f9", surface:"#ffffff", line:"#e4e6ec",
+          accent:"#3444d1", panel:"#f5f6f9" };
+
+    const W = (...ws) => ws.map((w) => `width:${w}%;` + (w === 0 ? "opacity:0;" : "") + "margin-top:4px;");
+
+    const mk = (steps) => steps.map((s, i) => ({
+      i: String(i + 1),
+      screen: s[0], does: s[1], moment: s[2] || "", bars: s[3],
+      critical: !!s[2],
+      arrow: i < steps.length - 1,
+      border: s[2] ? `border-color:${c.accent};` : "",
+      num: `display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;` +
+           `border-radius:50%;font-size:10px;font-weight:700;flex-shrink:0;` +
+           `background:${s[2] ? c.accent : c.line};color:${s[2] ? c.bg : c.dim};`
+    }));
+
+    return {
+      theme: `--fg:${c.fg};--dim:${c.dim};--bg:${c.bg};--surface:${c.surface};--line:${c.line};--accent:${c.accent};--panel:${c.panel};`,
+      accentc: c.accent, dimc: c.dim,
+      journeys: [
+        { name: "A · “Am I issuing invoices the right way?”",
+          who: "accountant, arrives from a search engine, has never seen this before",
+          fails: "the reader takes the top hit at face value. It is 2463/05 — rescinded — and it ranks first because it matches the query best. Standing has to be visible without a click.",
+          steps: mk([
+            ["Landing", "Types “tax invoice” into the one obvious field.", null, W(70, 40, 0)],
+            ["Results · Documents", "Three gazettes, all matching well. The first one is rescinded.",
+             "Reads the standing line and stops. Without it, this is where the product misleads.", W(90, 55, 80)],
+            ["Toggle → Rules", "Collapses the three into one rule, answered by 2500/106.",
+             "The question they asked is answered by a document they never searched for.", W(85, 45, 0)],
+            ["Expand history", "Sees the chain: 2463/05 → 2481/22 → 2500/106, and the October date change.", null, W(60, 60, 60)],
+            ["Gazette PDF", "Opens the original on ird.gov.lk to act on it.", null, W(75, 75, 40)]
+          ]) },
+
+        { name: "B · “What applied when we filed in 2015?”",
+          who: "tax practitioner handling a back-year assessment or dispute",
+          fails: "an as-of date filters by publication rather than effective date. 2316/13 was published in 2023 and took effect in 2022 — the wrong year is a wrong answer, delivered confidently.",
+          steps: mk([
+            ["Results", "Searches “transfer pricing” — five documents spanning 2008 to 2021.", null, W(80, 50, 65)],
+            ["Set as-of date", "Moves the date control to 2015.",
+             "The control has to be findable without knowing it exists — this is the differentiator.", W(100, 30, 0)],
+            ["The rule on that date", "One answer: 1823/05. Not the 2008 one it replaced, not the 2018 one not yet written.",
+             "No single document in the corpus states this. The graph does.", W(85, 60, 45)],
+            ["History", "Confirms what displaced it and when, to cite in the file.", null, W(55, 55, 55)]
+          ]) },
+
+        { name: "C · “Something changed — does it affect me?”",
+          who: "existing subscriber, arrives from the Atom feed, likely on a phone",
+          fails: "the feed entry and the page disagree, or the page loses the caveat the entry carried. Both render from the same resolved state for exactly this reason.",
+          steps: mk([
+            ["Feed entry", "“2500/106 amends 2481/22 and changes when it takes effect.”", null, W(90, 45, 0)],
+            ["Rule detail", "Lands directly on the rule, current document stated first.",
+             "Answer before history. They came with a question, not for a reading list.", W(70, 80, 50)],
+            ["Incomplete-history notice", "Where the chain has a hole, it says so beside the claim it weakens.",
+             "The moment the product admits its limits instead of bluffing.", W(100, 40, 0)],
+            ["Audience check", "“Affects: VAT-registered businesses” — decides it applies to them.", null, W(50, 70, 30)]
+          ]) }
+      ],
+      entries: [
+        { from: "Atom feed", note: "The only surface that reaches people without them coming back. Deep-links to the rule, not the document." },
+        { from: "Search engine", note: "Lands on a rule detail or a query. Must make sense cold, with no prior context." },
+        { from: "Direct / repeat", note: "Goes straight to the search field. Wants density and keyboard, not onboarding." },
+        { from: "Shared link", note: "A colleague pasted a gazette number. The page must answer “is this still the rule?” immediately." }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

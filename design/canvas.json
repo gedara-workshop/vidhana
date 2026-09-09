@@ -1,0 +1,25 @@
+{
+  "pages": [
+    { "id": "page-2", "name": "Screens" },
+    { "id": "page-3", "name": "Qualifiers" },
+    { "id": "page-1", "name": "Flows" }
+  ],
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1280, "h": 960, "page": "page-2" },
+    { "file": "Landing.dc.html", "x": 1380, "y": 0, "w": 1240, "h": 920, "page": "page-2" },
+    { "file": "RuleDetail.dc.html", "x": 0, "y": 1090, "w": 1080, "h": 1080, "page": "page-2" },
+    { "file": "AsOf.dc.html", "x": 1180, "y": 1090, "w": 1000, "h": 900, "page": "page-2" },
+
+    { "file": "Qualifiers.dc.html", "x": 0, "y": 0, "w": 1120, "h": 1140, "page": "page-3" },
+    { "file": "Flows.dc.html", "x": 0, "y": 0, "w": 1420, "h": 1240, "page": "page-1" }
+  ],
+  "annotations": [
+    { "id": "redesign-note", "x": 2700, "y": 40, "w": 320,
+      "text": "Redesign — app shell direction.\n\nNew: sidebar with live facets, sticky top bar, card results with elevation, indigo accent, Schibsted Grotesk + IBM Plex Mono.\n\nMain and AsOf are live. Type in the search box, hit Rules, click the clock for as-of, drag the slider.\n\nDark toggle sits above each artboard.", "page": "page-2" },
+    { "id": "qual-note", "x": 1200, "y": 40, "w": 300,
+      "text": "The change that fixed 'too text-heavy':\n\nSTATE became a pill you recognise. Only the CONSEQUENCE gets words — and 'in force · current' has no consequence line at all, because there is nothing to act on.\n\nEverything else demoted to a chip row.", "page": "page-3" },
+    { "id": "flows-note", "x": 1500, "y": 40, "w": 300,
+      "text": "Unchanged from the first pass — the flows were not the problem.\n\nEach names the moment the product fails quietly. Flow A is the one the whole design rests on: the top hit is rescinded and still ranks first.", "page": "page-1" }
+  ],
+  "launch": { "view": "canvas", "page": "page-2" }
+}

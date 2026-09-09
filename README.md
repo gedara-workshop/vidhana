@@ -73,6 +73,12 @@ Early and building in public. This repo starts with the plan, not a finished pro
 
 Stack is Python and SQLite. No service to run, the whole corpus is 144 documents.
 
+## Try it
+
+**[gedara-workshop.github.io/vidhana](https://gedara-workshop.github.io/vidhana/)** — search the corpus, or subscribe to the [feeds](https://gedara-workshop.github.io/vidhana/feeds.html).
+
+Search returns the *rule*, not the documents that mention it. Every result says whether it is in force, whether a newer document supersedes it, and whether the rule's history has a hole in it. `--as-of` answers what stood on a given date, tested on the effective date rather than publication. Method in [PHASE5.md](PHASE5.md).
+
 ## Roadmap
 
 - [x] **Phase 0, Feasibility.** Read 15-20 real gazettes by hand, gauge language mix and scan quality, write summaries for 5 as an evaluation set.
@@ -80,6 +86,7 @@ Stack is Python and SQLite. No service to run, the whole corpus is 144 documents
 - [x] **Phase 2, Structuring.** LLM pass over the cleaned text for a plain-English summary, the affected audience grounded on the enabling Act, effective dates, and tags.
 - [x] **Phase 3, Search.** Full-text and topic search across the corpus, with the resolved state of a rule rather than just the documents that mention it.
 - [x] **Phase 4, Alerts.** Daily check, notify on what is new and what it changes.
+- [x] **Phase 5, Search on the web.** A static front end so the corpus is usable without cloning the repo.
 
 All four phases are done. The pipeline runs nightly and publishes Atom feeds: [everything](https://gedara-workshop.github.io/vidhana/feeds/all.xml), or one per subject — [income tax](https://gedara-workshop.github.io/vidhana/feeds/income-tax.xml), [VAT](https://gedara-workshop.github.io/vidhana/feeds/vat.xml), [stamp duty](https://gedara-workshop.github.io/vidhana/feeds/stamp-duty.xml). Method in [PHASE4.md](PHASE4.md).
 

@@ -1,0 +1,173 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Schibsted Grotesk", system-ui, -apple-system, sans-serif;
+           font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent); text-decoration: underline; }
+    .mono { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace; }
+    input, button { font-family: inherit; font-size: inherit; }
+    input:focus { outline: none; border-color: var(--accent) !important; box-shadow: 0 0 0 3px var(--accentSoft); }
+    .card { transition: box-shadow .12s ease, border-color .12s ease; }
+    .card:hover { border-color: var(--accent) !important; }
+    .fac:hover { background: var(--accentSoft); }
+  </style>
+</helmet>
+
+<div style="{{theme}} background: var(--bg); color: var(--fg); min-height: 900px; display: flex;">
+
+  <div style="width: 236px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--line);
+              display: flex; flex-direction: column;">
+    <div style="padding: 18px 18px 16px; display: flex; align-items: center; gap: 9px;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="flex-shrink: 0;">
+        <rect x="1.5" y="1.5" width="21" height="21" rx="5" fill="{{accentc}}"/>
+        <path d="M7 8.5h10M7 12h10M7 15.5h6" stroke="{{surfacec}}" stroke-width="1.9" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <div style="font-weight: 700; font-size: 15px; letter-spacing: -0.02em;">Vidhana</div>
+        <div style="font-size: 10.5px; color: var(--dim);">IRD gazettes, resolved</div>
+      </div>
+    </div>
+    <div style="padding: 0 12px;">
+      <sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+        <div style="margin-bottom: 16px;">
+          <div style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
+                      color: var(--dim); padding: 0 8px 6px;">{{g.name}}</div>
+          <sc-for list="{{g.items}}" as="f" hint-placeholder-count="5">
+            <div class="fac" style="display: flex; align-items: center; gap: 8px; padding: 5px 8px;
+                                    border-radius: 6px; cursor: pointer; font-size: 12.5px;">
+              <span style="flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{f.label}}</span>
+              <span class="mono" style="font-size: 11px; opacity: .55;">{{f.n}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+    <div style="flex-grow: 1;"></div>
+    <div style="padding: 14px 18px; border-top: 1px solid var(--line); font-size: 11px; color: var(--dim); line-height: 1.5;">
+      144 gazettes · 2006–2026<br><span style="opacity: .8;">7 recovered from the archive</span>
+    </div>
+  </div>
+
+  <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column;">
+    <div style="background: var(--surface); border-bottom: 1px solid var(--line); padding: 13px 30px;
+                display: flex; gap: 16px; align-items: center; justify-content: flex-end;">
+      <a href="#" style="font-size: 13px; color: var(--dim);">Feeds</a>
+      <a href="#" style="font-size: 13px; color: var(--dim);">How it works</a>
+    </div>
+
+    <div style="padding: 58px 46px 46px; max-width: 880px;">
+      <h1 style="font-size: 38px; line-height: 1.12; font-weight: 700; letter-spacing: -0.035em; margin: 0; max-width: 640px;">
+        What the rule<br>actually is. Now.
+      </h1>
+      <p style="font-size: 16px; line-height: 1.55; color: var(--dim); margin: 16px 0 0; max-width: 560px;">
+        Half of these gazettes amend or rescind another one, so the current state of a rule frequently exists in
+        no single document. Search returns the rule — not the documents that mention it.
+      </p>
+
+      <div style="position: relative; margin-top: 28px; max-width: 620px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{dimc}}" stroke-width="2"
+             stroke-linecap="round" style="position: absolute; left: 15px; top: 15px;">
+          <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+        </svg>
+        <input value="" placeholder="Search 144 gazettes, full text"
+               style="width: 100%; padding: 14px 16px 14px 44px; border: 1px solid var(--line);
+                      border-radius: 9px; background: var(--surface); color: var(--fg); font-size: 15px;
+                      box-shadow: {{shadow}};" />
+      </div>
+
+      <div style="display: flex; gap: 7px; margin-top: 12px; flex-wrap: wrap; align-items: center;">
+        <span style="font-size: 12px; color: var(--dim);">Try</span>
+        <sc-for list="{{examples}}" as="e" hint-placeholder-count="4">
+          <a href="#" style="{{chipAction}}">{{e}}</a>
+        </sc-for>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 38px;">
+        <sc-for list="{{jobs}}" as="j" hint-placeholder-count="3">
+          <a href="#" class="card" style="background: var(--surface); border: 1px solid var(--line);
+                     border-radius: 10px; padding: 17px 18px 19px; box-shadow: {{shadow}}; color: var(--fg);
+                     display: block; text-decoration: none;">
+            <div style="{{j.icon}}">{{j.n}}</div>
+            <div style="margin-top: 11px; font-size: 14.5px; font-weight: 600; line-height: 1.35;">{{j.q}}</div>
+            <div style="margin-top: 6px; font-size: 12.5px; color: var(--dim); line-height: 1.5;">{{j.how}}</div>
+          </a>
+        </sc-for>
+      </div>
+
+      <div style="margin-top: 34px; background: var(--surface); border: 1px solid var(--line);
+                  border-radius: 10px; padding: 17px 19px; box-shadow: {{shadow}};">
+        <div style="font-size: 13px; font-weight: 600;">What this cannot tell you</div>
+        <div style="margin-top: 7px; font-size: 12.5px; color: var(--dim); line-height: 1.6;">
+          The IRD listing omits gazettes from inside its own date range — seven were recovered from the Internet
+          Archive and are marked <span style="{{chipNeutral}}">recovered</span>. A gazette nobody indexes, which
+          rescinds one we hold, would be invisible here. Where a rule’s history has a hole, results say so.
+          Summaries are machine-written; the gazette is the source of truth. Not legal advice.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Theme"}}'>
+class Component extends DCLogic {
+  pal() {
+    return this.props.dark
+      ? { fg:"#e9eaf0", dim:"#949ab0", bg:"#0e0f13", surface:"#17191f", line:"#262a33",
+          accent:"#8a95ff", accentSoft:"#1c1f33", ok:"#4fc79a", sup:"#e8b25f", res:"#ef8f8f",
+          okSoft:"#12271f", supSoft:"#2a2213", resSoft:"#2c1a1a", shadow:"none" }
+      : { fg:"#14161c", dim:"#5b6070", bg:"#f5f6f9", surface:"#ffffff", line:"#e4e6ec",
+          accent:"#3444d1", accentSoft:"#eef0fd", ok:"#0f7a52", sup:"#a9680b", res:"#ab3a3a",
+          okSoft:"#e8f5ef", supSoft:"#fdf3e2", resSoft:"#fbeceb",
+          shadow:"0 1px 2px rgba(20,22,28,.05), 0 1px 1px rgba(20,22,28,.03)" };
+  }
+  vars(c) {
+    return `--fg:${c.fg};--dim:${c.dim};--bg:${c.bg};--surface:${c.surface};--line:${c.line};` +
+           `--accent:${c.accent};--accentSoft:${c.accentSoft};`;
+  }
+  renderVals() {
+    const c = this.pal();
+    const num = (col, soft) =>
+      `display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;` +
+      `background:${soft};color:${col};font-size:12px;font-weight:700;`;
+    return {
+      theme: this.vars(c), accentc: c.accent, surfacec: c.surface, dimc: c.dim, shadow: c.shadow,
+      chipNeutral: `display:inline-flex;padding:1px 8px;border-radius:20px;font-size:11px;` +
+                   `border:1px solid ${c.line};color:${c.dim};`,
+      chipAction: `display:inline-flex;padding:4px 12px;border-radius:20px;font-size:12.5px;` +
+                  `border:1px solid ${c.line};color:${c.fg};background:${c.surface};text-decoration:none;`,
+      examples: ["tax invoice", "transfer pricing", "stamp duty on leases", "withholding"],
+      jobs: [
+        { n: "1", icon: num(c.accent, c.accentSoft), q: "What is the rule right now?",
+          how: "Search, then switch to Rules. One result per rule, answered by the document current today." },
+        { n: "2", icon: num(c.accent, c.accentSoft), q: "What applied back in 2015?",
+          how: "Set an as-of date. Effective dates are often retroactive, so this differs from filtering by publication." },
+        { n: "3", icon: num(c.accent, c.accentSoft), q: "Does this affect me?",
+          how: "Filter by audience — notaries, employers, VAT-registered businesses — inferred from the enabling Act." }
+      ],
+      groups: [
+        { name: "Status", items: [
+          { label: "Current documents", n: 62 }, { label: "In force", n: 82 }, { label: "Rescinded", n: 22 }] },
+        { name: "Subject", items: [
+          { label: "income-tax", n: 63 }, { label: "vat", n: 32 }, { label: "stamp-duty", n: 28 },
+          { label: "other", n: 12 }, { label: "esc", n: 6 }] },
+        { name: "Who it affects", items: [
+          { label: "income taxpayers", n: 59 }, { label: "VAT-registered businesses", n: 36 },
+          { label: "notaries", n: 23 }, { label: "employers", n: 16 }] }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
