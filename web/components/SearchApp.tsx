@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { Consequence, MetaRow, StandingPill } from "@/components/Standing";
+import { Consequence, MetaRow, Mark } from "@/components/Standing";
 import { buildIndex, runSearch, type SearchIndex } from "@/lib/search";
 import { toSlug } from "@/lib/standing";
 import type { Bodies, CorpusIndex, Gazette } from "@/lib/types";
@@ -227,7 +227,7 @@ function ResultCard({ g, asOf }: { g: Gazette; asOf: string | null }) {
           </span>
         )}
         <span className="grow" />
-        <StandingPill g={g} asOf={asOf} />
+        <Mark g={g} asOf={asOf} />
       </div>
       <h2 className="mt-2 text-[16px] font-semibold leading-snug tracking-tight">{g.title}</h2>
       <Consequence g={g} asOf={asOf} />

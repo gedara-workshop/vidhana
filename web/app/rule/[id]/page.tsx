@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { GapChip, StandingPill, WarnIcon } from "@/components/Standing";
+import { GapTag, Mark, WarnIcon } from "@/components/Standing";
 import { allThreads, missingFrom, thread, threadMembers } from "@/lib/corpus";
 import { formatDate, standingOf, toSlug } from "@/lib/standing";
 
@@ -53,7 +53,7 @@ export default async function RulePage({ params }: { params: Promise<{ id: strin
         <span className="chip">
           {t.first_date.slice(0, 4)} – {t.last_date.slice(0, 4)}
         </span>
-        <GapChip missing={missing} />
+        <GapTag missing={missing} />
       </div>
 
       <h1 className="text-[30px] font-bold leading-[1.15] tracking-tight">{head.title}</h1>
@@ -61,7 +61,7 @@ export default async function RulePage({ params }: { params: Promise<{ id: strin
       <div className="card mt-5 rounded-[10px] p-6"
            style={{ borderLeftWidth: 4, borderLeftColor: "var(--ok)" }}>
         <div className="flex flex-wrap items-center gap-3">
-          <StandingPill g={head} />
+          <Mark g={head} />
           <span className="grow" />
           <span className="font-mono text-[11.5px]" style={{ color: "var(--dim)" }}>
             effective {formatDate(head.effective_from)}
@@ -107,7 +107,7 @@ export default async function RulePage({ params }: { params: Promise<{ id: strin
                   <span className="font-mono text-[13.5px] font-semibold">{m.no}</span>
                   {m.source !== "ird-listing" && <span className="chip">recovered</span>}
                   <span className="grow" />
-                  <StandingPill g={m} />
+                  <Mark g={m} />
                 </div>
                 <p className="mt-2 text-[15px] font-semibold leading-snug">{m.title}</p>
                 <p className="mt-[11px] font-mono text-[11.5px]" style={{ color: "var(--dim)" }}>

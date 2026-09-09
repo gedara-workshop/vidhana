@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { Consequence, GapChip, StandingPill, WarnIcon } from "@/components/Standing";
+import { Consequence, GapTag, Mark, WarnIcon } from "@/components/Standing";
 import { allGazettes, gazette, missingFrom, thread, threadMembers } from "@/lib/corpus";
 import { formatDate, fromSlug, standingOf, toSlug } from "@/lib/standing";
 
@@ -60,12 +60,12 @@ export default async function GazettePage(
             recovered
           </span>
         )}
-        <GapChip missing={missing} />
+        <GapTag missing={missing} />
       </div>
 
       <div className="card rounded-[10px] p-6" style={{ borderLeftWidth: 4, borderLeftColor: `var(--${s.kind === "rescinded" ? "res" : s.kind === "superseded" ? "sup" : "ok"})` }}>
         <div className="flex flex-wrap items-center gap-3">
-          <StandingPill g={g} />
+          <Mark g={g} />
           <span className="grow" />
           <span className="font-mono text-[11.5px]" style={{ color: "var(--dim)" }}>
             published {formatDate(g.published_date)}

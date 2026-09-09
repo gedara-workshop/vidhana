@@ -1,55 +1,44 @@
 import type { Gazette } from "@/lib/types";
 import { formatDate, standingOf } from "@/lib/standing";
 
-/** State as a pill you recognise; only the consequence gets words.
- *  "In force · current" carries no consequence at all — there is nothing to
- *  act on, and a sentence there would be noise that trains readers to skip. */
-export function StandingPill({ g, asOf }: { g: Gazette; asOf?: string | null }) {
+/* The qualifier system, expressed without colour.
+ *
+ * The rule survives from the earlier design: state is a mark you recognise,
+ * only the consequence gets words, and each caveat attaches to the claim it
+ * weakens. What changed is the expression — a ruled mono mark instead of a
+ * tinted pill, italics instead of a coloured line, opacity ranking the three
+ * states rather than encoding them. The word is always present, so nothing
+ * here depends on seeing a hue. */
+
+export function Mark({ g, asOf }: { g: Gazette; asOf?: string | null }) {
   const s = standingOf(g, asOf);
-  return (
-    <span className={`pill pill-${s.kind}`}>
-      <span className="pill-dot" aria-hidden />
-      {s.pill}
-    </span>
-  );
+  return <span className={`mark mark-${s.kind}`}>{s.pill}</span>;
 }
 
 export function Consequence({ g, asOf }: { g: Gazette; asOf?: string | null }) {
   const s = standingOf(g, asOf);
   if (!s.consequence) return null;
-  const colour =
-    s.kind === "rescinded" ? "var(--res)" : s.kind === "superseded" ? "var(--sup)" : "var(--dim)";
-  return (
-    <p className="mt-[5px] text-[13px] font-medium" style={{ color: colour }}>
-      {s.consequence}
-    </p>
-  );
+  return <p className="conseq mt-[6px] text-[15px]">{s.consequence}</p>;
 }
 
 export function WarnIcon({ size = 11 }: { size?: number }) {
   return (
-    <svg
-      width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden
-      className="shrink-0"
-    >
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden
+         className="shrink-0">
       <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
-      <path d="M12 9v4" />
-      <path d="M12 17h.01" />
+      <path d="M12 9v4" /><path d="M12 17h.01" />
     </svg>
   );
 }
 
-/** The incomplete-history disclosure. Sits with the facts rather than in the
- *  prose, because it weakens the standing claim rather than the document. */
-export function GapChip({ missing }: { missing: string[] }) {
+/** Missing history. A dashed border rather than a colour — the same visual
+ *  logic the timeline uses for a document it does not hold. */
+export function GapTag({ missing }: { missing: string[] }) {
   if (!missing.length) return null;
   return (
-    <span
-      className="chip chip-warn"
-      title="A change made by a gazette we do not hold would not appear here."
-    >
-      <WarnIcon />
+    <span className="tag tag-warn"
+          title="A change made by a gazette we do not hold would not appear here.">
       {missing.length} gazette{missing.length > 1 ? "s" : ""} missing from source
     </span>
   );
@@ -57,15 +46,18 @@ export function GapChip({ missing }: { missing: string[] }) {
 
 export function MetaRow({ g, missing }: { g: Gazette; missing: string[] }) {
   return (
-    <div className="mt-[11px] flex flex-wrap items-center gap-2">
-      <span className="font-mono text-[11.5px]" style={{ color: "var(--dim)" }}>
-        {formatDate(g.published_date)}
-      </span>
-      <span className="chip">{g.subject}</span>
-      {g.thread_size > 1 && <span className="chip">{g.thread_size} documents in rule</span>}
-      <GapChip missing={missing} />
+    <div className="mt-[10px] flex flex-wrap items-center gap-[10px]">
+      <span className="mono text-[11.5px] opacity-50">{formatDate(g.published_date)}</span>
+      <span className="tag">{g.subject}</span>
+      {g.thread_size > 1 && <span className="tag">{g.thread_size} in this rule</span>}
+      <GapTag missing={missing} />
       {g.confidence && g.confidence !== "high" && (
-        <span className="chip">AI summary · {g.confidence} confidence</span>
+        <span className="tag">summary · {g.confidence} confidence</span>
+      )}
+      {g.source !== "ird-listing" && (
+        <span className="tag" title="Not in the IRD listing; recovered from the Internet Archive">
+          recovered
+        </span>
       )}
     </div>
   );
