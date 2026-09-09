@@ -218,7 +218,51 @@ WHERE gazette_fts MATCH ?
 """
 
 
-def search(con, query: str, limit: int = 10) -> list[dict]:
+def _filters(subject=None, tag=None, audience=None, act=None,
+             since=None, until=None, in_force=False, as_of=None):
+    """Build the WHERE fragments and their parameters, in order.
+
+    Subject, tag and audience narrow by facet; since/until bound the
+    publication date. The two state filters are different in kind and are worth
+    keeping apart:
+
+        in_force   drop what another document in the corpus has rescinded
+        as_of      what stood on a given day — the thing a reader needs when
+                   asking about a return they filed two years ago
+
+    `as_of` is not just `published <= date`. A gazette published in January
+    2023 can take effect in October 2022 (2316/13 does exactly that), so the
+    test is on effective_from, and a rescission that had not yet bitten on that
+    date must not remove the document.
+    """
+    where, params = [], []
+    if subject:
+        where.append(f"g.subject IN ({','.join('?' * len(subject))})")
+        params += list(subject)
+    if act:
+        where.append("LOWER(g.enabling_act) LIKE ?")
+        params.append(f"%{act.lower()}%")
+    for col, table, vals in (("tag", "gazette_tag", tag),
+                             ("coarse", "gazette_audience", audience)):
+        if vals:
+            where.append(f"g.no IN (SELECT no FROM {table} WHERE {col} IN "
+                         f"({','.join('?' * len(vals))}))")
+            params += list(vals)
+    if since:
+        where.append("g.published_date >= ?"); params.append(since)
+    if until:
+        where.append("g.published_date <= ?"); params.append(until)
+    if in_force:
+        where.append("(g.status IS NULL OR g.status != 'rescinded')")
+    if as_of:
+        where.append("g.effective_from IS NOT NULL AND g.effective_from <= ?")
+        params.append(as_of)
+        where.append("(g.rescinded_from IS NULL OR g.rescinded_from > ?)")
+        params.append(as_of)
+    return where, params
+
+
+def search(con, query: str, limit: int = 10, **filters) -> list[dict]:
     """Full-text search, ranked, with each hit's resolved state attached.
 
     The state is the point. A plain FTS hit list cannot tell the reader that
@@ -227,9 +271,33 @@ def search(con, query: str, limit: int = 10) -> list[dict]:
     what the rule says. Every row therefore carries its status, what rescinded
     it if anything did, and the current head of its rule thread.
     """
+    where, params = _filters(**filters)
     sql = _SELECT.format(w=", ".join(str(w) for w in WEIGHTS))
-    rows = con.execute(sql + " ORDER BY score LIMIT ?", (query, limit)).fetchall()
+    if where:
+        sql += " AND " + " AND ".join(where)
+    rows = con.execute(sql + " ORDER BY score LIMIT ?", [query, *params, limit]).fetchall()
     return [_annotate(dict(r)) for r in rows]
+
+
+def facets(con, min_uses: int = 3) -> dict:
+    """The facet lists worth showing a reader.
+
+    Tags are cut at `min_uses` because the long tail is real and enormous — 206
+    of 301 keys are used once — and a facet list longer than the corpus is not a
+    navigation aid. The cut is on display only: filtering on a rare tag still
+    works, and every tag remains searchable as text.
+    """
+    q = lambda sql, *a: [dict(r) for r in con.execute(sql, a)]
+    return dict(
+        subject=q("SELECT subject AS name, COUNT(*) n FROM gazette "
+                  "GROUP BY subject ORDER BY n DESC"),
+        audience=q("SELECT coarse AS name, COUNT(*) n FROM gazette_audience "
+                   "WHERE coarse IS NOT NULL GROUP BY coarse ORDER BY n DESC"),
+        tag=q("SELECT tag AS name, COUNT(*) n FROM gazette_tag GROUP BY tag "
+              "HAVING n >= ? ORDER BY n DESC, name", min_uses),
+        status=q("SELECT status AS name, COUNT(*) n FROM gazette "
+                 "WHERE status IS NOT NULL GROUP BY status ORDER BY n DESC"),
+    )
 
 
 def _annotate(r: dict) -> dict:
