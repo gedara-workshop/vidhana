@@ -21,7 +21,55 @@ def connect(path: str = DEFAULT_DB) -> sqlite3.Connection:
 def init(con: sqlite3.Connection) -> None:
     with open(SCHEMA) as f:
         con.executescript(f.read())
+    migrate(con)
     con.commit()
+
+
+def migrate(con: sqlite3.Connection) -> list[str]:
+    """Add columns that schema.sql declares but an existing database lacks.
+
+    `CREATE TABLE IF NOT EXISTS` is a no-op on a table that already exists, so a
+    new column in schema.sql would otherwise only appear in databases built from
+    scratch. Rebuilding is not free here — it means re-downloading 137 PDFs and
+    paying for the LLM pass again — so missing columns are added in place.
+
+    Only additive changes are handled. A type change or a dropped column still
+    needs a real migration; this is deliberately the boring 90% case.
+    """
+    import re
+    wanted: dict[str, list[tuple[str, str]]] = {}
+    sql = open(SCHEMA).read()
+    for m in re.finditer(r"CREATE TABLE IF NOT EXISTS (\w+)\s*\((.*?)\n\);", sql, re.S):
+        table, body = m.group(1), m.group(2)
+        cols = []
+        for line in body.splitlines():
+            line = re.sub(r"--.*$", "", line).strip().rstrip(",")
+            if not line or line.upper().startswith(("PRIMARY KEY", "FOREIGN KEY", "UNIQUE", "CHECK")):
+                continue
+            parts = line.split(None, 1)
+            if len(parts) == 2 and parts[0].isidentifier():
+                cols.append((parts[0], parts[1]))
+        wanted[table] = cols
+
+    added = []
+    for table, cols in wanted.items():
+        have = {r[1] for r in con.execute(f"PRAGMA table_info({table})")}
+        if not have:
+            continue                      # table did not exist; executescript made it
+        for name, decl in cols:
+            if name in have:
+                continue
+            # SQLite cannot ALTER in a NOT NULL column without a default, and it
+            # cannot add a PRIMARY KEY at all — skip those rather than fail.
+            d = decl.upper()
+            if "PRIMARY KEY" in d or ("NOT NULL" in d and "DEFAULT" not in d):
+                continue
+            decl = re.sub(r"REFERENCES\s+\w+\s*\([^)]*\)", "", decl).strip()
+            con.execute(f"ALTER TABLE {table} ADD COLUMN {name} {decl}")
+            added.append(f"{table}.{name}")
+    if added:
+        con.commit()
+    return added
 
 
 def upsert_gazette(con: sqlite3.Connection, row: dict) -> None:

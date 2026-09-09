@@ -88,6 +88,7 @@ CREATE TABLE IF NOT EXISTS gazette_page (
     chars           INTEGER NOT NULL,
     max_image_width INTEGER NOT NULL DEFAULT 0,
     needs_ocr       INTEGER NOT NULL DEFAULT 0,
+    ocr_chars       INTEGER,   -- NULL until OCR has run on this page
     PRIMARY KEY (no, page)
 );
 
