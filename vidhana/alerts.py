@@ -336,3 +336,48 @@ def _atom_time(date: str) -> str:
     """Atom wants an RFC 3339 timestamp; gazettes carry a date. Midnight UTC is
     the honest reading — a gazette is published on a day, not at an instant."""
     return f"{date}T00:00:00Z"
+
+
+# Published feeds live under docs/ so GitHub Pages can serve them straight from
+# the repo with no hosting decision attached. They are tracked in git, unlike the
+# database — a feed's whole job is to be a stable URL with stable entry ids, and
+# a derived artefact that must not change spuriously is exactly the kind that
+# belongs in version control.
+FEED_DIR = "docs/feeds"
+FEED_LIMIT = 60
+
+
+def write_feeds(con, out_dir: str = FEED_DIR, base_url: str | None = None,
+                limit: int = FEED_LIMIT) -> list[dict]:
+    """Write the main feed and one per subject.
+
+    Per-subject feeds exist because the corpus is not one audience. Someone who
+    cares about VAT should not be notified about 63 income-tax gazettes to catch
+    32 VAT ones, and the subject is already classified deterministically, so the
+    split costs a query rather than a judgement.
+    """
+    import os
+
+    os.makedirs(out_dir, exist_ok=True)
+    events = whatsnew(con, limit=limit * 4)
+    subjects = sorted({e["subject"] for e in events if e["subject"]})
+
+    written = []
+    for name, subject in [("all", None)] + [(s, s) for s in subjects]:
+        chosen = [e for e in events if subject is None or e["subject"] == subject]
+        entries = group(chosen)[:limit]
+        title = FEED_TITLE if subject is None else f"{FEED_TITLE} — {subject}"
+        self_url = f"{base_url.rstrip('/')}/{name}.xml" if base_url else None
+        path = os.path.join(out_dir, f"{name}.xml")
+        xml = atom(con, entries, feed_id=f"tag:vidhana,2026:feed:{name}",
+                   title=title, self_url=self_url)
+        old = None
+        if os.path.exists(path):
+            with open(path) as f:
+                old = f.read()
+        if old != xml:
+            with open(path, "w") as f:
+                f.write(xml)
+        written.append(dict(name=name, path=path, entries=len(entries),
+                            changed=old != xml))
+    return written

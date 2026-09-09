@@ -11,6 +11,8 @@
     python -m vidhana search "transfer pricing" --as-of 2015-01-01
     python -m vidhana facets                 the facet lists worth filtering on
     python -m vidhana reindex                rebuild the index and facets
+    python -m vidhana whatsnew --since 2025-01-01   what changed, and what it changed
+    python -m vidhana feed                   write the Atom feeds under docs/feeds
     python -m vidhana chain 2500/106       walk the raw amendment edges
     python -m vidhana resolve              rebuild rule threads and in-force state
     python -m vidhana threads              list the rule threads
@@ -27,7 +29,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from . import db, listing, pipeline, resolve, search, structure
+from . import alerts, db, listing, pipeline, resolve, search, structure
 
 
 def cmd_init(a):
@@ -389,6 +391,32 @@ def cmd_facets(a):
             print(f"  {r['n']:>4}  {r['name']}")
 
 
+def cmd_whatsnew(a):
+    con = db.connect(a.db)
+    n = alerts.record(con)
+    rows = alerts.whatsnew(con, since=a.since, subject=a.subject, kind=a.kind,
+                           limit=a.limit)
+    if not rows:
+        print("nothing" + (f" since {a.since}" if a.since else "")); return
+    if n["new"]:
+        print(f"{n['new']} event(s) seen for the first time on this run\n")
+    for e in rows:
+        print(f"{e['event_date']}  {alerts.KIND_LABEL[e['kind']]:<22} {e['headline'][:76]}")
+        if e["head_no"] and e["head_no"] != e["no"]:
+            print(f"{'':>12}  the rule is now {e['head_no']} ({e['head_date']})")
+        if e["audience"]:
+            print(f"{'':>12}  affects: {'; '.join(e['audience'][:3])}")
+    print(f"\n{len(rows)} event(s); {n['total']} in the corpus")
+
+
+def cmd_feed(a):
+    con = db.connect(a.db)
+    alerts.record(con)
+    for w in alerts.write_feeds(con, out_dir=a.out, base_url=a.base_url, limit=a.limit):
+        state = "written" if w["changed"] else "unchanged"
+        print(f"  {w['name']:<15} {w['entries']:>3} entries  {state:<9} {w['path']}")
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(prog="vidhana", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -457,6 +485,22 @@ def main(argv=None):
     q.set_defaults(fn=cmd_search)
 
     sub.add_parser("reindex").set_defaults(fn=cmd_reindex)
+
+    w = sub.add_parser("whatsnew")
+    w.add_argument("--since", metavar="YYYY-MM-DD",
+                   help="by gazette publication date, not when we detected it")
+    w.add_argument("--subject", nargs="*")
+    w.add_argument("--kind", nargs="*",
+                   choices=["published", "amends", "rescinds", "effective_change"])
+    w.add_argument("--limit", type=int, default=50)
+    w.set_defaults(fn=cmd_whatsnew)
+
+    fd = sub.add_parser("feed")
+    fd.add_argument("--out", default=alerts.FEED_DIR)
+    fd.add_argument("--base-url", dest="base_url",
+                    default="https://gedara-workshop.github.io/vidhana/feeds")
+    fd.add_argument("--limit", type=int, default=alerts.FEED_LIMIT)
+    fd.set_defaults(fn=cmd_feed)
 
     fc = sub.add_parser("facets")
     fc.add_argument("--min-uses", dest="min_uses", type=int, default=3)
