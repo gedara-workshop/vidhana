@@ -151,6 +151,20 @@ class Feed(unittest.TestCase):
         body = alerts._entry_body(next(x for x in e if x["no"] == "2088/25"))
         self.assertIn("confidence: low", body)
 
+    def test_incomplete_history_is_disclosed_in_the_entry(self):
+        # A feed reader cannot ask a follow-up question. An entry that says a
+        # rule is current, and says nothing else, will be read as settled.
+        ref(self.con, "2500/106", "9999/99", "amends")     # a gazette we do not hold
+        resolve.resolve(self.con)
+        e = alerts.group(alerts.whatsnew(self.con, limit=99))
+        body = alerts._entry_body(next(x for x in e if x["no"] == "2500/106"))
+        self.assertIn("history is incomplete", body)
+        self.assertIn("not in the corpus", body)
+
+    def test_a_complete_history_carries_no_caution(self):
+        body = alerts._entry_body(next(x for x in self.entries if x["no"] == "2500/106"))
+        self.assertNotIn("history is incomplete", body)
+
     def test_feed_is_valid_atom_with_stable_entry_ids(self):
         xml = alerts.atom(self.con, self.entries, feed_id="tag:test", title="t")
         root = ET.fromstring(xml)

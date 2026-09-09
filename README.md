@@ -54,16 +54,24 @@ One caveat found in Phase 0: the IRD listing is not purely tax and VAT, it carri
 
 Twenty-one real gazettes spanning 2007 to 2026, read end to end before any pipeline code. Full notes in [PHASE0.md](PHASE0.md) and [CORPUS-NOTES.md](CORPUS-NOTES.md). The findings that changed the plan:
 
-- **Acquisition is easier than expected.** One request returns all 137 gazettes, 2006 to 2026. No pagination, no JavaScript, no rate limiting to work around. Volume is 3 to 6 gazettes a year.
+- **Acquisition is easier than expected.** One request returns all 137 gazettes the listing carries, 2006 to 2026. No pagination, no JavaScript, no rate limiting to work around. Volume is 3 to 6 gazettes a year.
 - **Almost nothing is a scan.** Nearly every document is real text back to 2007, so OCR isn't needed wholesale — just selectively, for six pages across three documents where the content is an image. One of those, a 2009 gazette, is a full-page scan that yielded a single byte of text until it was OCR'd.
 - **The hard part is not the PDFs, it's the semantics.** Effective dates are frequently retroactive, sometimes several per document, and sometimes changed later by a different gazette. Dates sit in the middle and at the end of documents, not at the top.
 - **Who a gazette affects is usually not written in it.** Nine of the twenty-one never say who they bind. That has to be inferred from the enabling Act — five across the sample, and twelve once all 137 were processed, which is still few enough to curate an Act-to-audience map by hand and hold the model to it.
+
+## The source is incomplete, and the product says so
+
+The IRD listing turned out to omit gazettes from inside its own date range — eight of them, including two published the same day as one it does carry. Worse, `documents.gov.lk`, the official index that would let anyone verify a gazette series, is offline, so there is no authoritative list to check against.
+
+Seven of the eight were recovered from the Internet Archive and are stored with their provenance visible, never blended in with what the department published. That took rule threads with a hole in their history from 4 of 19 down to 1 of 20.
+
+The part that does not go away: a gazette nobody indexes, which rescinds one we hold, would be invisible to us by construction. So wherever a rule's history has a hole, search and the feed **say so at the point the claim is made** rather than in a caveats page nobody opens. Full account in [COMPLETENESS.md](COMPLETENESS.md).
 
 ## Status
 
 Early and building in public. This repo starts with the plan, not a finished product, commits will show the real build as it happens, evenings at a time. No live product yet, check the roadmap below for where things stand.
 
-Stack is Python and SQLite. No service to run, the whole corpus is 137 documents.
+Stack is Python and SQLite. No service to run, the whole corpus is 144 documents.
 
 ## Roadmap
 

@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>Vidhana — Sri Lankan IRD tax and VAT gazettes — other</title><id>tag:vidhana,2026:feed:other</id><link href="https://github.com/gedara-workshop/vidhana" /><link href="https://gedara-workshop.github.io/vidhana/feeds/other.xml" rel="self" /><subtitle>What changed in the Sri Lankan Inland Revenue gazettes, and what the rule is now. Derived from https://www.ird.gov.lk/en/publications/sitepages/gazette.aspx?menuid=1602</subtitle><updated>2016-01-01T00:00:00Z</updated><author><name>Vidhana</name></author><entry><title>1947/48 [other] new: Amend the Order published under Sec. 2(1) of the Finance Act No. 25 of 2003 with effect from 01.01.2016</title><id>tag:vidhana,2026:gazette:1947/48</id><link href="https://www.ird.gov.lk/en/publications/Gazette_Documents/2016_1947_48_E.pdf" /><updated>2016-01-01T00:00:00Z</updated><published>2016-01-01T00:00:00Z</published><category term="other" /><content type="text">As amended, the Order replaces Schedule I of Gazette 1791/08 and sets the charge for persons leaving Sri Lanka at US $30.00, whether they leave by aircraft or ship. The new schedule applies from 1 January 2016.
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Vidhana — Sri Lankan IRD tax and VAT gazettes — other</title><id>tag:vidhana,2026:feed:other</id><link href="https://github.com/gedara-workshop/vidhana" /><link href="https://gedara-workshop.github.io/vidhana/feeds/other.xml" rel="self" /><subtitle>What changed in the Sri Lankan Inland Revenue gazettes, and what the rule is now. Derived from https://www.ird.gov.lk/en/publications/sitepages/gazette.aspx?menuid=1602</subtitle><updated>2016-01-01T00:00:00Z</updated><author><name>Vidhana</name></author><entry><title>1947/48 [other] amends 1791/08</title><id>tag:vidhana,2026:gazette:1947/48</id><link href="https://www.ird.gov.lk/en/publications/Gazette_Documents/2016_1947_48_E.pdf" /><updated>2016-01-01T00:00:00Z</updated><published>2016-01-01T00:00:00Z</published><category term="other" /><content type="text">As amended, the Order replaces Schedule I of Gazette 1791/08 and sets the charge for persons leaving Sri Lanka at US $30.00, whether they leave by aircraft or ship. The new schedule applies from 1 January 2016.
+
+Amends 1791/08 — (recovered from the Internet Archive; not in the IRD listing).
 
 Effective from 2016-01-01.
 
 Affects: travellers leaving Sri Lanka.
+
+Caution: this rule's history is incomplete — 1 referenced gazette(s) are not in the corpus, so a change made by a document we do not hold would not appear here. Check the gazette itself before relying on this.
 
 Source: https://www.ird.gov.lk/en/publications/Gazette_Documents/2016_1947_48_E.pdf</content></entry><entry><title>1844/62 [other] new: Writing off the Tax charged and Levied on or before 31.12.2009 on SLTB, Kesbewa and 10 other institutions on 17.12.2013</title><id>tag:vidhana,2026:gazette:1844/62</id><link href="https://www.ird.gov.lk/en/publications/Gazette_Documents/2014_1844_62_(E).pdf" /><updated>2014-01-09T00:00:00Z</updated><published>2014-01-09T00:00:00Z</published><category term="other" /><content type="text">The Commissioner General of Inland Revenue wrote off listed tax arrears owed by 11 named institutions, including Sri Lanka Transport Board depots, government bodies and other organisations. The write-off covers tax charged and levied on or before 31 December 2009 and took effect on 17 December 2013 under the Default Taxes (Special Provisions) Act.
 
@@ -17,7 +21,17 @@ Effective from 2013-01-09.
 
 Affects: persons claiming the permitted motor vehicle concession.
 
-Source: https://www.ird.gov.lk/en/publications/Gazette_Documents/2013_1792_19 (E).pdf</content></entry><entry><title>1760/04 [other] new: Tax Appeals Commission Act No. 23 of 2011 - The Tax Appeals Rules, 2011</title><id>tag:vidhana,2026:gazette:1760/04</id><link href="https://www.ird.gov.lk/en/publications/Gazette_Documents/2012_1760_04 (E).pdf" /><updated>2012-05-28T00:00:00Z</updated><published>2012-05-28T00:00:00Z</published><category term="other" /><content type="text">These Rules set the procedure for appealing a Commissioner-General’s tax determination to the Tax Appeals Commission. An appellant must submit a petition with specified tax and appeal details, proof of paying 25% of the assessed amount, a non-refundable Rs. 2,500 fee, six document copies, and certified copies of supporting documents; hearing attendance and notification rules also apply.
+Source: https://www.ird.gov.lk/en/publications/Gazette_Documents/2013_1792_19 (E).pdf</content></entry><entry><title>1791/08 [other] new: (recovered from the Internet Archive; not in the IRD listing)</title><id>tag:vidhana,2026:gazette:1791/08</id><link href="https://web.archive.org/web/20230126031356if_/http://documents.gov.lk/files/egz/2012/12/1791-08_E.pdf" /><updated>2012-12-31T00:00:00Z</updated><published>2012-12-31T00:00:00Z</published><category term="other" /><content type="text">As amended by Gazette 1947/48, from 1 January 2016, an Embarkation Levy of US $30 applies to each person leaving Sri Lanka by aircraft or ship. The Order replaced the earlier levy order and requires airline operators to collect and remit the levy, provide required information, and comply with security requirements. The original rates of US $25 for air travel and US $5 for sea travel are therefore superseded.
+
+The current document in this rule is now 1947/48 (2016-01-01).
+
+Effective from 2003-09-01.
+
+Affects: travellers leaving Sri Lanka.
+
+Caution: this rule's history is incomplete — 1 referenced gazette(s) are not in the corpus, so a change made by a document we do not hold would not appear here. Check the gazette itself before relying on this.
+
+Source: https://web.archive.org/web/20230126031356if_/http://documents.gov.lk/files/egz/2012/12/1791-08_E.pdf</content></entry><entry><title>1760/04 [other] new: Tax Appeals Commission Act No. 23 of 2011 - The Tax Appeals Rules, 2011</title><id>tag:vidhana,2026:gazette:1760/04</id><link href="https://www.ird.gov.lk/en/publications/Gazette_Documents/2012_1760_04 (E).pdf" /><updated>2012-05-28T00:00:00Z</updated><published>2012-05-28T00:00:00Z</published><category term="other" /><content type="text">These Rules set the procedure for appealing a Commissioner-General’s tax determination to the Tax Appeals Commission. An appellant must submit a petition with specified tax and appeal details, proof of paying 25% of the assessed amount, a non-refundable Rs. 2,500 fee, six document copies, and certified copies of supporting documents; hearing attendance and notification rules also apply.
 
 Effective from 2012-05-28.
 

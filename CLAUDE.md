@@ -15,6 +15,31 @@ narrowness is a design decision, not an oversight.
 
 ## Where things stand
 
+**Corpus completeness is answered** (`COMPLETENESS.md`). The corpus is **144
+gazettes: 137 from the IRD listing, 7 recovered from the Internet Archive**.
+Load-bearing facts, all learned the hard way:
+
+- **documents.gov.lk is offline** — the official index of Extraordinary
+  Gazettes now serves an unconfigured proxy page. There is no authoritative
+  enumeration to verify against, so every completeness claim is a lower bound.
+- **The IRD listing omits gazettes from inside its own range** (1439–2500).
+  Eight were found; seven recovered. `1680/21` is still missing.
+- **`ird.gov.lk` answers `HEAD` with 404 and the same URL with 200 on `GET`.**
+  Any existence check must use a ranged GET or it concludes everything is gone.
+- **Never trust a gazette number parsed out of a URL.** Verify it against the
+  PDF's own printed header. A near-miss URL ingested a Provincial Councils
+  Elections gazette as an IRD tax one, and passed every check that existed.
+- **Never swallow an archive lookup error.** A completeness check that reports
+  rate-limiting as "does not exist" is worse than none — it claims to have
+  looked. `archive.ArchiveUnavailable` exists for this.
+- **`source` is `ird-listing` or `web-archive` and must stay visible.** A
+  recovered document is never indistinguishable from one the department
+  published.
+- **"In force" is disclosed as conditional wherever a rule's chain has a hole**,
+  in search *and* in the feed. This is not a placeholder for better data — the
+  dangerous case (a gazette nobody indexes that rescinds one we hold) is
+  invisible by construction, so the disclosure is permanent.
+
 **Phase 4 is complete** — all four phases are done (`vidhana/alerts.py`,
 `PHASE4.md`). Events are **derived from the corpus on every run, never
 accumulated**: a missed cron run loses nothing and a rebuilt database produces
@@ -204,5 +229,15 @@ Not yet chosen — do not assume, ask:
   feeds are served as static files from `docs/`, which was chosen partly to
   avoid answering this by accident.
 - Whether anyone actually subscribes. Nothing in the codebase answers this, and
-  building more will not either. **Do not propose a Phase 5 to avoid finding
-  out.**
+  building more will not either.
+
+## Agreed direction
+
+**Next up: a production-grade front end**, so people can use the search with
+real use cases rather than cloning the repo and running Python. Dinal asked for
+this explicitly, after completeness. Constraints already settled by earlier
+decisions: it is served from `docs/` via GitHub Pages (which is why hosting has
+never had to be decided), the corpus is small enough to search client-side, and
+the resolver stays deterministic — **no LLM at query time**. Whatever it shows,
+it must carry the same two disclosures the CLI and the feed already carry:
+incomplete rule history, and low model confidence.

@@ -11,6 +11,8 @@
     python -m vidhana search "transfer pricing" --as-of 2015-01-01
     python -m vidhana facets                 the facet lists worth filtering on
     python -m vidhana reindex                rebuild the index and facets
+    python -m vidhana verify [--find]        what the corpus is missing
+    python -m vidhana backfill               recover omitted gazettes from the archive
     python -m vidhana whatsnew --since 2025-01-01   what changed, and what it changed
     python -m vidhana feed                   write the Atom feeds under docs/feeds
     python -m vidhana summaries export       the LLM output, tracked in git
@@ -31,7 +33,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from . import alerts, db, listing, pipeline, resolve, search, structure
+from . import alerts, archive, db, listing, pipeline, resolve, search, structure
 
 
 def cmd_init(a):
@@ -431,6 +433,54 @@ def cmd_summaries(a):
               f"not in this corpus {r['unknown']}")
 
 
+def cmd_verify(a):
+    """Report what the corpus is missing, and how much of the graph it weakens."""
+    con = db.connect(a.db)
+    miss = archive.missing(con)
+    inr = [m for m in miss if m["in_range"]]
+    held = con.execute("SELECT source, COUNT(*) c FROM gazette GROUP BY source").fetchall()
+    print("corpus")
+    for r in held:
+        print(f"  {r['c']:>4}  {r['source']}")
+    print(f"\nreferenced but not held: {len(miss)} "
+          f"({len(inr)} inside the listing's own range)")
+    for m in sorted(miss, key=lambda r: (not r["in_range"], r["no"])):
+        tag = "IN RANGE" if m["in_range"] else "pre-listing"
+        print(f"  {m['no']:<9} {tag:<12} {m['relation']:<16} referenced by {m['referenced_by']}")
+
+    rows = con.execute(
+        "SELECT COUNT(*) c FROM gazette WHERE status='in_force' AND thread_id IN "
+        "(SELECT thread_id FROM rule_thread WHERE unresolved>0)").fetchone()["c"]
+    print(f"\n{rows} gazette(s) are reported in force inside a rule whose history "
+          f"has a hole.\nSearch and the feed disclose this; it is not silently ignored.")
+    if a.find:
+        print("\nlooking for the in-range gaps in the Internet Archive:")
+        for m in inr:
+            try:
+                hits = archive.find(m["no"])
+            except archive.ArchiveUnavailable as e:
+                print(f"  {m['no']:<9} lookup failed — {str(e)[:60]}")
+                continue
+            print(f"  {m['no']:<9} {len(hits)} snapshot(s)"
+                  + (f"  {hits[0]['snapshot']}" if hits else ""))
+
+
+def cmd_backfill(a):
+    con = db.connect(a.db)
+    todo = a.only or [m["no"] for m in archive.missing(con) if m["in_range"]]
+    if not todo:
+        print("nothing to backfill"); return
+    for no in todo:
+        try:
+            r = archive.backfill(con, no, use_ocr=not a.no_ocr)
+        except archive.ArchiveUnavailable as e:
+            print(f"  {no:<9} lookup failed — {str(e)[:70]}")
+            continue
+        detail = r.get("detail") or r.get("act") or ""
+        print(f"  {no:<9} {r['status']:<15} {detail}")
+    print("\nrun `vidhana resolve && vidhana structure && vidhana reindex` to finish")
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(prog="vidhana", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -499,6 +549,16 @@ def main(argv=None):
     q.set_defaults(fn=cmd_search)
 
     sub.add_parser("reindex").set_defaults(fn=cmd_reindex)
+
+    v = sub.add_parser("verify")
+    v.add_argument("--find", action="store_true",
+                   help="also ask the Internet Archive about the in-range gaps")
+    v.set_defaults(fn=cmd_verify)
+
+    bf = sub.add_parser("backfill")
+    bf.add_argument("--only", nargs="*", metavar="NO")
+    bf.add_argument("--no-ocr", dest="no_ocr", action="store_true")
+    bf.set_defaults(fn=cmd_backfill)
 
     w = sub.add_parser("whatsnew")
     w.add_argument("--since", metavar="YYYY-MM-DD",

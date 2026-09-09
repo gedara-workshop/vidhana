@@ -208,7 +208,7 @@ _SELECT = """
 SELECT g.no, g.published_date, g.title, g.subject, g.enabling_act,
        g.status, g.rescinded_by, g.rescinded_from, g.effective_from,
        g.thread_id, s.summary, s.confidence,
-       t.head_no, t.size AS thread_size,
+       t.head_no, t.size AS thread_size, t.unresolved,
        bm25(gazette_fts, {w}) AS score,
        snippet(gazette_fts, 3, '[', ']', ' … ', 14) AS snip
 FROM gazette_fts f
@@ -320,6 +320,17 @@ def _annotate(r: dict) -> dict:
         r["standing"] = f"current document in a {r['thread_size']}-document rule"
     else:
         r["standing"] = "standalone"
+
+    # "In force" means "not rescinded by another document we hold", and the
+    # corpus is known to be missing documents: the IRD listing omits gazettes
+    # inside its own range, and the official index that would let us prove
+    # otherwise is offline. Where a rule's chain has a hole, the claim is
+    # weaker than it reads, and the reader has to be told at the point the
+    # claim is made — not in a caveats page they will never open.
+    r["chain_complete"] = not r.get("unresolved")
+    if r.get("unresolved"):
+        r["standing"] += (f" — history incomplete "
+                          f"({r['unresolved']} referenced gazette(s) not held)")
     return r
 
 

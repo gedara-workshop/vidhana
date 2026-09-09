@@ -31,6 +31,15 @@ CREATE TABLE IF NOT EXISTS gazette (
     authority_role  TEXT,               -- CGIR / Minister of Finance / ...
     subject         TEXT,               -- classified from enabling_act, not from title
 
+    -- Where this document came from. The IRD listing is the identity source of
+    -- truth, but it is demonstrably incomplete: 8 gazettes referenced by
+    -- documents we hold fall inside its own covered range and are absent from
+    -- ird.gov.lk entirely. Anything recovered from elsewhere must stay
+    -- distinguishable from what the department itself published, because the
+    -- provenance is weaker and a reader is entitled to know.
+    source          TEXT NOT NULL DEFAULT 'ird-listing',  -- ird-listing | web-archive
+    source_detail   TEXT,               -- archive snapshot URL, when backfilled
+
     -- extraction health
     text_path       TEXT,
     text_chars      INTEGER,
