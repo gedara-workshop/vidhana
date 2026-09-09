@@ -251,13 +251,18 @@ Not yet chosen — do not assume, ask:
   when it is absent.
 - Gazette numbers contain a slash, so URLs use `2500-106`. The slash form stays
   the identity everywhere else.
-- **The visual direction is archival: one ink, one paper, no colour.** Chosen
-  after two characterless attempts. State is carried by weight, italics,
-  opacity and a ruled underline; the word is always present, so nothing depends
-  on seeing a hue. **Do not reintroduce colour-coded status** — it would undo
-  the property that makes the page correct in monochrome and under every
-  colour-vision difference. Design sources in `design/`, chosen direction in
-  `Main.dc.html`, the two rejected ones kept on their own canvas page.
+- **The visual direction is a dense, dark-first product UI**: layered near-black
+  surfaces, Space Grotesk + JetBrains Mono, 13px base, three panes. It took
+  three attempts. Two quiet, document-like directions were rejected as
+  characterless, and an archival one (serif on paper, no colour) was rejected
+  as *too plain, too much text, no furniture, doesn't feel like an app*. The
+  brief was density and structure. **Do not drift back towards a spare,
+  typographic page** — it has been tried twice and rejected twice.
+- **The brand is achromatic on purpose.** The only saturated colour belongs to
+  the three standing states, so the thing a reader must act on is the thing
+  that draws the eye. Do not introduce a brand accent colour.
+- **Theme is system/light/dark**, applied by an inline script before paint.
+  Keep "system" reachable.
 
 ## Agreed direction
 
