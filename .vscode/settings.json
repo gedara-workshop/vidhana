@@ -1,0 +1,33 @@
+{
+  // The editor's file watcher does not read .gitignore. Without these, a single
+  // `npm install` drops ~9,600 files into the tree at once, which overruns the
+  // Source Control panel's 10,000-item cap and leaves it showing a frozen count
+  // long after git itself is clean. Excluding them keeps the panel honest and
+  // stops the watcher burning CPU on files nothing will ever edit.
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/web/.next/**": true,
+    "**/web/out/**": true,
+    "**/data/gazettes/**": true,
+    "**/data/text/**": true,
+    "**/__pycache__/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/web/.next": true,
+    "**/web/out": true,
+    "**/web/public/data": true,
+    "**/docs/data": true,
+    "**/__pycache__": true
+  },
+  // Keep the derived corpus out of quick-open: docs/data/bodies.json is 1.1 MB
+  // of statutory text and never wants editing by hand.
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true
+  },
+  "python.analysis.extraPaths": ["."],
+  "[python]": { "editor.rulers": [88] },
+  "[typescript]": { "editor.rulers": [100] },
+  "[typescriptreact]": { "editor.rulers": [100] }
+}
