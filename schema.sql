@@ -102,3 +102,56 @@ CREATE INDEX IF NOT EXISTS idx_date_kind         ON gazette_date(kind, date);
 CREATE VIRTUAL TABLE IF NOT EXISTS gazette_fts USING fts5(
     no UNINDEXED, title, body, tokenize = 'porter unicode61'
 );
+
+
+-- ---------------------------------------------------------------------------
+-- Phase 2: LLM structuring. Kept in separate tables so a bad model run can be
+-- deleted without touching anything Phase 1 derived deterministically.
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS gazette_summary (
+    no              TEXT PRIMARY KEY REFERENCES gazette(no) ON DELETE CASCADE,
+    model           TEXT NOT NULL,
+    summary         TEXT,     -- plain English, 2-4 sentences
+    audience        TEXT,     -- JSON array, grounded on the enabling Act
+    obligation      TEXT,     -- obligation | information
+    effective_date  TEXT,     -- as the model read it; checked against Phase 1
+    enabling_act    TEXT,     -- ditto
+    authority       TEXT,     -- ditto
+    tags            TEXT,     -- JSON array
+    confidence      TEXT,     -- high | medium | low, model's own
+    notes           TEXT,     -- anything the model flags as unclear
+    generated_at    TEXT,
+    input_tokens    INTEGER,
+    output_tokens   INTEGER
+);
+
+-- Accuracy check: the model re-reads fields Phase 1 already derives by rule.
+-- Disagreement is a real signal and needs no hand-written reference summaries.
+CREATE TABLE IF NOT EXISTS summary_check (
+    no             TEXT NOT NULL REFERENCES gazette(no) ON DELETE CASCADE,
+    field          TEXT NOT NULL,
+    deterministic  TEXT,
+    model_value    TEXT,
+    agrees         INTEGER NOT NULL,
+    PRIMARY KEY (no, field)
+);
+
+CREATE INDEX IF NOT EXISTS idx_check_agrees ON summary_check(field, agrees);
+
+
+-- Batch API jobs. The Batch API is half price and runs server-side in parallel,
+-- but it is asynchronous (up to a 24h window), so a job has to survive process
+-- restarts — hence a table rather than an in-memory handle.
+CREATE TABLE IF NOT EXISTS batch_job (
+    id              TEXT PRIMARY KEY,   -- OpenAI batch id
+    model           TEXT NOT NULL,
+    submitted_at    TEXT NOT NULL,
+    status          TEXT,
+    n_requests      INTEGER,
+    input_file_id   TEXT,
+    output_file_id  TEXT,
+    collected_at    TEXT,
+    n_collected     INTEGER,
+    n_failed        INTEGER
+);

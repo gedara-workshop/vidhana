@@ -72,6 +72,20 @@ def quote_url(url: str) -> str:
         (p.scheme, p.netloc, urllib.parse.quote(p.path, safe="/%"), p.query, p.fragment))
 
 
+def load_env(path: str = ".env") -> None:
+    """Minimal .env loader so we don't take a python-dotenv dependency.
+
+    Existing environment variables win, so an exported key overrides the file.
+    """
+    import os
+    if not os.path.exists(path):
+        return
+    for line in open(path):
+        m = re.match(r'\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*["\']?([^"\'\n]*)', line)
+        if m and m.group(1) not in os.environ:
+            os.environ[m.group(1)] = m.group(2).strip()
+
+
 def slug(no: str) -> str:
     """Local filename stem. Derived, never authoritative."""
     return no.replace("/", "-")
