@@ -20,4 +20,10 @@ if (!existsSync(join(from, "index.json"))) {
 }
 mkdirSync(to, { recursive: true });
 for (const f of ["index.json", "bodies.json"]) copyFileSync(join(from, f), join(to, f));
-console.log("corpus copied into public/data");
+
+// The favicon belongs to the site rather than the corpus, but it lives beside
+// the feeds because the Python pipeline's output is what Pages served before
+// this app existed. One copy, copied twice, beats two that can disagree.
+copyFileSync(join(here, "..", "..", "docs", "favicon.svg"),
+             join(here, "..", "public", "favicon.svg"));
+console.log("corpus and favicon copied into public/");

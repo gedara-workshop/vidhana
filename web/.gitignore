@@ -4,6 +4,6 @@ out/
 next-env.d.ts
 tsconfig.tsbuildinfo
 
-# Copied from docs/data by scripts/copy-data.mjs before dev and build. Tracked
+# Assembled from docs/ by scripts/copy-data.mjs before dev and build. Tracked
 # there, not here — one copy of a derived artefact is enough.
-public/data/
+public/
