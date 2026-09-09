@@ -80,10 +80,11 @@ def load_env(path: str = ".env") -> None:
     import os
     if not os.path.exists(path):
         return
-    for line in open(path):
-        m = re.match(r'\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*["\']?([^"\'\n]*)', line)
-        if m and m.group(1) not in os.environ:
-            os.environ[m.group(1)] = m.group(2).strip()
+    with open(path) as f:
+        for line in f:
+            m = re.match(r'\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*["\']?([^"\'\n]*)', line)
+            if m and m.group(1) not in os.environ:
+                os.environ[m.group(1)] = m.group(2).strip()
 
 
 def slug(no: str) -> str:

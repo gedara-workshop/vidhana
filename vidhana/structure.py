@@ -218,7 +218,8 @@ def build_prompt(con: sqlite3.Connection, no: str) -> str:
     g = con.execute("SELECT * FROM gazette WHERE no=?", (no,)).fetchone()
     if not g:
         raise KeyError(no)
-    text = open(g["text_path"]).read()
+    with open(g["text_path"]) as fh:
+        text = fh.read()
 
     act = (g["enabling_act"] or "").replace("The ", "")
     candidates = audience_candidates(act, g["subject"])
@@ -255,7 +256,8 @@ def build_prompt(con: sqlite3.Connection, no: str) -> str:
                 (r["src_no"],)).fetchone()
             if not amender or not amender["text_path"]:
                 continue
-            body = open(amender["text_path"]).read()
+            with open(amender["text_path"]) as fh:
+                body = fh.read()
             if len(body) > 6000:      # amendments are short; long ones get their head
                 body = body[:6000] + "\n[... truncated, see the gazette itself ...]"
             parts.append(f"\n--- TEXT OF {amender['no']} ({amender['published_date']}), "

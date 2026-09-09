@@ -165,7 +165,8 @@ def reindex(con) -> dict:
         body = ""
         if r["text_path"]:
             try:
-                body = open(r["text_path"]).read()
+                with open(r["text_path"]) as fh:
+                    body = fh.read()
             except OSError:
                 body = ""            # PDFs are gitignored; a fresh clone has no text yet
         db.index_fts(con, r["no"], r["title"], body, r["summary"])

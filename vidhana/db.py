@@ -39,7 +39,8 @@ def migrate(con: sqlite3.Connection) -> list[str]:
     """
     import re
     wanted: dict[str, list[tuple[str, str]]] = {}
-    sql = open(SCHEMA).read()
+    with open(SCHEMA) as f:
+        sql = f.read()
     for m in re.finditer(r"CREATE TABLE IF NOT EXISTS (\w+)\s*\((.*?)\n\);", sql, re.S):
         table, body = m.group(1), m.group(2)
         cols = []
@@ -127,8 +128,10 @@ def migrate_fts(con: sqlite3.Connection) -> bool:
     nothing until `vidhana reindex` runs, so callers are told it happened.
     """
     import re
+    with open(SCHEMA) as f:
+        sql = f.read()
     m = re.search(r"CREATE VIRTUAL TABLE IF NOT EXISTS gazette_fts USING fts5\((.*?)\);",
-                  open(SCHEMA).read(), re.S)
+                  sql, re.S)
     if not m:
         return False
     wanted = [c.split()[0] for c in m.group(1).split(",")
