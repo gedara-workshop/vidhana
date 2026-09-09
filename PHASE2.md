@@ -53,8 +53,8 @@ expensive.
 
 ```
 effective_date    53/55  agree  (96%)
-enabling_act     136/137 agree  (99%)
-authority        135/136 agree  (99%)
+enabling_act     137/137 agree  (100%)
+authority        136/137 agree  (99%)
 ```
 
 Two deliberate exclusions keep these honest: effective dates are only graded where
@@ -114,13 +114,39 @@ None is a clear model error:
   text was not supplied. Correct behaviour under the circumstances; the real fix
   is OCR.
 
+## OCR
+
+Six pages across three documents carried content only as images. They are now
+rendered at 300dpi and read with tesseract, and the result is appended under
+explicit `[OCR BEGIN]` / `[OCR END]` markers rather than merged into the body —
+OCR here is materially noisier than the text layer ("ae virtue" for "BY virtue"),
+so it has to stay distinguishable.
+
+| Gazette | Pages | Recovered |
+|---|---|---|
+| `1599/13` | 1 | 1,739 chars — the document had **none** at all |
+| `2064/59` | 2, 5 | 1,495 + 1,920 |
+| `2414/14` | 5, 6, 7 | 1,961 + 682 + 837 |
+
+`1599/13` is the clearest win. It is a 2009 full-page scan that yielded a single
+byte of text; Phase 1 could parse nothing from it. It now yields its enabling Act
+and its signatory (Sahampathi Angammana), and the summary traces its whole chain
+— amended by `1604/14`, then repealed and replaced by `1704/18` — while correctly
+reporting low confidence and noting that the OCR contains errors.
+
+`2414/14` is the other one worth noting: its item 9 read "Format of the Tax
+Clearance Application" followed by nothing at all, because the form was an image.
+The Tax Calculation table is now readable.
+
 ## Known limitations
 
-- **No OCR yet.** Three documents carry content only as images. The prompt warns
-  the model when part of a document is missing and tells it to lower confidence;
-  `1599/13` did exactly that.
-- **Self-reported confidence is not calibrated.** 97 high, 22 medium, 18 low. It is
-  a triage hint, not a measurement.
-- **The batch path's `collect` step is written but not yet exercised end to end.**
-  Submission and polling are verified against a real 3-request job; that job was
-  still `in_progress` at time of writing.
+- **Self-reported confidence is not calibrated.** It is a triage hint, not a
+  measurement. It does move in the right direction on OCR'd documents — both
+  `1599/13` and `2064/59` came back `low` — but that is an observation, not a
+  guarantee.
+- **OCR text is noisier than the text layer** and is marked as such. It is good
+  enough for summarisation and for parsing the header block; it should not be
+  quoted verbatim as if it were the source.
+- **`_tidy` still lets some OCR noise through** — the legacy-Sinhala line survives
+  as consonant soup on some pages. Harmless in context, since the markers say the
+  block is machine-read.

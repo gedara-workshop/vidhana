@@ -56,9 +56,11 @@ load-bearing facts:
 - **Listing:** `https://www.ird.gov.lk/en/publications/sitepages/gazette.aspx?menuid=1602`
   (lowercase `gazette.aspx`). One GET returns all 137 gazettes, 2006–2026.
   **No pagination.** No JS needed. No `robots.txt`.
-- **No source PDF is a scan, but some embed rasterised form pages.** `2414/14`
-  pp. 5–7 are images and extract as nothing. OCR is needed *selectively* — flag
-  pages with a >1000px image and <400 chars of text, not whole documents.
+- **Some pages carry content only as images**, and one document (`1599/13`) is a
+  full-page scan. OCR runs *selectively*, per page, on what `page_report` flags —
+  never on whole documents, since re-reading a good text layer makes it worse.
+  OCR output is marked with `[OCR BEGIN]` / `[OCR END]` and must stay
+  distinguishable from the native text layer.
 - **Half the corpus amends or rescinds another gazette.** Gazettes are diffs, not
   standalone statements. `effective_date` is derived, per-provision and mutable —
   never a scraped scalar. See `CORPUS-NOTES.md`.
