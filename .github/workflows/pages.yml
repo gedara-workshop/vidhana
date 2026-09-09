@@ -1,0 +1,90 @@
+# Build the Next.js site and deploy it to GitHub Pages.
+#
+# Split from `gazettes.yml` on purpose. That workflow owns the corpus — it
+# fetches, summarises and commits data. This one owns the site, and runs after
+# it on any change to the data or the app. Keeping them apart means a failed
+# site build never blocks the nightly gazette check, which is the job that
+# must not miss a day.
+name: pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - "docs/data/**"
+      - "docs/feeds/**"
+      - ".github/workflows/pages.yml"
+  workflow_run:
+    workflows: [gazettes]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true    # only the newest site build matters
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # A nightly run that found nothing still "completes"; only deploy when the
+    # corpus job actually succeeded, or when a human or a push asked.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install
+        working-directory: web
+        run: npm ci
+
+      - name: Typecheck
+        working-directory: web
+        run: npm run typecheck
+
+      - name: Build
+        working-directory: web
+        env:
+          # Project Pages site lives under /vidhana. A custom domain would set
+          # this to an empty string and need no code change.
+          NEXT_PUBLIC_BASE_PATH: /vidhana
+        run: npm run build
+
+      # The feeds are written by the Python pipeline and are not Next's to
+      # render. They are copied in verbatim so their URLs never move — people
+      # are subscribed to them.
+      - name: Add the feeds and the corpus
+        run: |
+          set -euo pipefail
+          cp -r docs/feeds web/out/feeds
+          cp docs/favicon.svg web/out/favicon.svg
+          test -f web/out/data/index.json
+          test -f web/out/feeds/all.xml
+          echo "$(ls web/out/gazette | wc -l) gazette pages, $(ls web/out/rule | wc -l) rule pages"
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
