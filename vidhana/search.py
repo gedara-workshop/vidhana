@@ -193,3 +193,55 @@ def reindex(con) -> dict:
                 out["ungrounded" if why == "ungrounded" else "no_map"] += 1
     con.commit()
     return out
+
+
+# bm25 weights, one per fts5 column including the UNINDEXED key. The title is
+# the listing description, which is short and often the most direct statement of
+# what a gazette does — but 34 of 137 are too terse to classify from, so it
+# cannot dominate. The summary is plain English written to be read. The body is
+# statutory prose where a hit is as likely to be boilerplate as substance, so it
+# is weighted lowest while still being the reason full-text search exists.
+WEIGHTS = (0.0, 6.0, 4.0, 1.0)
+
+_SELECT = """
+SELECT g.no, g.published_date, g.title, g.subject, g.enabling_act,
+       g.status, g.rescinded_by, g.rescinded_from, g.effective_from,
+       g.thread_id, s.summary, s.confidence,
+       t.head_no, t.size AS thread_size,
+       bm25(gazette_fts, {w}) AS score,
+       snippet(gazette_fts, 3, '[', ']', ' … ', 14) AS snip
+FROM gazette_fts f
+JOIN gazette g       ON g.no = f.no
+LEFT JOIN gazette_summary s ON s.no = g.no
+LEFT JOIN rule_thread t     ON t.thread_id = g.thread_id
+WHERE gazette_fts MATCH ?
+"""
+
+
+def search(con, query: str, limit: int = 10) -> list[dict]:
+    """Full-text search, ranked, with each hit's resolved state attached.
+
+    The state is the point. A plain FTS hit list cannot tell the reader that
+    2481/22 says the invoice format starts in July while 2500/106 moved it to
+    October — both documents match "tax invoice", and only one of them is still
+    what the rule says. Every row therefore carries its status, what rescinded
+    it if anything did, and the current head of its rule thread.
+    """
+    sql = _SELECT.format(w=", ".join(str(w) for w in WEIGHTS))
+    rows = con.execute(sql + " ORDER BY score LIMIT ?", (query, limit)).fetchall()
+    return [_annotate(dict(r)) for r in rows]
+
+
+def _annotate(r: dict) -> dict:
+    """Attach the one-line reading of a hit's standing, so callers do not each
+    re-derive it from four columns."""
+    if r.get("status") == "rescinded":
+        r["standing"] = (f"rescinded by {r['rescinded_by']} from {r['rescinded_from']}"
+                         if r.get("rescinded_by") else "rescinded")
+    elif r.get("thread_id") and r.get("head_no") and r["head_no"] != r["no"]:
+        r["standing"] = f"in force, but {r['head_no']} is the current document in this rule"
+    elif r.get("thread_id"):
+        r["standing"] = f"current document in a {r['thread_size']}-document rule"
+    else:
+        r["standing"] = "standalone"
+    return r
