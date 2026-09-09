@@ -65,14 +65,29 @@ jobs:
       # The feeds are written by the Python pipeline and are not Next's to
       # render. They are copied in verbatim so their URLs never move — people
       # are subscribed to them.
+      #
+      # The XML files go *into* web/out/feeds, which the app already creates for
+      # its own /feeds page. `cp -r docs/feeds web/out/feeds` would nest them as
+      # feeds/feeds/ and 404 every subscriber; copying the contents is the only
+      # form that works whether or not the directory exists.
       - name: Add the feeds and the corpus
         run: |
           set -euo pipefail
-          cp -r docs/feeds web/out/feeds
+          mkdir -p web/out/feeds
+          cp docs/feeds/*.xml web/out/feeds/
           cp docs/favicon.svg web/out/favicon.svg
+
+          # Assert rather than hope. Each of these has a way of going missing
+          # that leaves a site which loads and is quietly broken: no corpus and
+          # search returns nothing, no XML and every subscribed feed 404s, no
+          # index.html and the feeds page itself is gone.
           test -f web/out/data/index.json
+          test -f web/out/data/bodies.json
           test -f web/out/feeds/all.xml
-          echo "$(ls web/out/gazette | wc -l) gazette pages, $(ls web/out/rule | wc -l) rule pages"
+          test -f web/out/feeds/index.html
+          echo "$(ls web/out/gazette | wc -l) gazette pages, \
+                $(ls web/out/rule | wc -l) rule pages, \
+                $(ls web/out/feeds/*.xml | wc -l) feeds"
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
