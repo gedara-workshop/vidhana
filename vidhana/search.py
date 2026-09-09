@@ -19,6 +19,7 @@ is grounded back to the enabling Act's candidate list.
 from __future__ import annotations
 
 import collections
+import json
 
 from .structure import audience_candidates
 
@@ -138,3 +139,57 @@ def ground_audience(act: str | None, audience: str, subject: str | None = None):
     if best_score >= 0.5 or best_hit >= 2:
         return best, "grounded"
     return None, "ungrounded"
+
+
+def reindex(con) -> dict:
+    """Rebuild the search index and both facet tables from what is already stored.
+
+    Reads the text from disk and the summaries from gazette_summary — no network
+    call, no model call, nothing to pay for. Wholesale rather than incremental
+    because the canonical tag display form is a corpus-level fact: adding one
+    document can change how an existing tag is spelled in the facet list.
+    """
+    from . import db
+
+    rebuilt = db.migrate_fts(con)
+    rows = con.execute(
+        "SELECT g.no, g.title, g.text_path, g.enabling_act, g.subject, "
+        "       s.summary, s.tags, s.audience "
+        "FROM gazette g LEFT JOIN gazette_summary s ON s.no = g.no").fetchall()
+
+    raws = [t for r in rows for t in json.loads(r["tags"] or "[]")]
+    canon = canonical_tags(raws)
+
+    out = dict(rebuilt=rebuilt, indexed=0, tags=0, audiences=0, ungrounded=0, no_map=0)
+    for r in rows:
+        body = ""
+        if r["text_path"]:
+            try:
+                body = open(r["text_path"]).read()
+            except OSError:
+                body = ""            # PDFs are gitignored; a fresh clone has no text yet
+        db.index_fts(con, r["no"], r["title"], body, r["summary"])
+        out["indexed"] += 1
+
+        con.execute("DELETE FROM gazette_tag WHERE no=?", (r["no"],))
+        seen = set()
+        for raw in json.loads(r["tags"] or "[]"):
+            key = tag_key(raw)
+            if not key or key in seen:
+                continue
+            seen.add(key)
+            con.execute("INSERT INTO gazette_tag (no, tag, raw) VALUES (?,?,?)",
+                        (r["no"], canon.get(key, key), raw))
+            out["tags"] += 1
+
+        con.execute("DELETE FROM gazette_audience WHERE no=?", (r["no"],))
+        for aud in json.loads(r["audience"] or "[]"):
+            coarse, why = ground_audience(r["enabling_act"], aud, r["subject"])
+            con.execute(
+                "INSERT OR IGNORE INTO gazette_audience (no, audience, coarse) VALUES (?,?,?)",
+                (r["no"], aud, coarse))
+            out["audiences"] += 1
+            if why != "grounded":
+                out["ungrounded" if why == "ungrounded" else "no_map"] += 1
+    con.commit()
+    return out
