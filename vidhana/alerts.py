@@ -137,13 +137,15 @@ def describe(con, event: dict) -> dict:
     # The current document of the affected rule. This is the line that makes an
     # alert actionable rather than merely informative: not "2481/22 changed" but
     # "the rule you follow is now 2500/106".
+    d["unresolved"] = 0
     if g["thread_id"]:
         h = con.execute(
-            "SELECT t.head_no, g.published_date FROM rule_thread t "
+            "SELECT t.head_no, t.unresolved, g.published_date FROM rule_thread t "
             "JOIN gazette g ON g.no = t.head_no WHERE t.thread_id = ?",
             (g["thread_id"],)).fetchone()
         if h:
             d["head_no"], d["head_date"] = h["head_no"], h["published_date"]
+            d["unresolved"] = h["unresolved"] or 0
 
     d["headline"] = _headline(d)
     return d
@@ -277,6 +279,15 @@ def _entry_body(e: dict) -> str:
         lines.append(f"Effective from {e['effective_from']}.")
     if e["audience"]:
         lines.append("Affects: " + "; ".join(e["audience"]) + ".")
+    # A feed reader cannot ask a follow-up question, so an entry that says a
+    # rule is current has to carry its own caveat or it will be read as
+    # settled. The corpus is known to be missing gazettes the IRD listing
+    # omits, and the official index that would prove otherwise is offline.
+    if e.get("unresolved"):
+        lines.append(f"Caution: this rule's history is incomplete — "
+                     f"{e['unresolved']} referenced gazette(s) are not in the corpus, "
+                     f"so a change made by a document we do not hold would not appear "
+                     f"here. Check the gazette itself before relying on this.")
     if e["confidence"] and e["confidence"] != "high":
         # Say so in the feed, not just in the database. A summary the model was
         # unsure of should not reach a reader looking as certain as one it was.
