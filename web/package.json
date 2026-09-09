@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "predev": "npm run data",
     "prebuild": "npm run data",
-    "data": "node scripts/copy-data.mjs"
+    "data": "node scripts/copy-data.mjs",
+    "test": "node --test --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON lib/*.test.ts"
   },
   "dependencies": {
     "next": "^15.1.0",
