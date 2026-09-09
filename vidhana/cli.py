@@ -15,6 +15,7 @@
     python -m vidhana backfill               recover omitted gazettes from the archive
     python -m vidhana whatsnew --since 2025-01-01   what changed, and what it changed
     python -m vidhana feed                   write the Atom feeds under docs/feeds
+    python -m vidhana export-web             write the static search index under docs/data
     python -m vidhana summaries export       the LLM output, tracked in git
     python -m vidhana summaries import       restore it without paying again
     python -m vidhana chain 2500/106       walk the raw amendment edges
@@ -33,7 +34,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from . import alerts, archive, db, listing, pipeline, resolve, search, structure
+from . import alerts, archive, db, listing, pipeline, resolve, search, structure, web
 
 
 def cmd_init(a):
@@ -481,6 +482,14 @@ def cmd_backfill(a):
     print("\nrun `vidhana resolve && vidhana structure && vidhana reindex` to finish")
 
 
+def cmd_export_web(a):
+    con = db.connect(a.db)
+    out = web.export(con, a.out)
+    for name, r in out.items():
+        state = "written" if r["changed"] else "unchanged"
+        print(f"  {name:<12} {r['bytes']/1024:>7.0f} KB  {state:<9} {r['path']}")
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(prog="vidhana", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -549,6 +558,10 @@ def main(argv=None):
     q.set_defaults(fn=cmd_search)
 
     sub.add_parser("reindex").set_defaults(fn=cmd_reindex)
+
+    ew = sub.add_parser("export-web")
+    ew.add_argument("--out", default="docs/data")
+    ew.set_defaults(fn=cmd_export_web)
 
     v = sub.add_parser("verify")
     v.add_argument("--find", action="store_true",

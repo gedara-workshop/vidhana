@@ -14,3 +14,7 @@ __pycache__/
 *.pyc
 .env
 .DS_Store
+
+# Design canvas working files. The seeded .html is ~2 MB of editor payload and
+# is rebuilt from the .dc.html sources whenever the design changes.
+design/vidhana-search-design.html
