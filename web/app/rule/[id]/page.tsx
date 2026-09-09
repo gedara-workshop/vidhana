@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { GapChip, StandingPill, WarnIcon } from "@/components/Standing";
 import { allThreads, missingFrom, thread, threadMembers } from "@/lib/corpus";
 import { formatDate, standingOf, toSlug } from "@/lib/standing";
 
@@ -44,80 +43,86 @@ export default async function RulePage({ params }: { params: Promise<{ id: strin
   if (!head) notFound();
 
   return (
-    <main className="mx-auto max-w-4xl px-6 py-8">
-      <Link className="btn mb-4" href="/">← Search the corpus</Link>
+    <div className="h-full overflow-y-auto">
+      <article className="mx-auto max-w-3xl px-5 py-6">
+        <Link className="navlink -ml-[10px]" href="/rules/">← All rules</Link>
 
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className="chip">{t.subject}</span>
-        <span className="chip">{t.size} documents</span>
-        <span className="chip">
-          {t.first_date.slice(0, 4)} – {t.last_date.slice(0, 4)}
-        </span>
-        <GapChip missing={missing} />
-      </div>
-
-      <h1 className="text-[30px] font-bold leading-[1.15] tracking-tight">{head.title}</h1>
-
-      <div className="card mt-5 rounded-[10px] p-6"
-           style={{ borderLeftWidth: 4, borderLeftColor: "var(--ok)" }}>
-        <div className="flex flex-wrap items-center gap-3">
-          <StandingPill g={head} />
-          <span className="grow" />
-          <span className="font-mono text-[11.5px]" style={{ color: "var(--dim)" }}>
-            effective {formatDate(head.effective_from)}
-          </span>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="tag">{t.subject}</span>
+          <span className="tag">{t.size} documents</span>
+          <span className="tag">{t.first_date.slice(0, 4)}–{t.last_date.slice(0, 4)}</span>
+          {missing.length > 0 && <span className="tag tag-warn">history incomplete</span>}
         </div>
-        <p className="mt-3 flex flex-wrap items-baseline gap-3">
-          <Link className="font-mono text-[22px] font-semibold link" href={`/gazette/${toSlug(head.no)}/`}>
-            {head.no}
-          </Link>
-          <span className="text-[17px] font-semibold">is the rule today</span>
-        </p>
-        {head.summary && (
-          <p className="mt-2 max-w-[700px] text-[14.5px] leading-relaxed" style={{ color: "var(--dim)" }}>
-            {head.summary}
+
+        <h1 className="mt-2 text-[24px] font-bold leading-snug tracking-tight">{head.title}</h1>
+
+        <div className="mt-4 rounded-[8px] border p-4"
+             style={{ borderColor: "var(--line)", background: "var(--panel)" }}>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="state state-current">In force · current</span>
+            <span className="grow" />
+            <span className="mono text-[11px]" style={{ color: "var(--faint)" }}>
+              effective {formatDate(head.effective_from)}
+            </span>
+          </div>
+          <p className="mt-3 flex flex-wrap items-baseline gap-2">
+            <Link className="mono text-[19px] font-bold link" href={`/gazette/${toSlug(head.no)}/`}>
+              {head.no}
+            </Link>
+            <span className="text-[15px] font-medium">is the rule today</span>
+          </p>
+          {head.summary && (
+            <p className="mt-2 text-[13.5px] leading-relaxed" style={{ color: "var(--dim)" }}>
+              {head.summary}
+            </p>
+          )}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <a className="btn btn-primary" href={head.source_url} rel="noopener">
+              Open the gazette PDF
+            </a>
+            <Link className="btn" href={`/gazette/${toSlug(head.no)}/`}>Document page</Link>
+          </div>
+        </div>
+
+        {missing.length > 0 && (
+          <p className="mt-3 rounded-[8px] px-4 py-3 text-[12.5px] leading-relaxed"
+             style={{ background: "var(--sup-bg)", color: "var(--sup)" }}>
+            <strong>This rule’s history is incomplete.</strong>{" "}
+            <span className="mono">{missing.join(", ")}</span>{" "}
+            {missing.length > 1 ? "are" : "is"} referenced by a document we hold but missing from
+            the IRD listing, so a change made by a gazette we do not hold would not appear below.
           </p>
         )}
-        <div className="mt-4 flex flex-wrap gap-3">
-          <a className="btn-primary" href={head.source_url} rel="noopener">Open the gazette PDF →</a>
-        </div>
-      </div>
 
-      {missing.length > 0 && (
-        <div className="mt-3 flex items-start gap-3 rounded-[9px] p-4 text-[13px] leading-relaxed"
-             style={{ background: "var(--sup-soft)", color: "var(--sup)" }}>
-          <WarnIcon size={16} />
-          <p>
-            <strong>This rule’s history is incomplete.</strong>{" "}
-            <span className="font-mono">{missing.join(", ")}</span>{" "}
-            {missing.length > 1 ? "are" : "is"} referenced by a document we hold but missing from the
-            IRD listing, so a change made by a gazette we do not hold would not appear below.
-          </p>
-        </div>
-      )}
-
-      <h2 className="kicker mt-8 mb-3">Every document in this rule</h2>
-      <ol className="flex flex-col gap-3">
-        {members.map((m) => {
-          const s = standingOf(m);
-          return (
-            <li key={m.no}>
-              <Link className="card block rounded-[10px] p-4" href={`/gazette/${toSlug(m.no)}/`}>
-                <div className="flex flex-wrap items-center gap-3">
-                  <span className="font-mono text-[13.5px] font-semibold">{m.no}</span>
-                  {m.source !== "ird-listing" && <span className="chip">recovered</span>}
+        <p className="sec mt-6 mb-2">Every document in this rule</p>
+        <div className="overflow-hidden rounded-[8px] border" style={{ borderColor: "var(--line)" }}>
+          {members.map((m) => {
+            const ms = standingOf(m);
+            return (
+              <Link key={m.no} href={`/gazette/${toSlug(m.no)}/`}
+                    className="block border-b px-4 py-3 last:border-0 hover:bg-[var(--raised)]"
+                    style={{ borderColor: "var(--line-soft)" }}>
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className="mono text-[12px] font-semibold">{m.no}</span>
+                  <span className={`state state-${ms.kind}`}>{ms.pill}</span>
+                  {m.source !== "ird-listing" && <span className="tag">recovered</span>}
                   <span className="grow" />
-                  <StandingPill g={m} />
-                </div>
-                <p className="mt-2 text-[15px] font-semibold leading-snug">{m.title}</p>
-                <p className="mt-[11px] font-mono text-[11.5px]" style={{ color: "var(--dim)" }}>
-                  {formatDate(m.published_date)}
-                </p>
+                  <span className="mono text-[10.5px]" style={{ color: "var(--faint)" }}>
+                    {formatDate(m.published_date)}
+                  </span>
+                </span>
+                <span className="mt-[3px] block text-[13px] font-medium">{m.title}</span>
+                {ms.consequence && (
+                  <span className="mt-[2px] block text-[11.5px]"
+                        style={{ color: ms.kind === "rescinded" ? "var(--res)" : "var(--sup)" }}>
+                    {ms.consequence}
+                  </span>
+                )}
               </Link>
-            </li>
-          );
-        })}
-      </ol>
-    </main>
+            );
+          })}
+        </div>
+      </article>
+    </div>
   );
 }

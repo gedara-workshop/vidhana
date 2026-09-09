@@ -82,6 +82,43 @@ since is the second line rather than the headline.
 looked plausible while doing it. Caught by driving a real browser; no amount of
 reading would have found it, because every file parsed cleanly.
 
+## The visual direction
+
+Dark-first product UI: layered near-black surfaces, Space Grotesk and JetBrains
+Mono, 13px base with tight leading, and a three-pane workspace.
+
+It took three attempts, and the two that failed are worth recording because
+both failed the same way. A quiet document-like page and then a conventional
+app shell were each rejected as characterless — I was optimising for
+inoffensive. A third, archival direction (one ink on paper, no colour, serif
+throughout) was chosen and built, and rejected too: **too plain, too much text,
+no furniture, doesn't feel like an app.**
+
+What that brief actually asked for was density and structure, and it was right.
+The archival build showed three results on a 900px screen; this shows thirteen.
+
+The brand is deliberately achromatic — near-black surfaces, white type — so the
+**only saturated colour on screen belongs to the three standing states**. That
+keeps the one thing a reader must act on as the one thing that draws the eye,
+and stops a brand colour competing with the data.
+
+**Three panes.** Filters, results, detail. The detail opens beside the list
+rather than navigating away, because the question people have — *is this still
+the rule?* — is answered by comparing a document with its siblings, and losing
+the list to answer it is the wrong trade. The static `/gazette/[slug]` pages
+still exist and are what a search engine and a shared link land on: this is the
+workspace, those are the documents.
+
+**Keyboard.** `/` focuses search, `j`/`k` walk the list, Escape clears. A dense
+list is only fast if the hands stay off the mouse, and the hint is on screen
+rather than buried in a help modal.
+
+**Theme.** System, light and dark, cycled from the top bar. Three states rather
+than two, because a viewer whose OS switches at sunset expects this to follow
+and a two-way toggle opts them out of that permanently. The preference is
+applied by an inline script before first paint — without it, someone who chose
+light gets a frame of full-bleed dark while React hydrates.
+
 ## The qualifier system
 
 A result can carry five caveats. Stacked as badges they are a wall nobody
@@ -95,15 +132,15 @@ line at all, because there is nothing to act on.
 
 | caveat | where | why there |
 |---|---|---|
-| provenance (`recovered`) | beside the number | qualifies the document's identity |
-| state | pill, always present | the only thing a reader must act on |
-| consequence | one line under the title | the only sentence |
-| missing history | chip row | weakens the standing claim, so it sits with the facts |
-| summary confidence | chip row | scoped so it can never read as doubt about the law |
+| state | coloured pill, always present | the only thing a reader must act on |
+| consequence | one line, in the state's colour | the only sentence |
+| missing history | `gap` tag | weakens the standing claim, so it sits with the facts |
+| summary confidence | tag | scoped so it can never read as doubt about the law |
+| provenance (`recovered`) | tag | qualifies the document's identity |
 
-Rescinded uses a muted brick, not alarm red: a rescinded gazette is a normal
-historical fact, and shouting makes the genuinely urgent case unreadable. Every
-state carries a word as well as a colour.
+The state pill is the only saturated colour in the interface, and it carries a
+word as well as a hue — so it still reads correctly without colour vision, and
+nothing else on screen competes with it for attention.
 
 ## Addressability
 

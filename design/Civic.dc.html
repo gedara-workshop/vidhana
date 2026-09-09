@@ -1,0 +1,125 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Public Sans", system-ui, sans-serif; font-size: 14px;
+           line-height: 1.55; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    .m { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+    .serif { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; }
+    .row:hover { background: var(--tint); }
+  </style>
+</helmet>
+
+<div style="{{theme}} background: var(--paper); color: var(--ink); min-height: 1140px;">
+
+  <!-- a band, the way civic print announces itself -->
+  <div style="background: var(--seal); color: var(--paper); padding: 26px 48px 24px;">
+    <div class="m" style="font-size: 10px; letter-spacing: .28em; text-transform: uppercase; opacity: .72;">Gazette Extraordinary · Inland Revenue</div>
+    <div class="serif" style="font-size: 46px; line-height: 1.02; margin-top: 10px; letter-spacing: -.005em;">Vidhana</div>
+    <div class="serif" style="font-size: 21px; font-style: italic; opacity: .85; margin-top: 2px;">what the rule actually is</div>
+  </div>
+
+  <div style="max-width: 860px; padding: 34px 48px 52px;">
+
+    <div style="display: flex; align-items: baseline; gap: 14px; border-bottom: 2px solid var(--seal); padding-bottom: 10px;">
+      <span class="serif" style="font-size: 30px;">tax invoice</span>
+      <div style="flex-grow: 1;"></div>
+      <span class="m" style="font-size: 11.5px; color: var(--ochre); font-weight: 500;">13 documents · 9 rules</span>
+    </div>
+
+    <sc-for list="{{rows}}" as="r" hint-placeholder-count="3">
+      <div class="row" style="padding: 20px 12px 20px 0; border-bottom: 1px solid var(--hair);
+                              border-left: 3px solid {{r.edge}}; padding-left: 16px; margin-top: 2px;">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <span class="m" style="font-size: 14.5px; font-weight: 500;">{{r.no}}</span>
+          <span style="{{r.badge}}">{{r.state}}</span>
+          <div style="flex-grow: 1;"></div>
+          <span class="m" style="font-size: 11px; opacity: .5;">{{r.date}}</span>
+        </div>
+        <div class="serif" style="font-size: 24px; line-height: 1.25; margin-top: 8px; max-width: 640px;">{{r.title}}</div>
+        <sc-if value="{{r.hasConseq}}" hint-placeholder-val="{{ true }}">
+          <div style="font-size: 13.5px; margin-top: 7px; color: {{r.edge}}; font-weight: 600;">{{r.conseq}}</div>
+        </sc-if>
+        <div style="font-size: 14px; margin-top: 7px; opacity: .68; max-width: 640px;">{{r.summary}}</div>
+      </div>
+    </sc-for>
+
+    <div class="m" style="font-size: 10px; letter-spacing: .22em; text-transform: uppercase;
+                          opacity: .5; margin: 34px 0 12px;">This rule, over time</div>
+    <div style="background: var(--tint); border: 1px solid var(--hair); padding: 6px 20px;">
+      <sc-for list="{{chain}}" as="c" hint-placeholder-count="3">
+        <div style="display: flex; gap: 14px; align-items: center; padding: 12px 0; border-bottom: 1px solid {{c.sep}};">
+          <span style="{{c.dot}}"></span>
+          <span class="m" style="font-size: 13.5px; font-weight: {{c.w}}; min-width: 76px;">{{c.no}}</span>
+          <span class="m" style="font-size: 11px; opacity: .5; min-width: 92px;">{{c.date}}</span>
+          <span class="serif" style="font-size: 17px; font-style: italic; color: {{c.col}};">{{c.note}}</span>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="margin-top: 30px; font-size: 12px; opacity: .58; line-height: 1.65; max-width: 660px;">
+      Summaries are machine-written; the gazette is the source of truth. “In force” means not rescinded by
+      another gazette in this corpus — weaker than a legal determination. Not legal advice.
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Theme"}}'>
+class Component extends DCLogic {
+  renderVals() {
+    // Ochre, deep seal red and an off-white paper stock — the palette Sri Lankan
+    // civic print actually uses, rather than a generic "government blue".
+    const c = this.props.dark
+      ? { paper:"#17130f", ink:"#efe7db", seal:"#7c231c", ochre:"#d99340", hair:"#302720",
+          tint:"#1e1813", green:"#6fae86", mute:"#9a8c7c" }
+      : { paper:"#f7f2e7", ink:"#231d17", seal:"#8c2b22", ochre:"#b3701a", hair:"#ded2be",
+          tint:"#f1e9d9", green:"#2f6b4f", mute:"#7d7264" };
+    const badge = (col, solid) =>
+      `font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.14em;` +
+      `text-transform:uppercase;padding:3px 9px;border-radius:2px;` +
+      (solid ? `background:${col};color:${c.paper};font-weight:500;`
+             : `border:1px solid ${col};color:${col};`);
+    const dot = (col, solid) =>
+      `width:9px;height:9px;border-radius:50%;flex-shrink:0;` +
+      (solid ? `background:${col};` : `border:1.5px solid ${col};`);
+    return {
+      theme: `--paper:${c.paper};--ink:${c.ink};--seal:${c.seal};--ochre:${c.ochre};` +
+             `--hair:${c.hair};--tint:${c.tint};`,
+      rows: [
+        { no:"2500/106", date:"6 Aug 2026", state:"In force", badge: badge(c.green, true),
+          edge: c.green, hasConseq:false, conseq:"",
+          title:"Format and specification of the Tax Invoice",
+          summary:"As amended, the prescribed format applies from 1 October 2026, instead of 1 July 2026." },
+        { no:"2481/22", date:"27 Mar 2026", state:"Superseded", badge: badge(c.ochre, false),
+          edge: c.ochre, hasConseq:true, conseq:"2500/106 is the current document in this rule",
+          title:"Tax Invoice format, effective from 1 July 2026",
+          summary:"Requires every VAT-registered business to issue tax invoices using the specified format." },
+        { no:"2463/05", date:"17 Nov 2025", state:"Rescinded", badge: badge(c.seal, false),
+          edge: c.seal, hasConseq:true, conseq:"Rescinded by 2481/22, from 1 July 2026",
+          title:"Tax Invoice format, effective from 1 January 2026",
+          summary:"Specified the format every VAT-registered person was to use from 1 January 2026." }
+      ],
+      chain: [
+        { no:"2463/05", date:"17 Nov 2025", note:"rescinded", dot: dot(c.seal, false),
+          col: c.mute, w:"400", sep: c.hair },
+        { no:"2481/22", date:"27 Mar 2026", note:"superseded", dot: dot(c.ochre, false),
+          col: c.mute, w:"400", sep: c.hair },
+        { no:"2500/106", date:"6 Aug 2026", note:"the rule now", dot: dot(c.green, true),
+          col: c.green, w:"500", sep: "transparent" }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
