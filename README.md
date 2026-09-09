@@ -46,7 +46,7 @@ One caveat found in Phase 0: the IRD listing is not purely tax and VAT, it carri
 Twenty-one real gazettes spanning 2007 to 2026, read end to end before any pipeline code. Full notes in [PHASE0.md](PHASE0.md) and [CORPUS-NOTES.md](CORPUS-NOTES.md). The findings that changed the plan:
 
 - **Acquisition is easier than expected.** One request returns all 137 gazettes, 2006 to 2026. No pagination, no JavaScript, no rate limiting to work around. Volume is 3 to 6 gazettes a year.
-- **Nothing is a scan.** Every document is real text back to 2007, so the OCR fallback isn't needed wholesale. It is needed selectively, for the occasional form embedded as an image inside an otherwise-text PDF.
+- **Almost nothing is a scan.** Nearly every document is real text back to 2007, so OCR isn't needed wholesale — just selectively, for six pages across three documents where the content is an image. One of those, a 2009 gazette, is a full-page scan that yielded a single byte of text until it was OCR'd.
 - **The hard part is not the PDFs, it's the semantics.** Effective dates are frequently retroactive, sometimes several per document, and sometimes changed later by a different gazette. Dates sit in the middle and at the end of documents, not at the top.
 - **Who a gazette affects is usually not written in it.** Nine of the twenty-one never say who they bind. That has to be inferred from the enabling Act, of which there are only five across the whole corpus.
 
@@ -59,7 +59,7 @@ Stack is Python and SQLite. No service to run, the whole corpus is 137 documents
 ## Roadmap
 
 - [x] **Phase 0, Feasibility.** Read 15-20 real gazettes by hand, gauge language mix and scan quality, write summaries for 5 as an evaluation set.
-- [ ] **Phase 1, Acquisition.** Scraper for the IRD gazette listing page, fetch every gazette PDF, extract text, parse the header metadata, and build the amendment graph from the cross-references in the text.
-- [ ] **Phase 2, Structuring.** LLM pass over the cleaned text for a plain-English summary, the affected audience grounded on the enabling Act, effective dates, and tags.
+- [x] **Phase 1, Acquisition.** Scraper for the IRD gazette listing page, fetch every gazette PDF, extract text, parse the header metadata, and build the amendment graph from the cross-references in the text.
+- [x] **Phase 2, Structuring.** LLM pass over the cleaned text for a plain-English summary, the affected audience grounded on the enabling Act, effective dates, and tags.
 - [ ] **Phase 3, Search.** Full-text and topic search across the corpus, with the resolved state of a rule rather than just the documents that mention it.
 - [ ] **Phase 4, Alerts.** Daily check, notify on what is new and what it changes.

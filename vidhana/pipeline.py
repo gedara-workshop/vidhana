@@ -5,7 +5,7 @@ import datetime as dt
 import os
 import subprocess
 
-from . import db, extract, fetch, listing, parse
+from . import db, extract, fetch, listing, ocr, parse
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PDF_DIR = os.path.join(ROOT, "data", "gazettes")
@@ -28,7 +28,7 @@ def _pages(path: str) -> int | None:
     return None
 
 
-def process(con, row, force: bool = False) -> dict:
+def process(con, row, force: bool = False, use_ocr: bool = True) -> dict:
     """Fetch, extract and parse one gazette. Idempotent."""
     no = row["no"]
     dest = fetch.pdf_path(PDF_DIR, no)
@@ -44,16 +44,27 @@ def process(con, row, force: bool = False) -> dict:
 
     raw = extract.to_text(dest)
     text = extract.clean(raw)
+    pages_meta = extract.page_report(dest)
+
+    # Splice in OCR for pages whose content is an image. Appended with markers
+    # rather than merged into the body, so OCR-derived text stays identifiable.
+    if use_ocr and any(p["needs_ocr"] for p in pages_meta):
+        for p in pages_meta:
+            if not p["needs_ocr"]:
+                continue
+            got = ocr.ocr_page(dest, p["page"])
+            p["ocr_chars"] = len(got)
+            if got:
+                text += (f"\n\n{ocr.BEGIN} (page {p['page']})\n{got}\n{ocr.END}\n")
     os.makedirs(TEXT_DIR, exist_ok=True)
     tpath = os.path.join(TEXT_DIR, os.path.basename(dest).replace(".pdf", ".txt"))
     with open(tpath, "w") as f:
         f.write(text)
 
+    pages = pages_meta
     header_no, header_date = parse.header(text)
     act, act_no = parse.enabling_act(text)
     name, role = parse.authority(text)
-    pages = extract.page_report(dest)
-
     if header_no and header_no != no:
         warnings.append(f"pdf header says {header_no}, listing says {no}")
     if header_date and header_date != row["published_date"]:
