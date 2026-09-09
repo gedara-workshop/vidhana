@@ -1,0 +1,177 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Schibsted Grotesk", system-ui, -apple-system, sans-serif;
+           font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent); text-decoration: underline; }
+    .mono { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace; }
+    input, button { font-family: inherit; font-size: inherit; }
+    input:focus { outline: none; border-color: var(--accent) !important; box-shadow: 0 0 0 3px var(--accentSoft); }
+    .card { transition: box-shadow .12s ease, border-color .12s ease; }
+    .card:hover { border-color: var(--accent) !important; }
+    .fac:hover { background: var(--accentSoft); }
+  </style>
+</helmet>
+
+<div style="{{theme}} background: var(--bg); color: var(--fg); min-height: 880px;">
+
+  <div style="background: var(--surface); border-bottom: 1px solid var(--line); padding: 13px 30px;
+              display: flex; align-items: center; gap: 12px;">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <rect x="1.5" y="1.5" width="21" height="21" rx="5" fill="{{accentc}}"/>
+      <path d="M7 8.5h10M7 12h10M7 15.5h6" stroke="{{surfacec}}" stroke-width="1.9" stroke-linecap="round"/>
+    </svg>
+    <span style="font-size: 13.5px; font-weight: 600;">transfer pricing</span>
+    <span style="{{chipNeutral}}">5 documents · 2008–2021</span>
+  </div>
+
+  <div style="max-width: 900px; margin: 0 auto; padding: 26px 30px 50px;">
+
+    <!-- scrubber -->
+    <div style="background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+                padding: 20px 24px 22px; box-shadow: {{shadow}};">
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{accentc}}" stroke-width="2"
+             stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        <span style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--dim);">The rule as it stood on</span>
+        <span style="font-size: 22px; font-weight: 700; letter-spacing: -0.02em;">{{dateLabel}}</span>
+        <div style="flex-grow: 1;"></div>
+        <button onClick="{{today}}" style="{{todayBtn}}">Jump to today</button>
+      </div>
+
+      <input type="range" min="0" max="6" step="1" value="{{idx}}" onInput="{{onSlide}}"
+             style="width: 100%; margin-top: 18px; accent-color: {{accentc}};" />
+      <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+        <sc-for list="{{ticks}}" as="t" hint-placeholder-count="7">
+          <span class="mono" style="font-size: 11px; color: var(--dim);">{{t}}</span>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="margin-top: 10px; font-size: 12px; color: var(--dim); line-height: 1.55; padding: 0 4px;">
+      Tested on the <strong style="color: var(--fg); font-weight: 600;">effective</strong> date, not publication.
+      Gazette <span class="mono">2316/13</span> was published in January 2023 and took effect in October 2022 —
+      filtering by publication would put it in the wrong year.
+    </div>
+
+    <!-- the answer -->
+    <sc-if value="{{hasAnswer}}" hint-placeholder-val="{{ true }}">
+      <div class="card" style="margin-top: 22px; background: var(--surface); border: 1px solid var(--line);
+                  border-left: 4px solid {{ok}}; border-radius: 10px; padding: 20px 22px; box-shadow: {{shadow}};">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <span style="{{okPill}}"><span style="{{okDot}}"></span>the rule on this date</span>
+          <div style="flex-grow: 1;"></div>
+          <span class="mono" style="font-size: 11.5px; color: var(--dim);">effective {{answer.eff}}</span>
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 12px; margin-top: 11px; flex-wrap: wrap;">
+          <span class="mono" style="font-size: 22px; font-weight: 600;">{{answer.no}}</span>
+        </div>
+        <div style="margin-top: 6px; font-size: 15px; font-weight: 600; line-height: 1.4;">{{answer.title}}</div>
+        <div style="margin-top: 8px; font-size: 13.5px; color: var(--dim); line-height: 1.55;">{{answer.note}}</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{noAnswer}}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 22px; background: var(--surface); border: 1px dashed var(--line);
+                  border-radius: 10px; padding: 40px 22px; text-align: center;">
+        <div style="font-size: 15px; font-weight: 600;">Nothing had taken effect yet</div>
+        <div style="margin-top: 6px; font-size: 13px; color: var(--dim);">The first transfer-pricing regulations we hold come into force on 22 April 2008.</div>
+      </div>
+    </sc-if>
+
+    <!-- displaced -->
+    <div style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
+                color: var(--dim); margin: 26px 0 10px;">Not the answer on this date</div>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <sc-for list="{{others}}" as="o" hint-placeholder-count="3">
+        <div style="background: var(--surface); border: 1px solid var(--line); border-radius: 9px;
+                    padding: 12px 16px; display: flex; gap: 12px; align-items: center;">
+          <span class="mono" style="font-size: 13px; color: var(--dim); min-width: 72px;">{{o.no}}</span>
+          <span style="font-size: 13px; color: var(--dim); flex-grow: 1;">{{o.why}}</span>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="margin-top: 24px; font-size: 11.5px; color: var(--dim); line-height: 1.6;">
+      “In force” means <em>not rescinded by another gazette in this corpus</em> — weaker than a legal
+      determination. Not legal advice.
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Theme"}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { idx: 2 }; }
+  pal() {
+    return this.props.dark
+      ? { fg:"#e9eaf0", dim:"#949ab0", bg:"#0e0f13", surface:"#17191f", line:"#262a33",
+          accent:"#8a95ff", accentSoft:"#1c1f33", ok:"#4fc79a", sup:"#e8b25f", res:"#ef8f8f",
+          okSoft:"#12271f", supSoft:"#2a2213", resSoft:"#2c1a1a", shadow:"none" }
+      : { fg:"#14161c", dim:"#5b6070", bg:"#f5f6f9", surface:"#ffffff", line:"#e4e6ec",
+          accent:"#3444d1", accentSoft:"#eef0fd", ok:"#0f7a52", sup:"#a9680b", res:"#ab3a3a",
+          okSoft:"#e8f5ef", supSoft:"#fdf3e2", resSoft:"#fbeceb",
+          shadow:"0 1px 2px rgba(20,22,28,.05), 0 1px 1px rgba(20,22,28,.03)" };
+  }
+  vars(c) {
+    return `--fg:${c.fg};--dim:${c.dim};--bg:${c.bg};--surface:${c.surface};--line:${c.line};` +
+           `--accent:${c.accent};--accentSoft:${c.accentSoft};`;
+  }
+  renderVals() {
+    const c = this.pal();
+    const years = ["2007","2010","2015","2018","2020","2023","2026"];
+    const i = Number(this.state.idx);
+    const answers = [
+      null,
+      { no:"1546/10", eff:"22 Apr 2008", title:"Transfer pricing regulations for associated undertakings",
+        note:"Rescinded by 1823/05 in 2013 — but on this date, this is the rule." },
+      { no:"1823/05", eff:"12 Aug 2013", title:"Transfer pricing regulations, arm’s-length methods and record-keeping",
+        note:"Replaced 1546/10. Rescinded by 2104/04 in 2018 — but not yet, on this date." },
+      { no:"2104/04", eff:"31 Dec 2018", title:"Transfer pricing rules for transactions between associated enterprises",
+        note:"Replaced 1823/05. Rescinded by 2217/07 from 1 April 2020." },
+      { no:"2104/04", eff:"31 Dec 2018", title:"Transfer pricing rules for transactions between associated enterprises",
+        note:"Still standing; 2217/07 does not take effect until 1 April 2020." },
+      { no:"2217/07", eff:"1 Apr 2020", title:"Transfer pricing regulations replacing Gazette 2104/04",
+        note:"The current rule." },
+      { no:"2217/07", eff:"1 Apr 2020", title:"Transfer pricing regulations replacing Gazette 2104/04",
+        note:"The current rule." }
+    ];
+    const a = answers[i];
+    const others = a ? [
+        { no:"1546/10", why: i <= 1 ? "in force on this date" : "rescinded by 1823/05 in 2013" },
+        { no:"1823/05", why: i < 2 ? "not yet in effect" : (i === 2 ? "in force on this date" : "rescinded by 2104/04 in 2018") },
+        { no:"2217/07", why: i < 5 ? "not written yet — takes effect 1 April 2020" : "in force on this date" }
+      ].filter((o) => o.no !== a.no)
+      : [{ no:"1546/10", why:"not yet in effect — comes into force 22 April 2008" }];
+
+    return {
+      theme: this.vars(c), accentc: c.accent, surfacec: c.surface, shadow: c.shadow, ok: c.ok,
+      chipNeutral: `display:inline-flex;padding:2px 9px;border-radius:20px;font-size:11.5px;` +
+                   `border:1px solid ${c.line};color:${c.dim};`,
+      okPill: `display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:20px;` +
+              `font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;` +
+              `background:${c.okSoft};color:${c.ok};`,
+      okDot: `width:6px;height:6px;border-radius:50%;background:${c.ok};display:inline-block;`,
+      ticks: years, idx: String(i), dateLabel: `1 January ${years[i]}`,
+      hasAnswer: !!a, noAnswer: !a, answer: a || { no:"", eff:"", title:"", note:"" }, others,
+      todayBtn: `padding:7px 14px;border-radius:7px;cursor:pointer;font-size:12.5px;font-weight:500;` +
+                `border:1px solid ${i === 6 ? c.accent : c.line};` +
+                `background:${i === 6 ? c.accentSoft : "transparent"};color:${i === 6 ? c.accent : c.dim};`,
+      onSlide: (e) => this.setState({ idx: Number(e.target.value) }),
+      today: () => this.setState({ idx: 6 })
+    };
+  }
+}
+</script>
+</body>
+</html>

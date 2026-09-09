@@ -1,0 +1,380 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Schibsted Grotesk", system-ui, -apple-system, sans-serif;
+           font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent); text-decoration: underline; }
+    .mono { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace; }
+    input, button { font-family: inherit; font-size: inherit; }
+    input:focus { outline: none; border-color: var(--accent) !important;
+                  box-shadow: 0 0 0 3px var(--accentSoft); }
+    .card { transition: box-shadow .12s ease, border-color .12s ease; }
+    .card:hover { border-color: var(--accent) !important; }
+    .fac:hover { background: var(--accentSoft); }
+    .clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  </style>
+</helmet>
+
+<div style="{{theme}} background: var(--bg); color: var(--fg); min-height: 940px; display: flex;">
+
+  <!-- ══ SIDEBAR ══ -->
+  <div style="width: 236px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--line);
+              display: flex; flex-direction: column;">
+
+    <div style="padding: 18px 18px 16px; display: flex; align-items: center; gap: 9px;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="flex-shrink: 0;">
+        <rect x="1.5" y="1.5" width="21" height="21" rx="5" fill="{{accentc}}"/>
+        <path d="M7 8.5h10M7 12h10M7 15.5h6" stroke="{{surfacec}}" stroke-width="1.9" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <div style="font-weight: 700; font-size: 15px; letter-spacing: -0.02em;">Vidhana</div>
+        <div style="font-size: 10.5px; color: var(--dim); letter-spacing: 0.01em;">IRD gazettes, resolved</div>
+      </div>
+    </div>
+
+    <div style="padding: 0 12px 14px;">
+      <sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+        <div style="margin-bottom: 16px;">
+          <div style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
+                      color: var(--dim); padding: 0 8px 6px;">{{g.name}}</div>
+          <sc-for list="{{g.items}}" as="f" hint-placeholder-count="5">
+            <div class="fac" onClick="{{f.pick}}" style="{{f.style}}">
+              <span style="{{f.swatch}}"></span>
+              <span style="flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{f.label}}</span>
+              <span class="mono" style="font-size: 11px; opacity: .6;">{{f.n}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="flex-grow: 1;"></div>
+    <div style="padding: 14px 18px; border-top: 1px solid var(--line); font-size: 11px; color: var(--dim); line-height: 1.5;">
+      144 gazettes · 2006–2026<br>
+      <span style="opacity: .8;">7 recovered from the archive</span>
+    </div>
+  </div>
+
+  <!-- ══ MAIN ══ -->
+  <div style="flex-grow: 1; display: flex; flex-direction: column; min-width: 0;">
+
+    <!-- top bar -->
+    <div style="background: var(--surface); border-bottom: 1px solid var(--line); padding: 13px 26px;
+                display: flex; gap: 14px; align-items: center;">
+      <div style="position: relative; flex-grow: 1; max-width: 520px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{dimc}}" stroke-width="2"
+             stroke-linecap="round" style="position: absolute; left: 12px; top: 11px;">
+          <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+        </svg>
+        <input value="{{query}}" onInput="{{onQuery}}" placeholder="Search 144 gazettes, full text"
+               style="width: 100%; padding: 9px 13px 9px 36px; border: 1px solid var(--line);
+                      border-radius: 7px; background: var(--bg); color: var(--fg); font-size: 14px;" />
+      </div>
+
+      <div style="display: flex; background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 2px;">
+        <button onClick="{{showDocs}}" style="{{docsBtn}}">Documents</button>
+        <button onClick="{{showRules}}" style="{{rulesBtn}}">Rules</button>
+      </div>
+
+      <div style="flex-grow: 1;"></div>
+      <button onClick="{{toggleAsOf}}" style="{{asOfBtn}}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        {{asOfLabel}}
+      </button>
+    </div>
+
+    <!-- as-of bar -->
+    <sc-if value="{{asOf}}" hint-placeholder-val="{{ false }}">
+      <div style="background: var(--accentSoft); border-bottom: 1px solid var(--line); padding: 10px 26px;
+                  display: flex; align-items: center; gap: 14px;">
+        <span style="font-size: 12.5px; color: var(--accent); font-weight: 600;">Showing the rule as it stood on 1 January 2015</span>
+        <input type="range" min="0" max="6" value="3" style="flex-grow: 1; max-width: 300px; accent-color: {{accentc}};" />
+        <span style="font-size: 12px; color: var(--dim);">tested on effective date, not publication</span>
+      </div>
+    </sc-if>
+
+    <!-- results -->
+    <div style="padding: 20px 26px 34px; flex-grow: 1;">
+
+      <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px;">
+        <span style="font-size: 13px; color: var(--dim);">{{countLabel}}</span>
+        <sc-if value="{{isRules}}" hint-placeholder-val="{{ false }}">
+          <span style="font-size: 12px; color: var(--accent); background: var(--accentSoft);
+                       padding: 2px 9px; border-radius: 20px;">one result per rule, answered by its current document</span>
+        </sc-if>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <sc-for list="{{results}}" as="r" hint-placeholder-count="4">
+          <div class="card" onClick="{{r.expand}}"
+               style="background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+                      padding: 15px 17px 15px; cursor: pointer; box-shadow: {{shadow}};">
+
+            <!-- line 1: number + status pill -->
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <span class="mono" style="font-size: 13.5px; font-weight: 600;">{{r.no}}</span>
+              <sc-if value="{{r.recovered}}" hint-placeholder-val="{{ false }}">
+                <span style="{{chipNeutral}}">recovered</span>
+              </sc-if>
+              <div style="flex-grow: 1;"></div>
+              <span style="{{r.pill}}">
+                <span style="{{r.dot}}"></span>{{r.pillText}}
+              </span>
+            </div>
+
+            <!-- line 2: title -->
+            <div style="margin-top: 8px; font-size: 16px; font-weight: 600; line-height: 1.35;
+                        letter-spacing: -0.01em;">{{r.title}}</div>
+
+            <!-- line 3: the consequence, one short clause -->
+            <sc-if value="{{r.consequence}}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top: 5px; font-size: 13px; color: {{r.stateColor}}; font-weight: 500;">{{r.consequenceText}}</div>
+            </sc-if>
+
+            <!-- line 4: summary, clamped to two lines -->
+            <div class="clamp" style="margin-top: 7px; font-size: 13.5px; color: var(--dim); line-height: 1.5;">{{r.summary}}</div>
+
+            <!-- line 5: meta + warning chips -->
+            <div style="margin-top: 11px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+              <span class="mono" style="font-size: 11.5px; color: var(--dim);">{{r.date}}</span>
+              <span style="{{chipNeutral}}">{{r.subject}}</span>
+              <span style="{{chipNeutral}}">{{r.threadLabel}}</span>
+              <sc-if value="{{r.gap}}" hint-placeholder-val="{{ false }}">
+                <span style="{{warnChip}}">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>
+                    <path d="M12 9v4"/><path d="M12 17h.01"/>
+                  </svg>{{r.gapText}}
+                </span>
+              </sc-if>
+              <sc-if value="{{r.lowConf}}" hint-placeholder-val="{{ false }}">
+                <span style="{{chipNeutral}}">AI summary · {{r.conf}} confidence</span>
+              </sc-if>
+            </div>
+
+            <!-- expanded -->
+            <sc-if value="{{r.open}}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line);">
+                <div style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
+                            color: var(--dim); margin-bottom: 9px;">This rule, over time</div>
+                <sc-for list="{{r.history}}" as="h" hint-placeholder-count="3">
+                  <div style="display: flex; gap: 11px; align-items: center; padding: 5px 0;">
+                    <span style="{{h.mark}}"></span>
+                    <span class="mono" style="font-size: 12.5px; min-width: 70px; font-weight: {{h.weight}};">{{h.no}}</span>
+                    <span class="mono" style="font-size: 11.5px; color: var(--dim); min-width: 88px;">{{h.date}}</span>
+                    <span style="font-size: 12.5px; color: {{h.color}};">{{h.note}}</span>
+                  </div>
+                </sc-for>
+                <div style="margin-top: 11px; display: flex; gap: 16px;">
+                  <a href="#" style="font-size: 13px; font-weight: 500;">Open the full rule →</a>
+                  <a href="#" style="font-size: 13px; font-weight: 500;">Gazette PDF →</a>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{empty}}" hint-placeholder-val="{{ false }}">
+        <div style="background: var(--surface); border: 1px dashed var(--line); border-radius: 10px;
+                    padding: 46px 20px; text-align: center; color: var(--dim);">
+          <div style="font-size: 15px; color: var(--fg); font-weight: 600;">Nothing matches “{{query}}”</div>
+          <div style="margin-top: 6px; font-size: 13px;">Full text of every gazette is searched, not just titles.</div>
+        </div>
+      </sc-if>
+
+      <div style="margin-top: 22px; font-size: 11.5px; color: var(--dim); line-height: 1.6; max-width: 720px;">
+        Summaries are machine-written; the gazette is the source of truth. “In force” means <em>not rescinded by
+        another gazette in this corpus</em> — weaker than a legal determination. Not legal advice.
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Theme"}}'>
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    this.state = { q: "tax invoice", mode: "docs", subject: null, status: null, open: "2481/22", asOf: false };
+  }
+
+  pal() {
+    return this.props.dark
+      ? { fg:"#e9eaf0", dim:"#949ab0", bg:"#0e0f13", surface:"#17191f", line:"#262a33",
+          accent:"#8a95ff", accentSoft:"#1c1f33", ok:"#4fc79a", sup:"#e8b25f", res:"#ef8f8f",
+          okSoft:"#12271f", supSoft:"#2a2213", resSoft:"#2c1a1a", shadow:"none" }
+      : { fg:"#14161c", dim:"#5b6070", bg:"#f5f6f9", surface:"#ffffff", line:"#e4e6ec",
+          accent:"#3444d1", accentSoft:"#eef0fd", ok:"#0f7a52", sup:"#a9680b", res:"#ab3a3a",
+          okSoft:"#e8f5ef", supSoft:"#fdf3e2", resSoft:"#fbeceb",
+          shadow:"0 1px 2px rgba(20,22,28,.05), 0 1px 1px rgba(20,22,28,.03)" };
+  }
+
+  data() {
+    return [
+      { no:"2500/106", date:"6 Aug 2026", subject:"vat", kind:"current", threadSize:3,
+        title:"Format and specification of the Tax Invoice",
+        summary:"As amended by Gazette 2500/106, the prescribed format for tax invoices issued by every registered person applies from 1 October 2026, instead of 1 July 2026.",
+        conf:"high", gap:0, recovered:false,
+        history:[["2463/05","17 Nov 2025","rescinded by 2481/22","res"],
+                 ["2481/22","27 Mar 2026","superseded","sup"],
+                 ["2500/106","6 Aug 2026","the rule now","ok"]] },
+      { no:"2481/22", date:"27 Mar 2026", subject:"vat", kind:"superseded", head:"2500/106", threadSize:3,
+        title:"Tax Invoice format, effective from 1 July 2026",
+        summary:"Requires every VAT-registered business to issue tax invoices using the specified format, including supplier and purchaser details, TINs and invoice numbering.",
+        conf:"high", gap:0, recovered:false,
+        history:[["2463/05","17 Nov 2025","rescinded by this","res"],
+                 ["2481/22","27 Mar 2026","this document","sup"],
+                 ["2500/106","6 Aug 2026","the rule now","ok"]] },
+      { no:"1789/15", date:"18 Dec 2012", subject:"stamp-duty", kind:"superseded", head:"2312/73", threadSize:13,
+        title:"Stamp duty on stock transfers to margin trading accounts",
+        summary:"From 1 January 2013, adds instruments transferring stocks to or from a margin trading account to the relevant Schedule item.",
+        conf:"medium", gap:2, recovered:false,
+        history:[["1465/20","5 Oct 2006","earliest held","sup"],
+                 ["1789/15","18 Dec 2012","this document","sup"],
+                 ["2312/73","31 Dec 2022","the rule now","ok"]] },
+      { no:"2463/05", date:"17 Nov 2025", subject:"vat", kind:"rescinded", by:"2481/22", from:"1 Jul 2026", threadSize:3,
+        title:"Tax Invoice format, effective from 1 January 2026",
+        summary:"Specified the tax-invoice format every VAT-registered person was to use from 1 January 2026, including record retention.",
+        conf:"high", gap:0, recovered:false,
+        history:[["2463/05","17 Nov 2025","this document","res"],
+                 ["2481/22","27 Mar 2026","rescinded it","sup"],
+                 ["2500/106","6 Aug 2026","the rule now","ok"]] },
+      { no:"1791/08", date:"31 Dec 2012", subject:"other", kind:"superseded", head:"1947/48", threadSize:2,
+        title:"Embarkation Levy under the Finance Act",
+        summary:"Sets the embarkation levy payable by a person leaving Sri Lanka. Amended by 1947/48, which replaced Schedule I from 1 January 2016.",
+        conf:"low", gap:1, recovered:true,
+        history:[["1791/08","31 Dec 2012","this document","sup"],
+                 ["1947/48","1 Jan 2016","the rule now","ok"]] }
+    ];
+  }
+
+  renderVals() {
+    const c = this.pal(), st = this.state;
+    const theme = `--fg:${c.fg};--dim:${c.dim};--bg:${c.bg};--surface:${c.surface};--line:${c.line};` +
+                  `--accent:${c.accent};--accentSoft:${c.accentSoft};`;
+    const q = (st.q || "").toLowerCase().trim();
+
+    let rows = this.data();
+    if (q) rows = rows.filter((r) => (r.no+" "+r.title+" "+r.summary+" "+r.subject).toLowerCase().includes(q.split(/\s+/)[0]));
+    if (st.subject) rows = rows.filter((r) => r.subject === st.subject);
+    if (st.status === "inforce") rows = rows.filter((r) => r.kind !== "rescinded");
+    if (st.status === "current") rows = rows.filter((r) => r.kind === "current");
+    if (st.mode === "rules") {
+      const seen = new Set();
+      rows = rows.filter((r) => { const k = r.head || r.no; if (seen.has(k)) return false; seen.add(k); return true; });
+    }
+
+    const tone = (r) => r.kind === "rescinded" ? [c.res, c.resSoft]
+                      : r.kind === "superseded" ? [c.sup, c.supSoft] : [c.ok, c.okSoft];
+
+    const pillFor = (r) => {
+      const [col, soft] = tone(r);
+      return `display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 8px;border-radius:20px;` +
+             `font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;` +
+             `background:${soft};color:${col};white-space:nowrap;`;
+    };
+
+    const chipNeutral = `display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:20px;` +
+      `font-size:11px;border:1px solid ${c.line};color:${c.dim};white-space:nowrap;`;
+    const warnChip = `display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:20px;` +
+      `font-size:11px;background:${c.supSoft};color:${c.sup};font-weight:500;white-space:nowrap;`;
+
+    const results = rows.map((r) => {
+      const [col] = tone(r);
+      return {
+        ...r,
+        open: st.open === r.no,
+        lowConf: r.conf !== "high",
+        stateColor: col,
+        pill: pillFor(r),
+        pillText: r.kind === "rescinded" ? "Rescinded" : r.kind === "superseded" ? "Superseded" : "In force · current",
+        dot: `width:6px;height:6px;border-radius:50%;background:${col};display:inline-block;flex-shrink:0;`,
+        consequence: r.kind !== "current",
+        consequenceText: r.kind === "rescinded"
+          ? `Rescinded by ${r.by}, from ${r.from}`
+          : `${r.head} is the current document in this rule`,
+        threadLabel: r.threadSize > 1 ? `${r.threadSize} documents in rule` : "standalone",
+        gap: r.gap > 0,
+        gapText: `${r.gap} gazette${r.gap > 1 ? "s" : ""} missing from source`,
+        expand: () => this.setState({ open: st.open === r.no ? null : r.no }),
+        history: r.history.map(([hno, hdate, note, k]) => ({
+          no: hno, date: hdate, note,
+          color: k === "ok" ? c.ok : k === "sup" ? c.sup : c.res,
+          weight: hno === r.no ? "600" : "400",
+          mark: `width:7px;height:7px;border-radius:50%;flex-shrink:0;display:inline-block;` +
+                `background:${k === "ok" ? c.ok : k === "sup" ? c.sup : c.res};`
+        }))
+      };
+    });
+
+    const fac = (on) =>
+      `display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;cursor:pointer;font-size:12.5px;` +
+      `color:${on ? c.accent : c.fg};background:${on ? c.accentSoft : "transparent"};` +
+      `font-weight:${on ? "600" : "400"};`;
+    const sw = (col) => col
+      ? `width:7px;height:7px;border-radius:50%;background:${col};flex-shrink:0;`
+      : "width:7px;height:7px;flex-shrink:0;";
+
+    const subj = (id, n) => ({
+      label: id, n, style: fac(st.subject === id), swatch: sw(null),
+      pick: () => this.setState({ subject: st.subject === id ? null : id })
+    });
+    const stat = (id, label, n, col) => ({
+      label, n, style: fac(st.status === id), swatch: sw(col),
+      pick: () => this.setState({ status: st.status === id ? null : id })
+    });
+
+    return {
+      theme, query: st.q, results, chipNeutral, warnChip,
+      accentc: c.accent, dimc: c.dim, surfacec: c.surface, shadow: c.shadow,
+      isRules: st.mode === "rules",
+      empty: results.length === 0,
+      asOf: st.asOf,
+      asOfLabel: st.asOf ? "As of 1 Jan 2015" : "As of today",
+      countLabel: `${results.length} ${st.mode === "rules" ? "rule" : "document"}${results.length === 1 ? "" : "s"}`,
+      groups: [
+        { name: "Status", items: [
+            stat("current", "Current documents", 62, c.ok),
+            stat("inforce", "In force", 82, c.ok),
+            stat("rescinded", "Rescinded", 22, c.res) ] },
+        { name: "Subject", items: [
+            subj("income-tax", 63), subj("vat", 32), subj("stamp-duty", 28),
+            subj("other", 12), subj("esc", 6) ] },
+        { name: "Who it affects", items: [
+            { label: "income taxpayers", n: 59, style: fac(false), swatch: sw(null), pick: () => {} },
+            { label: "VAT-registered businesses", n: 36, style: fac(false), swatch: sw(null), pick: () => {} },
+            { label: "notaries", n: 23, style: fac(false), swatch: sw(null), pick: () => {} },
+            { label: "employers", n: 16, style: fac(false), swatch: sw(null), pick: () => {} } ] }
+      ],
+      docsBtn: `padding:5px 12px;border:0;border-radius:5px;cursor:pointer;font-size:12.5px;font-weight:500;` +
+               `background:${st.mode === "docs" ? c.surface : "transparent"};color:${st.mode === "docs" ? c.fg : c.dim};` +
+               `box-shadow:${st.mode === "docs" ? c.shadow : "none"};`,
+      rulesBtn: `padding:5px 12px;border:0;border-radius:5px;cursor:pointer;font-size:12.5px;font-weight:500;` +
+                `background:${st.mode === "rules" ? c.surface : "transparent"};color:${st.mode === "rules" ? c.fg : c.dim};` +
+                `box-shadow:${st.mode === "rules" ? c.shadow : "none"};`,
+      asOfBtn: `display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:7px;cursor:pointer;` +
+               `font-size:12.5px;font-weight:500;border:1px solid ${st.asOf ? c.accent : c.line};` +
+               `background:${st.asOf ? c.accentSoft : "transparent"};color:${st.asOf ? c.accent : c.dim};`,
+      onQuery: (e) => this.setState({ q: e.target.value }),
+      showDocs: () => this.setState({ mode: "docs" }),
+      showRules: () => this.setState({ mode: "rules" }),
+      toggleAsOf: () => this.setState({ asOf: !st.asOf })
+    };
+  }
+}
+</script>
+</body>
+</html>

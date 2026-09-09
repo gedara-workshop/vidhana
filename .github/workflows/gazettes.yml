@@ -68,18 +68,21 @@ jobs:
           python3 -m vidhana resolve
           python3 -m vidhana reindex
           python3 -m vidhana feed
+          python3 -m vidhana export-web
 
       - name: Report what changed
         run: python3 -m vidhana whatsnew --since "$(date -u -d '30 days ago' +%F)"
 
       # Only the derived artefacts that are meant to be tracked. The database,
       # the PDFs and the extracted text are all gitignored and stay that way.
+      # docs/data carries the search index the front end loads, so a new
+      # gazette reaches readers on the same run that finds it.
       - name: Commit any changes
         run: |
           set -euo pipefail
           git config user.name  "vidhana-bot"
           git config user.email "noreply@github.com"
-          git add data/listing data/manifest.csv data/summaries.json docs/feeds
+          git add data/listing data/manifest.csv data/summaries.json docs/feeds docs/data
           if git diff --cached --quiet; then
             echo "no change — nothing published today"
             exit 0

@@ -231,13 +231,59 @@ Not yet chosen — do not assume, ask:
 - Whether anyone actually subscribes. Nothing in the codebase answers this, and
   building more will not either.
 
+## The web front end
+
+**Next.js 15 App Router + TypeScript, in `web/`.** Statically exported
+(`output: "export"`) and deployed to Pages by `.github/workflows/pages.yml`.
+
+- **The reason for the framework is SSG, not DX.** 144 gazette pages and 20
+  rule pages are pre-rendered so search engines can read them; the previous
+  single-page app offered a crawler nothing. Do not add routes that cannot be
+  statically generated without saying what that costs.
+- **`web/lib/` must agree with `vidhana/search.py`.** Same documents match,
+  terms ANDed, standing identical. Ranking need not match — fts5 stems with
+  porter. `tests/test_web.py` runs the TypeScript through node's type stripping
+  to check this across both languages.
+- **`standing()` reads the resolver's output and never recomputes it.** A
+  second implementation is a second answer.
+- **Run `python3 -m vidhana export-web` before building the site**;
+  `scripts/copy-data.mjs` copies `docs/data` into `web/public` and fails loudly
+  when it is absent.
+- Gazette numbers contain a slash, so URLs use `2500-106`. The slash form stays
+  the identity everywhere else.
+
 ## Agreed direction
 
-**Next up: a production-grade front end**, so people can use the search with
-real use cases rather than cloning the repo and running Python. Dinal asked for
-this explicitly, after completeness. Constraints already settled by earlier
-decisions: it is served from `docs/` via GitHub Pages (which is why hosting has
-never had to be decided), the corpus is small enough to search client-side, and
-the resolver stays deterministic — **no LLM at query time**. Whatever it shows,
-it must carry the same two disclosures the CLI and the feed already carry:
-incomplete rule history, and low model confidence.
+**Administration is deferred, and its shape is already decided — do not build an
+admin UI.** Measured over the corpus there are ~10 things a human might ever
+want to correct (1 parse warning in 144, 6 validate disagreements, 3 needing
+OCR, 30 non-high-confidence summaries), growing by 3-6 gazettes a year. An
+admin UI would need auth and a backend, which would destroy the property that
+has been load-bearing since Phase 1: no server, no hosting decision, everything
+serves as static files. GitHub already is the admin surface — Actions runs the
+pipeline, commits are the audit log, PRs are the review queue.
+
+When it is time, build these three instead:
+
+1. **`data/corrections.json`** — tracked in git, applied deterministically after
+   parsing, keyed by gazette number and field, each entry carrying a reason.
+   Same pattern as `data/summaries.json`. This closes a real gap: today a parse
+   fix made in the database is thrown away by the next rebuild, so the only
+   durable fix is changing a regex — the wrong tool for a one-off like
+   `1789/09`, whose signatory is read off an address line.
+2. **PR-on-warning in the nightly job** — a new gazette that is clean publishes
+   itself; one with a parse warning or a low-confidence summary opens a PR and
+   waits. That is the actual job an admin UI would have done.
+3. **A public corpus-health page** on the Pages site — validation scores, parse
+   warnings, missing gazettes, last run. No auth, no backend, and it suits
+   building in public better than hiding the numbers behind a login.
+
+**The front end is built.** A lesson worth keeping from how it went: "production
+grade" meant a real application stack that can be extended, and it was first
+built as dependency-free vanilla JavaScript because I inferred constraints and
+then recorded my own inference here as a settled decision. **Do not do that** —
+when the stack is not stated, ask.
+
+Whatever the UI shows, it must carry the disclosures the CLI and the feed
+carry: incomplete rule history, low model confidence, and archive provenance.
+The resolver stays deterministic — **no LLM at query time**.
