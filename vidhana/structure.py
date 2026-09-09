@@ -481,3 +481,72 @@ def check(con: sqlite3.Connection) -> dict:
                          (f,)).fetchone()["c"]
         out[f] = (ok, tot)
     return out
+
+
+# ---------------------------------------------------------------------------
+# Export / import.
+#
+# The database is gitignored and deliberately disposable: everything in it can
+# be rebuilt from the listing and the PDFs — except this. Summaries are the one
+# artefact that cost money and cannot be reproduced byte for byte, so they are
+# exported to a tracked file. That makes the repository self-contained (clone,
+# fetch the PDFs, import, and the corpus is whole with no API key at all) and it
+# means a rebuilt database never pays for the same 137 documents twice.
+# ---------------------------------------------------------------------------
+
+SUMMARY_EXPORT = "data/summaries.json"
+
+_EXPORT_COLUMNS = ("no", "model", "summary", "audience", "obligation",
+                   "effective_date", "enabling_act", "authority", "tags",
+                   "confidence", "notes", "generated_at",
+                   "input_tokens", "output_tokens")
+
+
+def export_summaries(con: sqlite3.Connection, path: str = SUMMARY_EXPORT) -> int:
+    """Write every summary to a tracked JSON file.
+
+    Sorted by gazette number and written with a stable key order, so a re-export
+    after summarising one new document produces a one-record diff rather than a
+    reshuffled file. The point of tracking it is to be able to read that diff.
+    """
+    rows = [{c: r[c] for c in _EXPORT_COLUMNS}
+            for r in con.execute(
+                f"SELECT {', '.join(_EXPORT_COLUMNS)} FROM gazette_summary "
+                "ORDER BY no")]
+    with open(path, "w") as f:
+        json.dump(rows, f, indent=2, ensure_ascii=False, sort_keys=False)
+        f.write("\n")
+    return len(rows)
+
+
+def import_summaries(con: sqlite3.Connection, path: str = SUMMARY_EXPORT,
+                     overwrite: bool = False) -> dict:
+    """Load exported summaries into the database.
+
+    Skips gazettes we do not hold — the export can run ahead of a fetch — and by
+    default skips ones already summarised, so importing never silently discards
+    a fresher local run. `overwrite` is for restoring a database on purpose.
+    """
+    import os
+
+    if not os.path.exists(path):
+        return dict(loaded=0, skipped=0, unknown=0)
+    with open(path) as f:
+        rows = json.load(f)
+    held = {r["no"] for r in con.execute("SELECT no FROM gazette")}
+    have = {r["no"] for r in con.execute("SELECT no FROM gazette_summary")}
+    loaded = skipped = unknown = 0
+    for row in rows:
+        if row["no"] not in held:
+            unknown += 1
+            continue
+        if row["no"] in have and not overwrite:
+            skipped += 1
+            continue
+        con.execute(
+            f"INSERT OR REPLACE INTO gazette_summary ({', '.join(_EXPORT_COLUMNS)}) "
+            f"VALUES ({', '.join(':' + c for c in _EXPORT_COLUMNS)})",
+            {c: row.get(c) for c in _EXPORT_COLUMNS})
+        loaded += 1
+    con.commit()
+    return dict(loaded=loaded, skipped=skipped, unknown=unknown)

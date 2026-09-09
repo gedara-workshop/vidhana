@@ -13,6 +13,8 @@
     python -m vidhana reindex                rebuild the index and facets
     python -m vidhana whatsnew --since 2025-01-01   what changed, and what it changed
     python -m vidhana feed                   write the Atom feeds under docs/feeds
+    python -m vidhana summaries export       the LLM output, tracked in git
+    python -m vidhana summaries import       restore it without paying again
     python -m vidhana chain 2500/106       walk the raw amendment edges
     python -m vidhana resolve              rebuild rule threads and in-force state
     python -m vidhana threads              list the rule threads
@@ -417,6 +419,18 @@ def cmd_feed(a):
         print(f"  {w['name']:<15} {w['entries']:>3} entries  {state:<9} {w['path']}")
 
 
+def cmd_summaries(a):
+    con = db.connect(a.db)
+    db.init(con)
+    if a.action == "export":
+        n = structure.export_summaries(con, a.path)
+        print(f"exported {n} summaries to {a.path}")
+    else:
+        r = structure.import_summaries(con, a.path, overwrite=a.overwrite)
+        print(f"loaded {r['loaded']}, already present {r['skipped']}, "
+              f"not in this corpus {r['unknown']}")
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(prog="vidhana", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -494,6 +508,13 @@ def main(argv=None):
                    choices=["published", "amends", "rescinds", "effective_change"])
     w.add_argument("--limit", type=int, default=50)
     w.set_defaults(fn=cmd_whatsnew)
+
+    sm = sub.add_parser("summaries")
+    sm.add_argument("action", choices=["export", "import"])
+    sm.add_argument("--path", default=structure.SUMMARY_EXPORT)
+    sm.add_argument("--overwrite", action="store_true",
+                    help="replace summaries already in the database")
+    sm.set_defaults(fn=cmd_summaries)
 
     fd = sub.add_parser("feed")
     fd.add_argument("--out", default=alerts.FEED_DIR)
