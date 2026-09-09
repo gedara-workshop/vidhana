@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from vidhana import db, resolve, search, web
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CORE = os.path.join(ROOT, "docs", "core.js")
+CORE = os.path.join(ROOT, "web", "lib")
 NODE = shutil.which("node")
 
 
@@ -107,16 +107,33 @@ class Export(unittest.TestCase):
         self.assertEqual(bodies, {})
 
 
-@unittest.skipUnless(NODE, "node is not installed")
+@unittest.skipUnless(NODE and os.path.isdir(CORE), "node or the web app is unavailable")
 class JsCore(unittest.TestCase):
-    """Exercise docs/core.js directly — these are the functions that must not
-    drift from vidhana/search.py."""
+    """Exercise the front end's own modules against the Python they must agree
+    with. The TypeScript is run directly through node's type stripping, so this
+    tests the code that actually ships rather than a copy of it.
+
+    The unit-level behaviour of those modules is covered by `npm test` in web/.
+    What lives here is the half that needs both languages in one process."""
 
     def run_js(self, body):
-        with open(CORE) as f:
-            core = f.read()
-        script = f"{core}\nconst C = globalThis.VidhanaCore;\n{body}"
-        r = subprocess.run([NODE, "-e", script], capture_output=True, text=True)
+        script = (
+            'import * as S from "./search.ts";\n'
+            'import * as T from "./standing.ts";\n'
+            "const C = { ...S, standing: T.standingOf, tokens: S.tokenise, "
+            "depl: S.depluralise, buildIndex: S.buildIndex, score: S.score, "
+            "matches: (g, f) => S.matches(g, f) };\n" + body)
+        path = os.path.join(CORE, "_parity_check.mts")
+        with open(path, "w") as f:
+            f.write(script)
+        try:
+            r = subprocess.run(
+                [NODE, "--experimental-strip-types",
+                 "--disable-warning=ExperimentalWarning",
+                 "--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", path],
+                capture_output=True, text=True, cwd=CORE)
+        finally:
+            os.path.exists(path) and os.remove(path)
         self.assertEqual(r.returncode, 0, r.stderr)
         return r.stdout.strip()
 
@@ -143,19 +160,19 @@ class JsCore(unittest.TestCase):
         today, then = got
         self.assertEqual(today["pill"], "Rescinded")
         self.assertEqual(then["pill"], "In force on this date")
-        self.assertIn("Rescinded since", then["conseq"])
-        self.assertIn("2104/04", then["conseq"])
+        self.assertIn("Rescinded since", then["consequence"])
+        self.assertIn("2104/04", then["consequence"])
 
     def test_standing_matches_the_resolver(self):
         cases = [
             (dict(no="2463/05", status="rescinded", rescinded_by="2481/22",
-                  rescinded_from="2026-07-01", head_no="2500/106"), "res"),
-            (dict(no="2481/22", status="in_force", head_no="2500/106"), "sup"),
-            (dict(no="2500/106", status="in_force", head_no="2500/106"), "ok"),
-            (dict(no="2088/25", status="standalone", head_no=None), "ok"),
+                  rescinded_from="2026-07-01", head_no="2500/106"), "rescinded"),
+            (dict(no="2481/22", status="in_force", head_no="2500/106"), "superseded"),
+            (dict(no="2500/106", status="in_force", head_no="2500/106"), "current"),
+            (dict(no="2088/25", status="standalone", head_no=None), "current"),
         ]
         got = json.loads(self.run_js(
-            f'console.log(JSON.stringify({json.dumps([c[0] for c in cases])}.map((g) => C.standing(g).cls)))'))
+            f'console.log(JSON.stringify({json.dumps([c[0] for c in cases])}.map((g) => C.standing(g).kind)))'))
         self.assertEqual(got, [c[1] for c in cases])
 
     def test_as_of_uses_the_effective_date_not_publication(self):
