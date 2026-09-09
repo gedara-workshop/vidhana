@@ -432,6 +432,7 @@ def check(con: sqlite3.Connection) -> dict:
     rows = con.execute(
         "SELECT g.no, g.effective_from, g.enabling_act, g.authority, "
         "       s.effective_date AS m_eff, s.enabling_act AS m_act, s.authority AS m_auth, "
+        "       s.audience AS m_audience, g.subject, "
         "       (SELECT MIN(date) FROM gazette_date d WHERE d.no=g.no AND d.kind='effective') AS stated_eff "
         "FROM gazette g JOIN gazette_summary s ON s.no=g.no").fetchall()
     for r in rows:
@@ -457,9 +458,24 @@ def check(con: sqlite3.Connection) -> dict:
             con.execute("INSERT OR REPLACE INTO summary_check VALUES (?,?,?,?,?)",
                         (r["no"], "authority", r["authority"], r["m_auth"],
                          int(_same_person(r["authority"], r["m_auth"]))))
+        # Audience is the one field with no deterministic counterpart in the
+        # text — it is not in the documents at all. What can be checked is
+        # whether the model stayed inside the candidate list it was given, which
+        # is the instruction most likely to be quietly disobeyed. Documents
+        # whose Act has no map are skipped: there was nothing to obey, and
+        # scoring them would grade our curation as the model's error.
+        from .search import ground_audience
+        cands = audience_candidates((r["enabling_act"] or "").replace("The ", ""), r["subject"])
+        strings = json.loads(r["m_audience"] or "[]")
+        if cands and strings:
+            results = [ground_audience(r["enabling_act"], a, r["subject"]) for a in strings]
+            con.execute("INSERT OR REPLACE INTO summary_check VALUES (?,?,?,?,?)",
+                        (r["no"], "audience_grounded", "; ".join(cands),
+                         "; ".join(strings),
+                         int(all(why == "grounded" for _, why in results))))
     con.commit()
     out = {}
-    for f in ("effective_date", "enabling_act", "authority"):
+    for f in ("effective_date", "enabling_act", "authority", "audience_grounded"):
         tot = con.execute("SELECT COUNT(*) c FROM summary_check WHERE field=?", (f,)).fetchone()["c"]
         ok = con.execute("SELECT COUNT(*) c FROM summary_check WHERE field=? AND agrees=1",
                          (f,)).fetchone()["c"]

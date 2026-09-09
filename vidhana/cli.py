@@ -310,10 +310,12 @@ def cmd_validate(a):
     n = con.execute("SELECT COUNT(*) c FROM gazette_summary").fetchone()["c"]
     if not n:
         sys.exit("no summaries yet — run `vidhana structure` first")
-    print(f"grading {n} summaries against fields Phase 1 derived deterministically\n")
+    print(f"grading {n} summaries\n")
+    print("  three fields Phase 1 also derives by rule, plus whether the model stayed")
+    print("  inside the audience candidates its Act allows\n")
     for field, (ok, tot) in res.items():
         pct = f"{100*ok//tot}%" if tot else "n/a"
-        print(f"  {field:<16} {ok:>3}/{tot:<3} agree  ({pct})")
+        print(f"  {field:<18} {ok:>3}/{tot:<3} agree  ({pct})")
     dis = con.execute(
         "SELECT no, field, deterministic, model_value FROM summary_check "
         "WHERE agrees=0 ORDER BY field, no").fetchall()
