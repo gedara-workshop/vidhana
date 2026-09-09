@@ -71,7 +71,7 @@ The part that does not go away: a gazette nobody indexes, which rescinds one we 
 
 Early and building in public. This repo starts with the plan, not a finished product, commits will show the real build as it happens, evenings at a time. No live product yet, check the roadmap below for where things stand.
 
-Stack is Python and SQLite. No service to run, the whole corpus is 144 documents.
+Stack is Python and SQLite for the pipeline, Next.js and TypeScript for the site. No service to run — the corpus is 144 documents and the site is statically exported.
 
 ## Try it
 
@@ -86,7 +86,7 @@ Search returns the *rule*, not the documents that mention it. Every result says 
 - [x] **Phase 2, Structuring.** LLM pass over the cleaned text for a plain-English summary, the affected audience grounded on the enabling Act, effective dates, and tags.
 - [x] **Phase 3, Search.** Full-text and topic search across the corpus, with the resolved state of a rule rather than just the documents that mention it.
 - [x] **Phase 4, Alerts.** Daily check, notify on what is new and what it changes.
-- [x] **Phase 5, Search on the web.** A static front end so the corpus is usable without cloning the repo.
+- [x] **Phase 5, Search on the web.** A Next.js front end so the corpus is usable without cloning the repo — and so every gazette and rule is a page a search engine can read.
 
 All four phases are done. The pipeline runs nightly and publishes Atom feeds: [everything](https://gedara-workshop.github.io/vidhana/feeds/all.xml), or one per subject — [income tax](https://gedara-workshop.github.io/vidhana/feeds/income-tax.xml), [VAT](https://gedara-workshop.github.io/vidhana/feeds/vat.xml), [stamp duty](https://gedara-workshop.github.io/vidhana/feeds/stamp-duty.xml). Method in [PHASE4.md](PHASE4.md).
 

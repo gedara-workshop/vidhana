@@ -2,13 +2,32 @@
 
 Search, in a browser, at
 [gedara-workshop.github.io/vidhana](https://gedara-workshop.github.io/vidhana/).
-No server, no build step, no framework. The corpus is 144 documents and the
-whole thing serves as static files from `docs/` — which is what has kept the
-hosting decision open since Phase 1.
+**Next.js 15, App Router, TypeScript**, statically exported and deployed from
+GitHub Actions.
 
 ```bash
 python3 -m vidhana export-web    # writes docs/data/{index,bodies}.json
+cd web && npm run dev            # the app
+cd web && npm test               # 12 unit tests
 ```
+
+## Why a framework, when a single page worked
+
+The first version was 550 lines of vanilla JavaScript, and it worked. It was
+also **one page with query parameters**, which means a crawler saw nothing.
+
+The Next build pre-renders **144 gazette pages and 20 rule pages**. That is the
+whole argument, and it is a product one rather than a technical one: search is
+the acquisition channel for a tool nobody has heard of. Someone looking for a
+tax invoice format should land on `2481/22`, read *"Superseded. 2500/106 is the
+current document in this rule"* in the search snippet, and follow it — never
+having known this site existed. No amount of polish on a single-page app gets
+that, because there is nothing for a crawler to read.
+
+`output: "export"` is a deployment choice, not an architectural one. Every route
+uses server components and `generateStaticParams`, so moving to a Node host for
+ISR or route handlers means editing `next.config.ts` rather than the
+application.
 
 ## Why the browser gets the whole corpus
 
@@ -93,12 +112,20 @@ with real history entries, so back works and a result can be pasted into an
 email. That is how a gazette reference actually travels between people, and a
 search tool that cannot be linked to loses the argument before it starts.
 
-## Design source
+## Layout
 
-`design/*.dc.html` are the working files behind the design canvas: flows,
-screens, and the qualifier system. They re-seed the canvas whenever the design
-changes. The seeded `.html` is gitignored — it is ~2 MB of editor payload and
-is rebuilt from these sources.
+```
+web/lib/        types, search, standing — the parts that must agree with Python
+web/app/        routes: search, /gazette/[slug], /rule/[id], /feeds
+web/components/ the qualifier system, made real
+docs/data/      the exported corpus (written by Python, committed)
+docs/feeds/     the Atom feeds (written by Python, copied into the build)
+design/         .dc.html sources behind the design canvas
+```
+
+Two workflows, deliberately separate. `gazettes.yml` owns the corpus and must
+not miss a night; `pages.yml` owns the site and runs after it. A failed site
+build never blocks the gazette check.
 
 ## Known limits
 
