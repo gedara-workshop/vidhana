@@ -29,7 +29,10 @@ function Masthead() {
   return (
     <header className="border-b-[3px] border-double px-6 pb-5 pt-7 text-center md:px-14"
             style={{ borderColor: "var(--ink)" }}>
-      <p className="label">Inland Revenue · 2006–2026 · 144 documents</p>
+      <p className="label" style={{ textWrap: "balance" }}>
+        Inland Revenue · 2006–2026
+        <span className="hidden sm:inline"> · 144 documents</span>
+      </p>
       <Link href="/" className="mt-2 block text-[38px] font-bold leading-none tracking-[0.01em] md:text-[44px]">
         Vidhana
       </Link>
