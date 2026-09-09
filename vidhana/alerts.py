@@ -103,3 +103,76 @@ def record(con, now: str | None = None) -> dict:
                         [(k,) for k in stale])
     con.commit()
     return dict(total=len(events), new=len(fresh), dropped=len(stale), events=fresh)
+
+
+def describe(con, event: dict) -> dict:
+    """Turn an event into the thing a reader needs, in one place.
+
+    Both `whatsnew` and the Atom feed render from this, so the terminal and the
+    feed can never drift into saying different things about the same change.
+    """
+    g = con.execute(
+        "SELECT g.no, g.published_date, g.title, g.subject, g.source_url, "
+        "       g.effective_from, g.status, g.thread_id, "
+        "       s.summary, s.obligation, s.confidence "
+        "FROM gazette g LEFT JOIN gazette_summary s ON s.no = g.no "
+        "WHERE g.no = ?", (event["no"],)).fetchone()
+    d = dict(event, title=g["title"], subject=g["subject"], url=g["source_url"],
+             summary=g["summary"], effective_from=g["effective_from"],
+             obligation=g["obligation"], confidence=g["confidence"],
+             # Distinct: several model strings routinely ground to one
+             # candidate, and "VAT-registered businesses, VAT-registered
+             # businesses" is not a more precise answer than one of them.
+             audience=list(dict.fromkeys(
+                 r["coarse"] or r["audience"] for r in con.execute(
+                     "SELECT audience, coarse FROM gazette_audience WHERE no=?",
+                     (event["no"],)))),
+             target_title=None, head_no=None, head_date=None)
+
+    if event["target_no"]:
+        t = con.execute("SELECT title, published_date FROM gazette WHERE no=?",
+                        (event["target_no"],)).fetchone()
+        d["target_title"] = t["title"] if t else None
+
+    # The current document of the affected rule. This is the line that makes an
+    # alert actionable rather than merely informative: not "2481/22 changed" but
+    # "the rule you follow is now 2500/106".
+    if g["thread_id"]:
+        h = con.execute(
+            "SELECT t.head_no, g.published_date FROM rule_thread t "
+            "JOIN gazette g ON g.no = t.head_no WHERE t.thread_id = ?",
+            (g["thread_id"],)).fetchone()
+        if h:
+            d["head_no"], d["head_date"] = h["head_no"], h["published_date"]
+
+    d["headline"] = _headline(d)
+    return d
+
+
+def _headline(d: dict) -> str:
+    subject = f"[{d['subject']}]" if d["subject"] else ""
+    if d["kind"] == "published":
+        return f"{d['no']} {subject} {d['title']}".strip()
+    if d["kind"] == "effective_change":
+        return (f"{d['no']} {subject} changes when {d['target_no']} takes effect").strip()
+    verb = "amends" if d["kind"] == "amends" else "rescinds"
+    return f"{d['no']} {subject} {verb} {d['target_no']}".strip()
+
+
+def whatsnew(con, since: str | None = None, subject=None, kind=None,
+             limit: int = 50) -> list[dict]:
+    """Events, newest first, described. `since` filters on the gazette's
+    publication date rather than on when we detected it — a reader asking what
+    changed since January means changes to the law, not changes to our database.
+    """
+    sql = ("SELECT e.* FROM gazette_event e JOIN gazette g ON g.no = e.no WHERE 1=1")
+    params: list = []
+    if since:
+        sql += " AND e.event_date >= ?"; params.append(since)
+    if subject:
+        sql += f" AND g.subject IN ({','.join('?' * len(subject))})"; params += list(subject)
+    if kind:
+        sql += f" AND e.kind IN ({','.join('?' * len(kind))})"; params += list(kind)
+    sql += " ORDER BY e.event_date DESC, e.no DESC, e.kind LIMIT ?"
+    params.append(limit)
+    return [describe(con, dict(r)) for r in con.execute(sql, params)]
