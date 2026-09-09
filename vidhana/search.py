@@ -303,6 +303,13 @@ def facets(con, min_uses: int = 3) -> dict:
 def _annotate(r: dict) -> dict:
     """Attach the one-line reading of a hit's standing, so callers do not each
     re-derive it from four columns."""
+    # Extraction runs `pdftotext -layout`, which preserves the column spacing
+    # that keeps clause numbers attached to their clauses. In a one-line snippet
+    # that spacing is just a run of blanks wide enough to push the match off the
+    # screen, so it is collapsed here rather than at extraction time, where it
+    # is load-bearing.
+    if r.get("snip"):
+        r["snip"] = " ".join(r["snip"].split())
     if r.get("status") == "rescinded":
         r["standing"] = (f"rescinded by {r['rescinded_by']} from {r['rescinded_from']}"
                          if r.get("rescinded_by") else "rescinded")
