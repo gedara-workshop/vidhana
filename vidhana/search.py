@@ -313,3 +313,42 @@ def _annotate(r: dict) -> dict:
     else:
         r["standing"] = "standalone"
     return r
+
+
+def rules(con, query: str, limit: int = 10, **filters) -> list[dict]:
+    """Search, rolled up to one result per rule instead of one per document.
+
+    This is the answer to the question the README promises: not "which
+    documents mention this" but "what is the rule". Searching "tax invoice"
+    returns three documents that are three drafts of one rule; a reader wants
+    one result whose answer is 2500/106, with the other two visible as the
+    history behind it rather than as competing hits.
+
+    A thread's score is its best-matching document's, so a rule surfaces on the
+    strength of whichever of its documents states the matter most plainly —
+    often the original, whose successors are terse amendments that would rank
+    the whole rule down if scores were averaged.
+
+    Standalone documents are threads of one and are returned alongside, because
+    "this gazette amends nothing and nothing amends it" is an answer, not a
+    reason to be excluded.
+    """
+    hits = search(con, query, limit=500, **filters)
+    threads: dict[object, dict] = {}
+    for h in hits:
+        key = h["thread_id"] or f"solo:{h['no']}"
+        t = threads.get(key)
+        if t is None:
+            t = threads[key] = dict(
+                thread_id=h["thread_id"], score=h["score"], size=h["thread_size"] or 1,
+                head_no=h["head_no"] or h["no"], subject=h["subject"], matches=[])
+            t["current"] = con.execute(
+                "SELECT g.no, g.published_date, g.title, g.effective_from, g.status, "
+                "       s.summary FROM gazette g LEFT JOIN gazette_summary s ON s.no=g.no "
+                "WHERE g.no=?", (t["head_no"],)).fetchone()
+        t["score"] = min(t["score"], h["score"])
+        t["matches"].append(h)
+    out = sorted(threads.values(), key=lambda t: t["score"])[:limit]
+    for t in out:
+        t["matches"].sort(key=lambda h: h["published_date"])
+    return out
