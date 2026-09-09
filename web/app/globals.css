@@ -107,7 +107,13 @@ body {
     color: var(--ink);
   }
   .field::placeholder { opacity: .32; }
-  .field:focus { outline: none; border-bottom-width: 2.5px; }
+  /* The underline thickening is the focus indicator; an outline on top of it
+     draws a box around a field that deliberately has no box. */
+  .field:focus, .field:focus-visible { outline: none; border-bottom-width: 2.5px; }
+  /* Chrome paints its own clear button in the browser's accent colour, which on
+     a page with exactly one ink is the only coloured pixel on screen. */
+  .field::-webkit-search-cancel-button,
+  .field::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }
 
   .link { text-decoration: underline; text-underline-offset: 3px;
           text-decoration-thickness: 1px; text-decoration-color: var(--hair-strong); }
