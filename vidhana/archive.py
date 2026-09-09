@@ -113,3 +113,74 @@ def find(no: str, timeout: int = 60) -> list[dict]:
                             snapshot=WAYBACK.format(ts=ts, url=orig)))
     out.sort(key=lambda r: r["timestamp"], reverse=True)
     return out
+
+
+def missing(con) -> list[dict]:
+    """Gazettes our documents reference but the corpus does not hold.
+
+    Split by whether they fall inside the listing's own covered range, because
+    the two mean different things. Outside it is expected — the listing starts
+    in 2006 and a 1982 order it rescinds was never going to be there. Inside it
+    is a defect in the source, and the reason `search` cannot simply assert
+    "in force".
+    """
+    span = con.execute(
+        "SELECT MIN(CAST(substr(no,1,instr(no,'/')-1) AS INT)) lo, "
+        "       MAX(CAST(substr(no,1,instr(no,'/')-1) AS INT)) hi FROM gazette").fetchone()
+    rows = con.execute(
+        "SELECT DISTINCT r.dst_no, r.relation, r.src_no, g.published_date "
+        "FROM gazette_reference r JOIN gazette g ON g.no = r.src_no "
+        "WHERE NOT EXISTS (SELECT 1 FROM gazette h WHERE h.no = r.dst_no) "
+        "ORDER BY r.dst_no").fetchall()
+    out = []
+    for r in rows:
+        n = int(r["dst_no"].split("/")[0])
+        out.append(dict(no=r["dst_no"], relation=r["relation"], referenced_by=r["src_no"],
+                        in_range=bool(span["lo"] <= n <= span["hi"])))
+    return out
+
+
+def backfill(con, no: str, snapshot: dict | None = None, use_ocr: bool = True) -> dict:
+    """Recover one gazette from the archive and run it through the pipeline.
+
+    The document is inserted with `source='web-archive'` and the snapshot URL in
+    `source_detail`, so nothing downstream can mistake it for something the IRD
+    published. Everything else — extraction, parsing, the reference graph — is
+    the ordinary Phase 1 path, because a recovered gazette is only useful if it
+    is treated exactly as rigorously as a listed one.
+    """
+    from . import db, pipeline
+
+    if con.execute("SELECT 1 FROM gazette WHERE no=?", (no,)).fetchone():
+        return dict(no=no, status="already held")
+    hits = snapshot and [snapshot] or find(no)
+    if not hits:
+        return dict(no=no, status="no snapshot")
+    hit = hits[0]
+
+    # The archive's own timestamp is when it crawled, not when the gazette was
+    # published. The real date is in the document, and `process` parses it into
+    # header_date — so this is a placeholder that gets corrected below, never a
+    # claim.
+    year = int(re.search(r"/(\d{4})/", hit["url"]).group(1)) if re.search(r"/(\d{4})/", hit["url"]) else int(hit["timestamp"][:4])
+    db.upsert_gazette(con, dict(
+        no=no, year=year, published_date=f"{year}-01-01",
+        title=f"(recovered from the Internet Archive; not in the IRD listing)",
+        source_url=hit["snapshot"], source="web-archive",
+        source_detail=f"{hit['url']} @ {hit['timestamp']}"))
+    con.commit()
+
+    row = con.execute("SELECT * FROM gazette WHERE no=?", (no,)).fetchone()
+    res = pipeline.process(con, row, use_ocr=use_ocr)
+
+    # Correct the placeholder from what the document itself says. The PDF header
+    # is authoritative for a document the listing never carried — there is no
+    # listing row to disagree with.
+    g = con.execute("SELECT header_date, enabling_act FROM gazette WHERE no=?", (no,)).fetchone()
+    if g["header_date"]:
+        db.upsert_gazette(con, dict(no=no, published_date=g["header_date"],
+                                    year=int(g["header_date"][:4])))
+        con.commit()
+    return dict(no=no, status="recovered", snapshot=hit["snapshot"],
+                published=g["header_date"], act=g["enabling_act"],
+                warnings=res["warnings"])

@@ -69,9 +69,15 @@ def process(con, row, force: bool = False, use_ocr: bool = True) -> dict:
     header_no, header_date = parse.header(text)
     act, act_no = parse.enabling_act(text)
     name, role = parse.authority(text)
-    if header_no and header_no != no:
+    # These two compare the PDF against the listing. A gazette recovered from an
+    # archive has no listing row to disagree with — its date is a placeholder
+    # that the parsed header then corrects — so the comparison would only ever
+    # report our own placeholder back at us.
+    keys = row.keys() if hasattr(row, "keys") else row
+    listed = ("source" not in keys) or row["source"] != "web-archive"
+    if listed and header_no and header_no != no:
         warnings.append(f"pdf header says {header_no}, listing says {no}")
-    if header_date and header_date != row["published_date"]:
+    if listed and header_date and header_date != row["published_date"]:
         warnings.append(f"pdf date {header_date} != listing {row['published_date']}")
     if not act:
         warnings.append("no enabling act found")
