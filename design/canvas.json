@@ -1,32 +1,27 @@
 {
   "pages": [
-    { "id": "page-0", "name": "Directions" },
-    { "id": "page-2", "name": "Screens (built)" },
+    { "id": "page-0", "name": "Chosen — Archival" },
     { "id": "page-3", "name": "Qualifiers" },
-    { "id": "page-1", "name": "Flows" }
+    { "id": "page-1", "name": "Flows" },
+    { "id": "page-4", "name": "Directions not taken" }
   ],
   "artboards": [
-    { "file": "Archival.dc.html",  "x": 0,    "y": 0, "w": 900,  "h": 1160, "page": "page-0" },
-    { "file": "Editorial.dc.html", "x": 1000, "y": 0, "w": 980,  "h": 1160, "page": "page-0" },
-    { "file": "Civic.dc.html",     "x": 2080, "y": 0, "w": 940,  "h": 1160, "page": "page-0" },
-
-    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1280, "h": 960, "page": "page-2" },
-    { "file": "Landing.dc.html", "x": 1380, "y": 0, "w": 1240, "h": 920, "page": "page-2" },
-    { "file": "RuleDetail.dc.html", "x": 0, "y": 1090, "w": 1080, "h": 1080, "page": "page-2" },
-    { "file": "AsOf.dc.html", "x": 1180, "y": 1090, "w": 1000, "h": 900, "page": "page-2" },
-
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 900, "h": 1160, "page": "page-0" },
     { "file": "Qualifiers.dc.html", "x": 0, "y": 0, "w": 1120, "h": 1140, "page": "page-3" },
-    { "file": "Flows.dc.html", "x": 0, "y": 0, "w": 1420, "h": 1240, "page": "page-1" }
+    { "file": "Flows.dc.html", "x": 0, "y": 0, "w": 1420, "h": 1240, "page": "page-1" },
+    { "file": "Archival.dc.html",  "x": 0,    "y": 0, "w": 900, "h": 1160, "page": "page-4" },
+    { "file": "Editorial.dc.html", "x": 1000, "y": 0, "w": 980, "h": 1160, "page": "page-4" },
+    { "file": "Civic.dc.html",     "x": 2080, "y": 0, "w": 940, "h": 1160, "page": "page-4" }
   ],
   "annotations": [
-    { "id": "dir-note", "x": 3100, "y": 40, "w": 320,
-      "text": "Three directions, same content so they compare directly.\n\nEach has a Dark tweak above it.\n\nArchival — one ink, one paper. Character from typography and restraint, no colour at all.\n\nEditorial — the gazette number as the hero. One hot signal colour. Dark by default.\n\nCivic — ochre, seal red, paper stock. Most rooted, most at risk of costume.", "page": "page-0" },
-    { "id": "built-note", "x": 2700, "y": 40, "w": 300,
-      "text": "This is what is built and in PR #11 — the app-shell direction.\n\nIt works. It reads as any B2B dashboard, which is the problem we are fixing.", "page": "page-2" },
+    { "id": "chosen-note", "x": 980, "y": 40, "w": 320,
+      "text": "Archival — chosen, and now built.\n\nOne ink, one paper. State is carried by weight, italics, opacity and a ruled underline, so nothing depends on seeing a hue: the page reads correctly in monochrome and under every colour-vision difference.\n\nThe earlier design needed a rule — never colour alone. This one cannot break it.", "page": "page-0" },
     { "id": "qual-note", "x": 1200, "y": 40, "w": 300,
-      "text": "The qualifier logic survives whichever direction wins.\n\nState as a recognised mark, only the consequence as words, each caveat scoped to the claim it weakens.", "page": "page-3" },
+      "text": "The qualifier logic survived the change of direction intact: state as a mark you recognise, only the consequence as words, each caveat scoped to the claim it weakens.\n\nOnly its expression moved — from tinted pills to ruled mono marks.", "page": "page-3" },
     { "id": "flows-note", "x": 1500, "y": 40, "w": 300,
-      "text": "Unchanged. The flows were never the problem.", "page": "page-1" }
+      "text": "Unchanged throughout. The flows were never the problem.", "page": "page-1" },
+    { "id": "notaken-note", "x": 3100, "y": 40, "w": 320,
+      "text": "Kept for the record.\n\nEditorial — the gazette number as hero, one hot signal colour, dark by default. The most memorable of the three.\n\nCivic — ochre and seal red on paper stock, drawn from Sri Lankan civic print. The most rooted, and the most at risk of costume.", "page": "page-4" }
   ],
   "launch": { "view": "canvas", "page": "page-0" }
 }

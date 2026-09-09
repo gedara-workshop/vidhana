@@ -82,6 +82,27 @@ since is the second line rather than the headline.
 looked plausible while doing it. Caught by driving a real browser; no amount of
 reading would have found it, because every file parsed cleanly.
 
+## The visual direction: archival
+
+One ink on one paper, Spectral and IBM Plex Mono, and **no colour at all**.
+
+Two earlier attempts — a quiet document-like page, then a conventional app
+shell — both read as characterless, which was a pattern in the choices rather
+than bad luck: both optimised for inoffensive, and the subject matter is not
+inoffensive. Supersession, retroactive dates and a government listing that
+loses its own documents are dramatic, and neither design said so.
+
+Archival takes the gazette's own register: a double-ruled masthead, an imprint
+line in mono small caps, entries separated by hairlines, and the amendment
+history as a chronological spine with a filled node for the document that is
+current and hollow nodes for the rest.
+
+Removing colour turned out to be a correctness improvement, not only an
+aesthetic one. The previous design needed a rule — *never colour alone* — and
+this one **cannot break it**: the word is always present, opacity ranks the
+three states rather than encoding them, and the page reads correctly in
+monochrome and under every colour-vision difference.
+
 ## The qualifier system
 
 A result can carry five caveats. Stacked as badges they are a wall nobody
@@ -95,15 +116,16 @@ line at all, because there is nothing to act on.
 
 | caveat | where | why there |
 |---|---|---|
-| provenance (`recovered`) | beside the number | qualifies the document's identity |
-| state | pill, always present | the only thing a reader must act on |
-| consequence | one line under the title | the only sentence |
-| missing history | chip row | weakens the standing claim, so it sits with the facts |
-| summary confidence | chip row | scoped so it can never read as doubt about the law |
+| state | ruled mono mark, always present | the only thing a reader must act on |
+| consequence | one italic line under the title | the only sentence |
+| missing history | tag row, dashed border | weakens the standing claim, so it sits with the facts |
+| summary confidence | tag row | scoped so it can never read as doubt about the law |
+| provenance (`recovered`) | tag row | qualifies the document's identity |
 
-Rescinded uses a muted brick, not alarm red: a rescinded gazette is a normal
-historical fact, and shouting makes the genuinely urgent case unreadable. Every
-state carries a word as well as a colour.
+Nothing is red, because nothing here is an error: a rescinded gazette is a
+normal historical fact, and shouting makes the genuinely urgent case
+unreadable. Nothing is any colour at all — the mark's opacity ranks the three
+states and the word carries the meaning.
 
 ## Addressability
 

@@ -251,6 +251,13 @@ Not yet chosen — do not assume, ask:
   when it is absent.
 - Gazette numbers contain a slash, so URLs use `2500-106`. The slash form stays
   the identity everywhere else.
+- **The visual direction is archival: one ink, one paper, no colour.** Chosen
+  after two characterless attempts. State is carried by weight, italics,
+  opacity and a ruled underline; the word is always present, so nothing depends
+  on seeing a hue. **Do not reintroduce colour-coded status** — it would undo
+  the property that makes the page correct in monochrome and under every
+  colour-vision difference. Design sources in `design/`, chosen direction in
+  `Main.dc.html`, the two rejected ones kept on their own canvas page.
 
 ## Agreed direction
 
