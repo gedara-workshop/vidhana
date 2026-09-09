@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { Consequence, GapTag, Mark, WarnIcon } from "@/components/Standing";
+import { Consequence, GapTag, Mark } from "@/components/Standing";
 import { allGazettes, gazette, missingFrom, thread, threadMembers } from "@/lib/corpus";
 import { formatDate, fromSlug, standingOf, toSlug } from "@/lib/standing";
 
@@ -48,140 +48,128 @@ export default async function GazettePage(
   const s = standingOf(g);
 
   return (
-    <main className="mx-auto max-w-4xl px-6 py-8">
-      <Link className="btn mb-4" href="/">← Search the corpus</Link>
+    <article className="mx-auto max-w-[820px] px-6 pb-10 pt-8 md:px-14">
+      <Link className="label !opacity-100 underline underline-offset-4" href="/">
+        ← Search the corpus
+      </Link>
 
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className="chip">{g.subject}</span>
-        {t ? <span className="chip">{t.size} documents in this rule</span>
-           : <span className="chip">standalone</span>}
+      <div className="mt-6 border-b pb-4" style={{ borderColor: "var(--hair-strong)" }}>
+        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
+          <span className="mono text-[17px] font-medium">{g.no}</span>
+          <span className="mono text-[12px] opacity-50">
+            {formatDate(g.published_date)}
+            {g.effective_from && g.effective_from !== g.published_date &&
+              ` · effective ${formatDate(g.effective_from)}`}
+          </span>
+          <span className="grow" />
+          <Mark g={g} />
+        </div>
+        <h1 className="mt-3 max-w-[680px] text-[30px] leading-[1.22]">{g.title}</h1>
+        <Consequence g={g} />
+      </div>
+
+      {g.summary && (
+        <p className="mt-5 max-w-[660px] text-[17px] leading-[1.6]">{g.summary}</p>
+      )}
+      {g.confidence && g.confidence !== "high" && (
+        <p className="mt-3 max-w-[660px] text-[13.5px] italic opacity-60">
+          This summary was generated with {g.confidence} confidence. Read the gazette before
+          relying on it.
+        </p>
+      )}
+
+      <p className="mt-6 flex flex-wrap items-center gap-5">
+        <a className="text-[16px] font-semibold link" href={g.source_url} rel="noopener">
+          Open the gazette PDF →
+        </a>
+        {head && head.no !== g.no && (
+          <Link className="text-[16px] italic link" href={`/gazette/${toSlug(head.no)}/`}>
+            Go to {head.no}, the current document →
+          </Link>
+        )}
+      </p>
+
+      <div className="mt-5 flex flex-wrap items-center gap-[10px]">
+        <span className="tag">{g.subject}</span>
+        {t ? <span className="tag">{t.size} in this rule</span> : <span className="tag">standalone</span>}
         {g.source !== "ird-listing" && (
-          <span className="chip" title="Not in the IRD listing; recovered from the Internet Archive">
+          <span className="tag" title="Not in the IRD listing; recovered from the Internet Archive">
             recovered
           </span>
         )}
         <GapTag missing={missing} />
       </div>
 
-      <div className="card rounded-[10px] p-6" style={{ borderLeftWidth: 4, borderLeftColor: `var(--${s.kind === "rescinded" ? "res" : s.kind === "superseded" ? "sup" : "ok"})` }}>
-        <div className="flex flex-wrap items-center gap-3">
-          <Mark g={g} />
-          <span className="grow" />
-          <span className="font-mono text-[11.5px]" style={{ color: "var(--dim)" }}>
-            published {formatDate(g.published_date)}
-            {g.effective_from && g.effective_from !== g.published_date &&
-              ` · effective ${formatDate(g.effective_from)}`}
-          </span>
-        </div>
-        <h1 className="mt-3 text-[24px] font-semibold leading-tight tracking-tight">
-          <span className="font-mono">{g.no}</span> — {g.title}
-        </h1>
-        <Consequence g={g} />
-        {g.summary && (
-          <p className="mt-3 max-w-[700px] text-[14.5px] leading-relaxed" style={{ color: "var(--dim)" }}>
-            {g.summary}
-          </p>
-        )}
-        {g.confidence && g.confidence !== "high" && (
-          <p className="mt-2 text-[11.5px] leading-relaxed" style={{ color: "var(--dim)" }}>
-            This summary was generated with {g.confidence} confidence. Read the gazette before relying on it.
-          </p>
-        )}
-        <div className="mt-4 flex flex-wrap gap-3">
-          <a className="btn-primary" href={g.source_url} rel="noopener">Open the gazette PDF →</a>
-          {head && head.no !== g.no && (
-            <Link className="btn" href={`/gazette/${toSlug(head.no)}/`}>
-              Go to {head.no}, the current document →
-            </Link>
-          )}
-        </div>
-      </div>
-
       {missing.length > 0 && (
-        <div className="mt-3 flex items-start gap-3 rounded-[9px] p-4 text-[13px] leading-relaxed"
-             style={{ background: "var(--sup-soft)", color: "var(--sup)" }}>
-          <WarnIcon size={16} />
-          <p>
-            <strong>This rule’s history is incomplete.</strong>{" "}
-            <span className="font-mono">{missing.join(", ")}</span>{" "}
-            {missing.length > 1 ? "are" : "is"} referenced by a document we hold but missing from the
-            IRD listing, so a change made by a gazette we do not hold would not appear below.
-          </p>
-        </div>
+        <p className="mt-5 border-l-2 border-dashed py-1 pl-4 text-[14.5px] italic leading-relaxed"
+           style={{ borderColor: "var(--hair-strong)" }}>
+          <strong className="not-italic font-semibold">This rule’s history is incomplete.</strong>{" "}
+          <span className="mono not-italic text-[13.5px]">{missing.join(", ")}</span>{" "}
+          {missing.length > 1 ? "are" : "is"} referenced by a document we hold but missing from the
+          IRD listing, so a change made by a gazette we do not hold would not appear below.
+        </p>
       )}
 
       {t && (
         <>
-          <h2 className="kicker mt-8 mb-3">How this rule got here</h2>
-          <ol className="panel rounded-[10px] px-5">
-            {members.map((m, i) => {
-              const ms = standingOf(m);
+          <h2 className="label mt-10">The rule, in sequence</h2>
+          <ol className="mt-4 border-l pl-6" style={{ borderColor: "var(--hair-strong)" }}>
+            {members.map((m) => {
+              const isHead = m.no === t.head_no;
               return (
-                <li key={m.no} className="flex gap-4"
-                    style={{ borderTop: i === 0 ? "none" : "1px solid var(--line)" }}>
-                  <div className="flex w-[18px] shrink-0 flex-col items-center">
-                    <span className="w-[2px] grow" style={{ background: i === 0 ? "transparent" : "var(--line)" }} />
-                    <span className="my-0 h-[11px] w-[11px] shrink-0 rounded-full"
-                          style={{
-                            background: m.no === t.head_no ? "var(--ok)" : "var(--dim)",
-                            boxShadow: m.no === t.head_no
-                              ? "0 0 0 3px var(--surface), 0 0 0 5px var(--ok)" : undefined,
-                          }} />
-                    <span className="w-[2px] grow"
-                          style={{ background: i === members.length - 1 ? "transparent" : "var(--line)" }} />
+                <li key={m.no} className="relative py-[11px]">
+                  <span className="absolute -left-[30px] top-[19px] h-[9px] w-[9px] rounded-full"
+                        style={isHead
+                          ? { background: "var(--ink)" }
+                          : { border: "1.5px solid var(--ink)", background: "var(--paper)" }} />
+                  <div className="flex flex-wrap items-baseline gap-x-[13px] gap-y-1">
+                    <Link className="mono text-[14px] link"
+                          style={{ fontWeight: isHead ? 600 : 400 }}
+                          href={`/gazette/${toSlug(m.no)}/`}>{m.no}</Link>
+                    <span className="mono text-[11.5px] opacity-50">
+                      {formatDate(m.published_date)}
+                    </span>
+                    <span className="text-[14.5px] italic opacity-80">
+                      {standingOf(m).kind === "current" ? "the rule now"
+                        : standingOf(m).kind === "rescinded" ? "rescinded" : "superseded"}
+                    </span>
+                    {m.no === g.no && <span className="tag not-italic">you are here</span>}
                   </div>
-                  <div className="min-w-0 grow py-4">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <Link className="font-mono text-[13.5px] font-medium link" href={`/gazette/${toSlug(m.no)}/`}>
-                        {m.no}
-                      </Link>
-                      <span className="font-mono text-[11.5px]" style={{ color: "var(--dim)" }}>
-                        {formatDate(m.published_date)}
-                      </span>
-                      <span className={`pill pill-${ms.kind}`}>
-                        <span className="pill-dot" aria-hidden />{ms.pill}
-                      </span>
-                      {m.no === g.no && <span className="chip">you are here</span>}
-                    </div>
-                    <p className="mt-1 text-[13.5px]" style={{ color: "var(--dim)" }}>{m.title}</p>
-                  </div>
+                  <p className="mt-1 max-w-[600px] text-[14px] opacity-[.62]">{m.title}</p>
                 </li>
               );
             })}
           </ol>
-          <p className="mt-3">
-            <Link className="link text-[13px] font-medium" href={`/rule/${t.thread_id}/`}>
+          <p className="mt-4">
+            <Link className="text-[15px] italic link" href={`/rule/${t.thread_id}/`}>
               See this rule on its own page →
             </Link>
           </p>
         </>
       )}
 
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <div className="panel rounded-[10px] p-4">
-          <h2 className="kicker">Who this affects</h2>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {g.audience.length
-              ? g.audience.map((a) => <span key={a} className="chip">{a}</span>)
-              : <span className="chip">not stated</span>}
-          </div>
-          <p className="mt-3 text-[11.5px] leading-relaxed" style={{ color: "var(--dim)" }}>
-            Inferred from the enabling Act — gazettes rarely state who they bind, and the model may
-            only narrow within the Act’s known audiences.
+      <div className="mt-10 grid gap-8 border-t pt-6 md:grid-cols-2"
+           style={{ borderColor: "var(--hair)" }}>
+        <div>
+          <h2 className="label">Who this affects</h2>
+          <p className="mt-2 text-[16px]">
+            {g.audience.length ? g.audience.join("; ") : "Not stated."}
+          </p>
+          <p className="mt-2 text-[13px] italic opacity-60">
+            Inferred from the enabling Act — gazettes rarely state who they bind, and the model
+            may only narrow within the Act’s known audiences.
           </p>
         </div>
-        <div className="panel rounded-[10px] p-4">
-          <h2 className="kicker">Enabling Act</h2>
-          <p className="mt-3 text-[14px] font-medium">{g.enabling_act ?? "not parsed"}</p>
+        <div>
+          <h2 className="label">Enabling Act</h2>
+          <p className="mt-2 text-[16px]">{g.enabling_act ?? "Not parsed."}</p>
           {g.source !== "ird-listing" && (
-            <p className="mt-3 text-[11.5px] leading-relaxed" style={{ color: "var(--dim)" }}>
+            <p className="mt-2 text-[13px] italic opacity-60">
               Recovered from the Internet Archive — this gazette is not in the IRD listing.
-              <br />
-              <span className="font-mono">{g.source_detail}</span>
             </p>
           )}
         </div>
       </div>
-    </main>
+    </article>
   );
 }
