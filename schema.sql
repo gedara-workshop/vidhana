@@ -99,9 +99,18 @@ CREATE INDEX IF NOT EXISTS idx_gazette_published ON gazette(published_date);
 CREATE INDEX IF NOT EXISTS idx_ref_dst           ON gazette_reference(dst_no);
 CREATE INDEX IF NOT EXISTS idx_date_kind         ON gazette_date(kind, date);
 
--- Full-text over the cleaned English text.
+-- Full-text over the cleaned English text, plus the Phase 2 summary.
+--
+-- The summary is indexed as its own column rather than appended to the body,
+-- because it needs a different weight: it is plain English written to be read,
+-- while the body is statutory prose where the searched term is often incidental
+-- boilerplate. See search.py for the bm25 weights.
+--
+-- Changing these columns needs a DROP, not an ALTER — fts5 has no ADD COLUMN.
+-- db.migrate() detects the drift and rebuilds; `vidhana reindex` repopulates
+-- from the text already on disk, so no PDF is re-downloaded.
 CREATE VIRTUAL TABLE IF NOT EXISTS gazette_fts USING fts5(
-    no UNINDEXED, title, body, tokenize = 'porter unicode61'
+    no UNINDEXED, title, summary, body, tokenize = 'porter unicode61'
 );
 
 
@@ -156,3 +165,36 @@ CREATE TABLE IF NOT EXISTS batch_job (
     n_collected     INTEGER,
     n_failed        INTEGER
 );
+
+
+-- ---------------------------------------------------------------------------
+-- Phase 3: search facets.
+--
+-- The model's `tags` and `audience` come back as free text, and measured over
+-- the real corpus that text is nearly all singletons: 225 of 319 distinct tags
+-- are used exactly once, and 95 of 105 audience strings are unique. They are
+-- descriptive, not navigational, so they are normalised into these tables
+-- rather than filtered on as stored. Both are derived from gazette_summary and
+-- are rebuilt wholesale by `vidhana reindex`; never hand-edited.
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS gazette_tag (
+    no    TEXT NOT NULL REFERENCES gazette(no) ON DELETE CASCADE,
+    tag   TEXT NOT NULL,   -- normalised through search.TAG_ALIAS
+    raw   TEXT NOT NULL,   -- as the model wrote it, kept so drift stays visible
+    PRIMARY KEY (no, tag)
+);
+CREATE INDEX IF NOT EXISTS idx_tag ON gazette_tag(tag);
+
+-- Audience is grounded on the enabling Act (see structure.ACT_AUDIENCE): the
+-- model may only narrow within the Act's candidates. `coarse` is the candidate
+-- a model string grounded to, and is what search filters on. A NULL coarse
+-- means the string did not ground to its Act's map — which is the invented-
+-- audience signal, so it is recorded rather than dropped.
+CREATE TABLE IF NOT EXISTS gazette_audience (
+    no        TEXT NOT NULL REFERENCES gazette(no) ON DELETE CASCADE,
+    audience  TEXT NOT NULL,   -- the model's own string, verbatim
+    coarse    TEXT,            -- ACT_AUDIENCE candidate it grounded to, or NULL
+    PRIMARY KEY (no, audience)
+);
+CREATE INDEX IF NOT EXISTS idx_audience_coarse ON gazette_audience(coarse);
