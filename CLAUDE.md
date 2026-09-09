@@ -15,6 +15,24 @@ narrowness is a design decision, not an oversight.
 
 ## Where things stand
 
+**Phase 4 is complete** — all four phases are done (`vidhana/alerts.py`,
+`PHASE4.md`). Events are **derived from the corpus on every run, never
+accumulated**: a missed cron run loses nothing and a rebuilt database produces
+the same events. The only non-derivable fact is when we first saw an event,
+which is all `gazette_event` stores — do not start writing event rows as things
+happen, and never rewrite `detected_at`.
+
+Delivery is **Atom feeds under `docs/`**, served by GitHub Pages, written
+nightly by `.github/workflows/gazettes.yml`. Email and webhooks were considered
+and rejected for v0: at 3-6 gazettes a year they are unused plumbing, and both
+force the hosting decision that is still open.
+
+**`data/summaries.json` is tracked and is the only copy of the LLM output git
+keeps.** Run `summaries export` after any `structure` run, and `summaries
+import` before one, or a rebuild re-summarises 137 documents for no reason. A
+clone plus a fetch reproduces the whole corpus with no API key; keep that
+property.
+
 **Phase 3 is complete** — search is built on the amendment graph, not beside
 it (`vidhana/search.py`, `PHASE3.md`). Every hit carries its resolved standing,
 `--rules` collapses a thread into its current document, `--as-of` answers what
@@ -57,8 +75,7 @@ manual read and 5 hand-written summaries in `PHASE0.md` §6 are done.** The poin
 of Phase 0 is to build Phase 1 from facts instead of guesses — do not jump ahead
 and write the scraper early, even if asked to "just sketch it".
 
-Roadmap lives in `README.md`. Note that `README.md` currently ends mid-sentence in
-the Phase 1 bullet; it needs finishing.
+Roadmap lives in `README.md`, and all four phases are now ticked.
 
 ## Ground truth about the data
 
@@ -168,7 +185,13 @@ load-bearing facts:
   v0 stays narrow in *presentation*, not in what is stored.
 - **Phase 1 uses no LLM.** Acquisition only: scrape, fetch, extract, parse,
   build the reference graph.
-- **Phase 3 uses no LLM either.** Search reads what Phases 1 and 2 stored.
+- **Phase 3 uses no LLM either.** Search reads what Phases 1 and 2 stored, and
+  neither does Phase 4 — the feed renders what is already in the database.
+- **Alerts are RSS/Atom in v0**, published from `docs/` via GitHub Pages. Chosen
+  over email and webhooks because a feed needs no server, holds no personal
+  data, and composes with all three later.
+- **The nightly job commits nothing when nothing changed.** The history is a
+  record of the law changing, not of the workflow running.
 - **Facets are rebuilt wholesale, not incrementally.** The canonical tag display
   form is a corpus-level fact: adding one document can change how an existing
   tag is spelled, and an incremental update leaves both spellings in the list.
@@ -177,5 +200,9 @@ load-bearing facts:
 
 Not yet chosen — do not assume, ask:
 
-- Hosting, and whether there is a web UI at all in v0.
-- Alert delivery mechanism (email, RSS, webhook).
+- Hosting, and whether there is a web UI at all in v0. Still genuinely open:
+  feeds are served as static files from `docs/`, which was chosen partly to
+  avoid answering this by accident.
+- Whether anyone actually subscribes. Nothing in the codebase answers this, and
+  building more will not either. **Do not propose a Phase 5 to avoid finding
+  out.**
