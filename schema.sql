@@ -198,3 +198,25 @@ CREATE TABLE IF NOT EXISTS gazette_audience (
     PRIMARY KEY (no, audience)
 );
 CREATE INDEX IF NOT EXISTS idx_audience_coarse ON gazette_audience(coarse);
+
+
+-- ---------------------------------------------------------------------------
+-- Phase 4: alerts.
+--
+-- Events are *derived* from the corpus, not accumulated as it changes: "2500/106
+-- amends 2481/22" is a fact about the data, true whenever it is asked, so
+-- deriving it is idempotent and a missed run loses nothing. The only thing that
+-- cannot be re-derived is when we first saw it, which is what this table pins —
+-- so a feed entry keeps its identity and timestamp across runs instead of
+-- churning every time the pipeline is re-run.
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS gazette_event (
+    event_id     TEXT PRIMARY KEY,  -- kind:no:target, stable across runs
+    kind         TEXT NOT NULL,     -- published | amends | rescinds | effective_change
+    no           TEXT NOT NULL REFERENCES gazette(no) ON DELETE CASCADE,
+    target_no    TEXT,              -- the gazette acted on, for the relation kinds
+    event_date   TEXT NOT NULL,     -- publication date of `no`; the feed orders on this
+    detected_at  TEXT NOT NULL      -- first run that saw it; never rewritten
+);
+CREATE INDEX IF NOT EXISTS idx_event_date ON gazette_event(event_date DESC);
