@@ -1,10 +1,15 @@
 {
   "pages": [
-    { "id": "page-2", "name": "Screens" },
+    { "id": "page-0", "name": "Directions" },
+    { "id": "page-2", "name": "Screens (built)" },
     { "id": "page-3", "name": "Qualifiers" },
     { "id": "page-1", "name": "Flows" }
   ],
   "artboards": [
+    { "file": "Archival.dc.html",  "x": 0,    "y": 0, "w": 900,  "h": 1160, "page": "page-0" },
+    { "file": "Editorial.dc.html", "x": 1000, "y": 0, "w": 980,  "h": 1160, "page": "page-0" },
+    { "file": "Civic.dc.html",     "x": 2080, "y": 0, "w": 940,  "h": 1160, "page": "page-0" },
+
     { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1280, "h": 960, "page": "page-2" },
     { "file": "Landing.dc.html", "x": 1380, "y": 0, "w": 1240, "h": 920, "page": "page-2" },
     { "file": "RuleDetail.dc.html", "x": 0, "y": 1090, "w": 1080, "h": 1080, "page": "page-2" },
@@ -14,12 +19,14 @@
     { "file": "Flows.dc.html", "x": 0, "y": 0, "w": 1420, "h": 1240, "page": "page-1" }
   ],
   "annotations": [
-    { "id": "redesign-note", "x": 2700, "y": 40, "w": 320,
-      "text": "Redesign — app shell direction.\n\nNew: sidebar with live facets, sticky top bar, card results with elevation, indigo accent, Schibsted Grotesk + IBM Plex Mono.\n\nMain and AsOf are live. Type in the search box, hit Rules, click the clock for as-of, drag the slider.\n\nDark toggle sits above each artboard.", "page": "page-2" },
+    { "id": "dir-note", "x": 3100, "y": 40, "w": 320,
+      "text": "Three directions, same content so they compare directly.\n\nEach has a Dark tweak above it.\n\nArchival — one ink, one paper. Character from typography and restraint, no colour at all.\n\nEditorial — the gazette number as the hero. One hot signal colour. Dark by default.\n\nCivic — ochre, seal red, paper stock. Most rooted, most at risk of costume.", "page": "page-0" },
+    { "id": "built-note", "x": 2700, "y": 40, "w": 300,
+      "text": "This is what is built and in PR #11 — the app-shell direction.\n\nIt works. It reads as any B2B dashboard, which is the problem we are fixing.", "page": "page-2" },
     { "id": "qual-note", "x": 1200, "y": 40, "w": 300,
-      "text": "The change that fixed 'too text-heavy':\n\nSTATE became a pill you recognise. Only the CONSEQUENCE gets words — and 'in force · current' has no consequence line at all, because there is nothing to act on.\n\nEverything else demoted to a chip row.", "page": "page-3" },
+      "text": "The qualifier logic survives whichever direction wins.\n\nState as a recognised mark, only the consequence as words, each caveat scoped to the claim it weakens.", "page": "page-3" },
     { "id": "flows-note", "x": 1500, "y": 40, "w": 300,
-      "text": "Unchanged from the first pass — the flows were not the problem.\n\nEach names the moment the product fails quietly. Flow A is the one the whole design rests on: the top hit is rescinded and still ranks first.", "page": "page-1" }
+      "text": "Unchanged. The flows were never the problem.", "page": "page-1" }
   ],
-  "launch": { "view": "canvas", "page": "page-2" }
+  "launch": { "view": "canvas", "page": "page-0" }
 }
