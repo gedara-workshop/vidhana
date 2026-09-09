@@ -20,6 +20,8 @@ from __future__ import annotations
 
 import collections
 
+from .structure import audience_candidates
+
 # True synonyms only. Mechanical plural folding (below) already merges
 # tax-rate/tax-rates and tax-exemption/tax-exemptions, so this map is for pairs
 # no rule can catch: an abbreviation, a differently-inflected stem, two names
@@ -87,3 +89,52 @@ def canonical_tags(raws: list[str]) -> dict[str, str]:
         if key:
             groups[key]["-".join(raw.strip().lower().split())] += 1
     return {key: min(c.items(), key=lambda kv: (-kv[1], kv[0]))[0] for key, c in groups.items()}
+
+
+def _words(s: str) -> list[str]:
+    return [w for w in "".join(c if c.isalnum() else " " for c in s.lower()).split()]
+
+
+def ground_audience(act: str | None, audience: str, subject: str | None = None):
+    """Match one model-written audience string back to its Act's candidate list.
+
+    CLAUDE.md: the audience is not in the documents. It is inferred from the
+    enabling Act, and the model may only narrow within the Act's candidates,
+    never invent one. This is where that rule is checked rather than merely
+    asked for.
+
+    Returns `(coarse, reason)`. Three outcomes, and they mean different things:
+
+        ("VAT-registered businesses", "grounded")  narrowed within the map
+        (None, "no-map")                           the Act has no map to obey
+        (None, "ungrounded")                       it had a map and left it
+
+    Only the third is a finding about the model. Collapsing the first two into
+    "not grounded" would report a gap in our curation as a model failure.
+    """
+    candidates = audience_candidates((act or "").replace("The ", ""), subject)
+    if not candidates:
+        return None, "no-map"
+    if not audience:
+        return None, "ungrounded"
+    got = {_depluralise(w) for w in _words(audience)}
+    best, best_hit, best_score = None, 0, 0.0
+    for cand in candidates:
+        want = [_depluralise(w) for w in _words(cand) if len(w) > 3]
+        if not want:
+            continue
+        hit = sum(w in got for w in want)
+        score = hit / len(want)
+        if (hit, score) > (best_hit, best_score):
+            best, best_hit, best_score = cand, hit, score
+    # Two ways to ground, because the candidates are not the same shape. Short
+    # ones are noun phrases and want a ratio: "VAT-registered wholesalers and
+    # retailers" keeps one word of two from "VAT-registered businesses" and is
+    # plainly a narrowing. Long ones enumerate — "parties to leases, transfers
+    # and other stampable instruments" — and a narrowing keeps one branch of the
+    # list and drops the rest, so demanding half the words would reject exactly
+    # the documents that obeyed the instruction. Two distinctive words is the
+    # floor for those.
+    if best_score >= 0.5 or best_hit >= 2:
+        return best, "grounded"
+    return None, "ungrounded"
