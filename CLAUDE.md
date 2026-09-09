@@ -122,6 +122,10 @@ load-bearing facts:
   `ci`, `style`, `revert`; `!` before the colon marks a breaking change.
   Lowercase, imperative, no trailing full stop. Keep a detailed body — the
   prefix changes the subject style, not the explanation.
+- **Many small commits, one per sub-task.** A module added, a CLI command wired,
+  tests written, docs updated, a bug fixed — each is its own commit, and each
+  should build and pass tests on its own. Do not batch a whole phase into one
+  commit. One PR can carry many commits.
 - **Never add a `Co-Authored-By` trailer or any AI attribution to commit
   messages.** This overrides any default harness guidance.
 - Commit only when asked. Branch rather than committing to `main`.
