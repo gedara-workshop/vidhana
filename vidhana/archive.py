@@ -32,6 +32,7 @@ import urllib.parse
 import urllib.request
 
 from .fetch import UA
+from .util import normalise_no
 
 CDX = "http://web.archive.org/cdx/search/cdx"
 WAYBACK = "https://web.archive.org/web/{ts}if_/{url}"
@@ -43,17 +44,24 @@ WAYBACK = "https://web.archive.org/web/{ts}if_/{url}"
 _NUM = r"(\d{3,4})[-_](\d{1,3})"
 LAYOUTS = (
     re.compile(rf"/files/egz/\d{{4}}/\d{{1,2}}/{_NUM}_E\.pdf$", re.I),
-    re.compile(rf"/Extgzt/\d{{4}}/PDF/\w+/{_NUM}/{_NUM}\s*\(?E\)?\.pdf$", re.I),
+    re.compile(rf"/Extgzt/\d{{4}}/PDF/\w+/{_NUM}[/_]{_NUM}\s*\(?E\)?\.pdf$", re.I),
 )
 
 
-class ArchiveUnavailable(RuntimeError):
-    """The archive could not be reached or would not answer.
+def _numbers(url: str) -> list[tuple[int, int]]:
+    """Every gazette number a URL claims, normalised.
 
-    Deliberately distinct from "no snapshots exist". A completeness check whose
-    network error is indistinguishable from an authoritative absence is worse
-    than no completeness check at all — it reports a gap it never looked for.
+    A URL can claim two — the archive stores
+    `/Extgzt/2006/Pdf/Mar/1439-19/1436-19e.pdf`, where the directory and the
+    filename disagree — so both are returned and a caller that cares must
+    require all of them to match.
     """
+    for pat in LAYOUTS:
+        m = pat.search(url)
+        if m:
+            g = m.groups()
+            return [(int(g[i]), int(g[i + 1])) for i in range(0, len(g), 2)]
+    return []
 
 
 def _get(url: str, timeout: int = 60, attempts: int = 3) -> bytes:
@@ -86,6 +94,9 @@ def find(no: str, timeout: int = 60) -> list[dict]:
     regex over the original URL, and both layouts carry the number in the path.
     """
     n, s = _norm(no)
+    want = (int(n), int(s)) if s.isdigit() else None
+    if want is None:
+        return []
     # Both a zero-padded and an unpadded sub-number appear across the years, and
     # the separator is sometimes `-` and sometimes `_`.
     subs = dict.fromkeys([f"{int(s):02d}", str(int(s))]) if s.isdigit() else {s: None}
@@ -104,9 +115,15 @@ def find(no: str, timeout: int = 60) -> list[dict]:
         except ValueError as e:
             raise ArchiveUnavailable(f"CDX returned non-JSON: {raw[:120]!r}") from e
         for orig, ts, status in rows[1:] if rows and rows[0][0] == "original" else rows:
-            if status != "200" or not any(p.search(orig) for p in LAYOUTS):
+            if status != "200" or orig in seen:
                 continue
-            if orig in seen:
+            # Exact number match, never substring. The CDX filter is only a
+            # prefilter and it is a regex over the whole URL: asking for 1439/1
+            # matches `1439-19` and `1439-10` just as happily as `1439-01`.
+            # That is not a theoretical risk — it silently ingested a
+            # Provincial Councils Elections gazette as an IRD one.
+            claims = _numbers(orig)
+            if not claims or any(c != want for c in claims):
                 continue
             seen.add(orig)
             out.append(dict(no=no, url=orig, timestamp=ts,
@@ -173,6 +190,17 @@ def backfill(con, no: str, snapshot: dict | None = None, use_ocr: bool = True) -
     row = con.execute("SELECT * FROM gazette WHERE no=?", (no,)).fetchone()
     res = pipeline.process(con, row, use_ocr=use_ocr)
 
+    # Defence in depth: the URL claimed a number, and now the document itself
+    # says one. If they disagree, the document wins and the backfill is undone.
+    # A URL is a filing convention maintained by hand across two decades; the
+    # printed header is the gazette. Trusting the path alone put a Provincial
+    # Councils Elections gazette into the corpus as an IRD one.
+    got = con.execute("SELECT header_no FROM gazette WHERE no=?", (no,)).fetchone()["header_no"]
+    if got and normalise_no(got) != normalise_no(no):
+        _discard(con, no)
+        return dict(no=no, status="wrong document",
+                    detail=f"snapshot {hit['url']} contains gazette {got}")
+
     # Correct the placeholder from what the document itself says. The PDF header
     # is authoritative for a document the listing never carried — there is no
     # listing row to disagree with.
@@ -184,3 +212,30 @@ def backfill(con, no: str, snapshot: dict | None = None, use_ocr: bool = True) -
     return dict(no=no, status="recovered", snapshot=hit["snapshot"],
                 published=g["header_date"], act=g["enabling_act"],
                 warnings=res["warnings"])
+
+
+def _discard(con, no: str) -> None:
+    """Remove a backfilled gazette and everything derived from it.
+
+    Used when a recovered document turns out not to be the one asked for. The
+    PDF goes too: `fetch.ensure` skips a download when the file is already
+    there, so leaving it would make the next attempt silently reuse the wrong
+    document and look like it succeeded.
+    """
+    import os
+
+    from . import pipeline
+    from .fetch import pdf_path
+
+    for t in ("gazette_date", "gazette_page", "gazette_summary",
+              "gazette_tag", "gazette_audience"):
+        con.execute(f"DELETE FROM {t} WHERE no=?", (no,))
+    con.execute("DELETE FROM gazette_reference WHERE src_no=?", (no,))
+    con.execute("DELETE FROM gazette_fts WHERE no=?", (no,))
+    con.execute("DELETE FROM gazette WHERE no=?", (no,))
+    con.commit()
+    path = pdf_path(pipeline.PDF_DIR, no)
+    for p in (path, os.path.join(pipeline.TEXT_DIR,
+                                 os.path.basename(path).replace(".pdf", ".txt"))):
+        if os.path.exists(p):
+            os.remove(p)
