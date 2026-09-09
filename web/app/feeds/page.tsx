@@ -20,41 +20,41 @@ export default function FeedsPage() {
   const subjects = facetCounts().subject;
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
-      <Link className="link text-[13px]" href="/">← Search the corpus</Link>
-      <h1 className="mt-4 text-[30px] font-bold leading-tight tracking-tight">Feeds</h1>
-      <p className="mt-3 text-[15px] leading-relaxed" style={{ color: "var(--dim)" }}>
+    <article className="mx-auto max-w-[820px] px-6 pb-10 pt-8 md:px-14">
+      <Link className="label !opacity-100 underline underline-offset-4" href="/">
+        ← Search the corpus
+      </Link>
+      <h1 className="mt-6 text-[34px] leading-tight">Feeds</h1>
+      <p className="mt-3 max-w-[620px] text-[17px] leading-[1.6]">
         Atom feeds, updated nightly. Each entry says what a gazette does, who it affects, and
         which document is currently the rule — and where a rule’s history has a hole, it says
         that too.
       </p>
 
-      <ul className="mt-8">
-        <li style={{ borderTop: "1px solid var(--line)" }}>
-          <a className="flex items-baseline justify-between gap-4 px-1 py-3"
+      <ul className="mt-8 border-t" style={{ borderColor: "var(--hair-strong)" }}>
+        <li className="entry">
+          <a className="flex items-baseline justify-between gap-4 py-[14px]"
              href={`${BASE}/feeds/all.xml`}>
-            <span className="font-medium">Everything</span>
-            <span className="font-mono text-[12px]" style={{ color: "var(--dim)" }}>
-              {counts.gazettes} gazettes
-            </span>
+            <span className="text-[19px]">Everything</span>
+            <span className="mono text-[12px] opacity-50">{counts.gazettes} gazettes</span>
           </a>
         </li>
         {subjects.map(([s, n]) => (
-          <li key={s} style={{ borderTop: "1px solid var(--line)" }}>
-            <a className="flex items-baseline justify-between gap-4 px-1 py-3"
+          <li key={s} className="entry">
+            <a className="flex items-baseline justify-between gap-4 py-[14px]"
                href={`${BASE}/feeds/${s}.xml`}>
-              <span className="font-medium">{s}</span>
-              <span className="font-mono text-[12px]" style={{ color: "var(--dim)" }}>{n}</span>
+              <span className="text-[19px]">{s}</span>
+              <span className="mono text-[12px] opacity-50">{n}</span>
             </a>
           </li>
         ))}
       </ul>
 
-      <p className="mt-8 text-[12.5px] leading-relaxed" style={{ color: "var(--dim)" }}>
+      <p className="mt-8 max-w-[640px] text-[14px] italic leading-relaxed opacity-[.68]">
         Feeds were chosen over email deliberately: at three to six gazettes a year an inbox
         pipeline is mostly unused plumbing, and a feed holds no personal data, needs no server,
         and composes with everything else later.
       </p>
-    </main>
+    </article>
   );
 }
