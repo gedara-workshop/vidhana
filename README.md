@@ -71,4 +71,8 @@ Stack is Python and SQLite. No service to run, the whole corpus is 137 documents
 - [x] **Phase 1, Acquisition.** Scraper for the IRD gazette listing page, fetch every gazette PDF, extract text, parse the header metadata, and build the amendment graph from the cross-references in the text.
 - [x] **Phase 2, Structuring.** LLM pass over the cleaned text for a plain-English summary, the affected audience grounded on the enabling Act, effective dates, and tags.
 - [x] **Phase 3, Search.** Full-text and topic search across the corpus, with the resolved state of a rule rather than just the documents that mention it.
-- [ ] **Phase 4, Alerts.** Daily check, notify on what is new and what it changes.
+- [x] **Phase 4, Alerts.** Daily check, notify on what is new and what it changes.
+
+All four phases are done. The pipeline runs nightly and publishes Atom feeds: [everything](https://gedara-workshop.github.io/vidhana/feeds/all.xml), or one per subject — [income tax](https://gedara-workshop.github.io/vidhana/feeds/income-tax.xml), [VAT](https://gedara-workshop.github.io/vidhana/feeds/vat.xml), [stamp duty](https://gedara-workshop.github.io/vidhana/feeds/stamp-duty.xml). Method in [PHASE4.md](PHASE4.md).
+
+Feeds are chosen over email deliberately: at 3-6 gazettes a year an inbox pipeline is mostly unused plumbing, and a feed holds no personal data, needs no server, and composes with everything else later. What happens after v0 depends on whether anyone actually subscribes, which no amount of building answers.

@@ -1,0 +1,92 @@
+# Nightly check for new IRD gazettes.
+#
+# The IRD publishes 3-6 gazettes a year, so this workflow does nothing on almost
+# every run, and that is the design target: it must be cheap to do nothing, and
+# it must leave no trace when there is nothing to say.
+#
+# State lives in the repository, not in the runner. `data/manifest.csv` records
+# every PDF fetched and `data/summaries.json` holds the LLM output, so a cold
+# runner rebuilds the corpus without re-summarising it. The database itself is
+# gitignored and rebuilt each run; the PDFs are cached because they are bulky
+# and re-fetchable, never because they are precious.
+name: gazettes
+
+on:
+  schedule:
+    - cron: "17 2 * * *"      # 02:17 UTC daily, off the hour to avoid the stampede
+  workflow_dispatch:           # and on demand, for testing
+
+permissions:
+  contents: write              # to commit the listing, manifest, summaries and feeds
+
+concurrency:
+  group: gazettes
+  cancel-in-progress: false    # never interrupt a run mid-fetch; it holds no lock
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install poppler and tesseract
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils tesseract-ocr
+
+      - name: Install Python dependencies
+        run: pip install -q -r requirements.txt
+
+      # PDFs and extracted text only. Both are re-fetchable from the manifest,
+      # so a cache miss costs time and politeness, never correctness or money.
+      - name: Restore fetched PDFs
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/gazettes
+            data/text
+          key: gazettes-${{ hashFiles('data/manifest.csv') }}
+          restore-keys: gazettes-
+
+      - name: Build the corpus
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          set -euo pipefail
+          python3 -m vidhana init
+          python3 -m vidhana sync
+          python3 -m vidhana fetch
+          # Load what we already paid for before asking for anything new, so
+          # only genuinely new gazettes reach the model.
+          python3 -m vidhana summaries import
+          python3 -m vidhana structure
+          python3 -m vidhana summaries export
+          python3 -m vidhana resolve
+          python3 -m vidhana reindex
+          python3 -m vidhana feed
+
+      - name: Report what changed
+        run: python3 -m vidhana whatsnew --since "$(date -u -d '30 days ago' +%F)"
+
+      # Only the derived artefacts that are meant to be tracked. The database,
+      # the PDFs and the extracted text are all gitignored and stay that way.
+      - name: Commit any changes
+        run: |
+          set -euo pipefail
+          git config user.name  "vidhana-bot"
+          git config user.email "noreply@github.com"
+          git add data/listing data/manifest.csv data/summaries.json docs/feeds
+          if git diff --cached --quiet; then
+            echo "no change — nothing published today"
+            exit 0
+          fi
+          # The subject names what actually moved, so the history stays a record
+          # of the law changing rather than of this workflow running.
+          n=$(python3 -m vidhana whatsnew --since "$(date -u -d '30 days ago' +%F)" \
+                --kind published --limit 99 | grep -c 'new gazette' || true)
+          git commit -m "chore(data): nightly gazette check, ${n} new in the last 30 days"
+          git push

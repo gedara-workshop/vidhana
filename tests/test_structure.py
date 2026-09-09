@@ -6,6 +6,7 @@ wrapper and costs money to exercise.
 """
 import json
 import os
+import shutil
 import sqlite3
 import sys
 import tempfile
@@ -133,3 +134,72 @@ class TestAccuracyCheck(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SummaryExport(unittest.TestCase):
+    """The export is the only copy of the LLM output that git keeps, so a
+    round trip has to be lossless and a re-export has to be diffable."""
+
+    def setUp(self):
+        self.con = sqlite3.connect(":memory:")
+        self.con.row_factory = sqlite3.Row
+        db.init(self.con)
+        for no, date in (("2481/22", "2026-03-27"), ("2500/106", "2026-08-06")):
+            self.con.execute(
+                "INSERT INTO gazette (no, year, published_date, title, source_url) "
+                "VALUES (?,?,?,?,?)", (no, int(date[:4]), date, "t", "http://x"))
+            self.con.execute(
+                "INSERT INTO gazette_summary (no, model, summary, audience, tags, "
+                "confidence, notes) VALUES (?,?,?,?,?,?,?)",
+                (no, "test", f"summary for {no}", '["VAT-registered businesses"]',
+                 '["vat"]', "high", None))
+        self.dir = tempfile.mkdtemp()
+        self.path = os.path.join(self.dir, "summaries.json")
+
+    def tearDown(self):
+        shutil.rmtree(self.dir, ignore_errors=True)
+
+    def test_round_trip_restores_every_field(self):
+        structure.export_summaries(self.con, self.path)
+        before = [dict(r) for r in self.con.execute(
+            "SELECT * FROM gazette_summary ORDER BY no")]
+        self.con.execute("DELETE FROM gazette_summary")
+        r = structure.import_summaries(self.con, self.path)
+        self.assertEqual(r["loaded"], 2)
+        after = [dict(x) for x in self.con.execute(
+            "SELECT * FROM gazette_summary ORDER BY no")]
+        self.assertEqual(before, after)
+
+    def test_import_does_not_clobber_a_fresher_local_run(self):
+        structure.export_summaries(self.con, self.path)
+        self.con.execute("UPDATE gazette_summary SET summary='newer' WHERE no='2481/22'")
+        r = structure.import_summaries(self.con, self.path)
+        self.assertEqual((r["loaded"], r["skipped"]), (0, 2))
+        self.assertEqual(self.con.execute(
+            "SELECT summary FROM gazette_summary WHERE no='2481/22'").fetchone()[0],
+            "newer")
+
+    def test_overwrite_restores_on_purpose(self):
+        structure.export_summaries(self.con, self.path)
+        self.con.execute("UPDATE gazette_summary SET summary='newer' WHERE no='2481/22'")
+        structure.import_summaries(self.con, self.path, overwrite=True)
+        self.assertEqual(self.con.execute(
+            "SELECT summary FROM gazette_summary WHERE no='2481/22'").fetchone()[0],
+            "summary for 2481/22")
+
+    def test_summaries_for_gazettes_we_do_not_hold_are_skipped(self):
+        # The export can run ahead of a fetch; importing must not invent rows.
+        structure.export_summaries(self.con, self.path)
+        self.con.execute("DELETE FROM gazette_summary")
+        self.con.execute("DELETE FROM gazette WHERE no='2500/106'")
+        r = structure.import_summaries(self.con, self.path)
+        self.assertEqual((r["loaded"], r["unknown"]), (1, 1))
+
+    def test_export_is_sorted_so_diffs_stay_readable(self):
+        structure.export_summaries(self.con, self.path)
+        with open(self.path) as f:
+            rows = json.load(f)
+        self.assertEqual([r["no"] for r in rows], sorted(r["no"] for r in rows))
+
+    def test_missing_export_file_is_not_an_error(self):
+        self.assertEqual(structure.import_summaries(self.con, self.path)["loaded"], 0)
