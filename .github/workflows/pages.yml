@@ -60,6 +60,9 @@ jobs:
           # Project Pages site lives under /vidhana. A custom domain would set
           # this to an empty string and need no code change.
           NEXT_PUBLIC_BASE_PATH: /vidhana
+          # Settings → Secrets and variables → Actions → Variables. Public by
+          # design, so a variable rather than a secret; unset emits no tag.
+          GOOGLE_SITE_VERIFICATION: ${{ vars.GOOGLE_SITE_VERIFICATION }}
         run: npm run build
 
       # Runs after the build because it reads the export, and before the
