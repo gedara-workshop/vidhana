@@ -502,6 +502,21 @@ def cmd_restore(a):
         raise SystemExit(f"could not restore {', '.join(r['no'] for r in bad)}")
 
 
+def cmd_guard(a):
+    from . import guard
+    before, after = guard.committed(a.against), guard.working()
+    lost = guard.shrinkage(before, after)
+    for kind in guard.TRACKED:
+        print(f"  {kind:<10} {len(before[kind]):>4} committed  {len(after[kind]):>4} now")
+    if lost:
+        for kind, nos in lost.items():
+            print(f"\n{len(nos)} {kind} would disappear: {', '.join(nos)}")
+        raise SystemExit(
+            "\nrefusing to publish a smaller corpus. Nothing here says why — find "
+            "out before committing by hand.")
+    print("\nnothing would disappear")
+
+
 def cmd_export_web(a):
     con = db.connect(a.db)
     out = web.export(con, a.out)
@@ -587,6 +602,10 @@ def main(argv=None):
     v.add_argument("--find", action="store_true",
                    help="also ask the Internet Archive about the in-range gaps")
     v.set_defaults(fn=cmd_verify)
+
+    gd = sub.add_parser("guard")
+    gd.add_argument("--against", default="HEAD", metavar="REV")
+    gd.set_defaults(fn=cmd_guard)
 
     rs = sub.add_parser("restore")
     rs.add_argument("--no-ocr", dest="no_ocr", action="store_true")
