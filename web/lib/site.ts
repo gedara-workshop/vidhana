@@ -1,4 +1,5 @@
 import type { Gazette, Thread } from "./types";
+import { rulePath } from "./rules.ts";
 import { toSlug } from "./standing.ts";
 
 /* Absolute URLs for the deployed site.
@@ -63,7 +64,7 @@ export function sitemapEntries(gazettes: Gazette[], threads: Thread[]): SitemapE
 
   for (const t of threads) {
     entries.push({
-      url: url(`/rule/${t.thread_id}/`),
+      url: url(rulePath(t)),
       lastModified: t.last_date,
       priority: 0.8,
       changeFrequency: "weekly",

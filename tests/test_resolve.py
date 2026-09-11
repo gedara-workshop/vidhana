@@ -70,6 +70,44 @@ class TestThreading(unittest.TestCase):
         self.assertEqual(r["standalone"], 1)
 
 
+class TestSameDayTies(unittest.TestCase):
+    """The IRD issues in same-day batches. Ordering by date alone left ties to
+    set iteration, which Python randomises per process: across eight hash
+    seeds one corpus gave three different roots and two different current
+    documents. A rule's answer must not depend on PYTHONHASHSEED."""
+
+    SCRIPT = """
+import sys
+sys.path[:0] = [{root!r}, {tests!r}]
+from test_resolve import make_db, add, ref
+from vidhana import resolve
+con = make_db()
+for n in ("1441/15", "1441/16", "1441/17", "1441/18"):
+    add(con, n, "2006-04-20")
+add(con, "1500/01", "2007-05-01"); add(con, "1500/02", "2007-05-01")
+for a in ("1441/16", "1441/17", "1441/18", "1500/01", "1500/02"):
+    ref(con, a, "1441/15", "amends")
+resolve.resolve(con)
+t = con.execute("SELECT root_no, head_no FROM rule_thread").fetchone()
+print(t["root_no"], t["head_no"])
+"""
+
+    def test_root_and_head_do_not_depend_on_the_hash_seed(self):
+        import subprocess
+        here = os.path.dirname(os.path.abspath(__file__))
+        code = self.SCRIPT.format(root=os.path.dirname(here), tests=here)
+        seen = set()
+        for seed in range(8):
+            out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
+                                 env=dict(os.environ, PYTHONHASHSEED=str(seed)), check=True)
+            seen.add(out.stdout.strip())
+        # Earliest by date, then lowest number; latest by date, then highest.
+        self.assertEqual(seen, {"1441/15 1500/02"})
+
+    def test_issue_order_is_numeric(self):
+        self.assertLess(resolve._issue_order("1441/9"), resolve._issue_order("1441/10"))
+
+
 class TestRescission(unittest.TestCase):
     def test_rescission_uses_its_own_effective_date(self):
         # 2481/22 rescinds 2463/05 only from 01 Jul 2026, not on publication:

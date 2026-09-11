@@ -95,6 +95,11 @@ first run it caught four bugs in Phase 1 rather than in the model.
 into rule threads with in-force state, so `vidhana rule <no> --as-of <date>`
 answers "what is the rule right now". This is the product differentiator and it
 is deterministic — keep it that way, and do not move any of it into the LLM pass.
+**Never order anything by date alone.** The IRD issues in same-day batches, and
+a date tie used to fall through to Python set iteration, which is randomised
+per process: one corpus gave three different roots and two different current
+documents across eight hash seeds. Ties break by gazette number
+(`resolve._issue_order`), and a test runs the resolver under eight seeds.
 
 **Phase 1 is complete** — the acquisition pipeline runs end to end over all 137
 gazettes with 0 failures. See `PHASE1.md` for usage and `schema.sql` for the
@@ -159,17 +164,23 @@ load-bearing facts:
 
 ### Tracking fetched gazettes
 
-- `data/listing/gazette-listing.json` — parsed listing, one row per gazette
-  (`year`, `date`, `no`, `url`, `desc`). Tracked in git; it is the index.
-- `data/manifest.csv` — one row per PDF we've actually fetched, with
-  `source_url`, `sha256` and the machine-survey columns (`pages`, `chars`,
-  `images`, `text_layer`, `producer`). Tracked in git.
-- `data/gazettes/*.pdf` — the PDFs. **Gitignored.** Always re-fetchable from the
-  manifest, and bulky. The manifest is the record, not the blobs.
-- **Local filenames are derived, never authoritative:** `{no with / → -}_{date}.pdf`,
-  e.g. `2481-22_27Mar2026.pdf`. Upstream filenames are inconsistent (three
-  separator styles, literal spaces, a `TP_` prefix) — never parse identity out of
-  them.
+- **The IRD listing is fetched live** by `sync` on every run; it is the index
+  of what the department publishes. `data/recovered.json` is the index of
+  everything else — gazettes recovered from the Internet Archive — and
+  `restore` reads it. Together they are the whole corpus.
+- **The database records each fetch** (`pdf_sha256`, `pages`, `fetched_at`,
+  per-page survey in `gazette_page`). It is gitignored and rebuilt nightly.
+- `data/listing/gazette-listing.json` and `data/manifest.csv` are **Phase 0
+  artefacts**: the listing as parsed then, and the 21-document sample. Nothing
+  in the pipeline writes either. Do not treat them as current, and do not key
+  anything on them — the nightly PDF cache was keyed on the manifest, never
+  changed, and re-downloaded every new PDF every night until it was fixed.
+- `data/gazettes/*.pdf` — the PDFs. **Gitignored**, bulky, and re-fetchable
+  from the listing URLs and `data/recovered.json`.
+- **Local filenames are derived, never authoritative:** `{no with / → -}.pdf`,
+  e.g. `2481-22.pdf` (the 21 Phase 0 files also carry a date suffix). Upstream
+  filenames are inconsistent (three separator styles, literal spaces, a `TP_`
+  prefix) — never parse identity out of them.
 - Identity key everywhere is the listing's zero-padded gazette number, `NNNN/NN`.
 
 ### Fetching
@@ -264,6 +275,20 @@ Not yet chosen — do not assume, ask:
   when it is absent.
 - Gazette numbers contain a slash, so URLs use `2500-106`. The slash form stays
   the identity everywhere else.
+- **A rule's URL is its first gazette — `/rule/1439-01/` — never `thread_id`.**
+  `thread_id` is a sort position and renumbers whenever the corpus changes
+  shape; when seven documents went missing for one night, 11 of 20 numeric rule
+  URLs pointed at a different rule. `thread_id` is an internal join key in the
+  index and must never reach a URL. Every other gazette number also answers
+  under `/rule/` as a redirect (`web/lib/rules.ts`), which keeps every rule URL
+  ever published working through recoveries, merges and splits with no stored
+  history. The 20 old numeric ids go to `/rules/`, because two numberings were
+  live and disagree; `LEGACY_RULE_IDS` is frozen.
+- **Redirects are a zero-second `<meta refresh>` page, not `redirect()`.** In a
+  static export Next encodes `redirect()` only in its client payload, so
+  without JavaScript the page is blank. Redirect pages are noindex, stay out of
+  the sitemap, and must land on a listed page in one hop — `check:sitemap`
+  enforces all three.
 - **The visual direction is a dense, dark-first product UI**: layered near-black
   surfaces, Space Grotesk + JetBrains Mono, 13px base, three panes. It took
   three attempts. Two quiet, document-like directions were rejected as
@@ -288,7 +313,9 @@ Not yet chosen — do not assume, ask:
   `gedara-workshop.github.io` repo that does not exist. The file is still built
   — it becomes authoritative on a custom domain — but **sitemap discovery today
   is the Search Console submission, not the file.** Do not "fix" a reported
-  discovery problem by editing `robots.ts`.
+  discovery problem by editing `robots.ts`. Ownership is verified by the HTML
+  tag, whose token comes from the `GOOGLE_SITE_VERIFICATION` repository
+  variable (public by design, so a variable and not a secret).
 
 ## Agreed direction
 

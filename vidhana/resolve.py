@@ -27,6 +27,19 @@ import collections
 THREAD_RELATIONS = ("amends", "rescinds", "last_amended_by")
 
 
+def _issue_order(no: str) -> tuple[int, ...]:
+    """A gazette number as a sortable tuple: `1441/17` -> (1441, 17).
+
+    The tie-break for documents published on the same day. The IRD issues in
+    batches (1439/01 and 1439/02, 1441/17 and 1441/18), and on one day the
+    number is the order of issue. Without it, ordering falls back to iterating
+    a set of strings, which Python randomises per process: the same corpus
+    gave three different roots and two different current documents across
+    eight hash seeds. Numeric, so that `1441/9` sorts before `1441/10`.
+    """
+    return tuple(int(p) if p.isdigit() else 0 for p in no.split("/"))
+
+
 def _components(edges: list[tuple[str, str]], known: set[str]) -> list[set[str]]:
     """Connected components over the threading relations, restricted to gazettes
     we actually hold. Dangling targets are counted separately, not merged in."""
@@ -120,7 +133,7 @@ def resolve(con) -> dict:
 
     threads = 0
     for comp in sorted(_components(edges, known), key=lambda c: min(c)):
-        rows = sorted(comp, key=lambda n: gazettes[n]["published_date"])
+        rows = sorted(comp, key=lambda n: (gazettes[n]["published_date"], _issue_order(n)))
         threads += 1
         tid = threads
         standing = [n for n in rows if con.execute(

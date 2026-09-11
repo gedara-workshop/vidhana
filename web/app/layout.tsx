@@ -7,6 +7,12 @@ import "./globals.css";
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
+/* Search Console ownership, by the HTML-tag method — the only one that works
+ * for a URL-prefix property on a project Pages site, where the origin root is
+ * not ours. The token is public by design (it sits in the page), so it comes
+ * from a repository *variable*, not a secret, and an unset one emits nothing. */
+const GOOGLE_VERIFICATION = process.env.GOOGLE_SITE_VERIFICATION?.trim() || undefined;
+
 export const metadata: Metadata = {
   metadataBase: new URL(ORIGIN),
   title: {
@@ -16,6 +22,7 @@ export const metadata: Metadata = {
   description:
     "Search Sri Lankan Inland Revenue tax and VAT gazettes, resolved into what the rule " +
     "currently is rather than the documents that mention it.",
+  verification: GOOGLE_VERIFICATION ? { google: GOOGLE_VERIFICATION } : undefined,
   openGraph: {
     title: "Vidhana",
     description: "Sri Lankan IRD tax and VAT gazettes, resolved into what the rule currently is.",

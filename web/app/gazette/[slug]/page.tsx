@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 
 import { allGazettes, gazette, missingFrom, thread, threadMembers } from "@/lib/corpus";
+import { rulePath } from "@/lib/rules";
 import { url } from "@/lib/site";
 import { formatDate, fromSlug, standingOf, toSlug } from "@/lib/standing";
 
@@ -91,7 +92,7 @@ export default async function GazettePage(
               Go to {head.no}, current
             </Link>
           )}
-          {t && <Link className="btn" href={`/rule/${t.thread_id}/`}>See the whole rule</Link>}
+          {t && <Link className="btn" href={rulePath(t)}>See the whole rule</Link>}
         </div>
 
         {g.summary && (

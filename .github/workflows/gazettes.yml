@@ -4,10 +4,10 @@
 # every run, and that is the design target: it must be cheap to do nothing, and
 # it must leave no trace when there is nothing to say.
 #
-# State lives in the repository, not in the runner. `data/manifest.csv` records
-# every PDF fetched, `data/recovered.json` every gazette recovered from outside
-# the IRD listing, and `data/summaries.json` holds the LLM output, so a cold
-# runner rebuilds the whole corpus without re-summarising it. The database itself is
+# State lives in the repository, not in the runner. The IRD listing is fetched
+# live, `data/recovered.json` records every gazette recovered from outside it,
+# and `data/summaries.json` holds the LLM output, so a cold runner rebuilds the
+# whole corpus without re-summarising it. The database itself is
 # gitignored and rebuilt each run; the PDFs are cached because they are bulky
 # and re-fetchable, never because they are precious.
 name: gazettes
@@ -44,16 +44,19 @@ jobs:
 
       # PDFs and extracted text only. Both are re-fetchable from the manifest,
       # so a cache miss costs time and politeness, never correctness or money.
+      # Restore and save are split so the key can describe what is actually
+      # cached. It used to hash data/manifest.csv, a Phase 0 file that nothing
+      # has written since: the key never changed, an exact hit never re-saves,
+      # and every PDF fetched after the first save was downloaded again every
+      # night. Restoring by prefix takes the newest cache; saving under a hash
+      # of the PDFs on disk makes a new cache exactly when a PDF was added.
       - name: Restore fetched PDFs
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             data/gazettes
             data/text
-          # recovered.json is in the key so the first run after a recovery
-          # saves a cache holding it; otherwise an exact hit on an unchanged
-          # manifest never re-saves, and the archive is asked every night.
-          key: gazettes-${{ hashFiles('data/manifest.csv', 'data/recovered.json') }}
+          key: gazettes-restore
           restore-keys: gazettes-
 
       - name: Build the corpus
@@ -78,6 +81,18 @@ jobs:
           python3 -m vidhana reindex
           python3 -m vidhana feed
           python3 -m vidhana export-web
+
+      # Before the guard, so a run that refuses to publish still keeps what it
+      # downloaded. An unchanged set hashes to a key that already exists, which
+      # the action reports and skips; that is not a failure.
+      - name: Save fetched PDFs
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: |
+            data/gazettes
+            data/text
+          key: gazettes-${{ hashFiles('data/gazettes/*.pdf') }}
 
       - name: Report what changed
         run: python3 -m vidhana whatsnew --since "$(date -u -d '30 days ago' +%F)"
