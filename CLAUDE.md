@@ -32,6 +32,16 @@ Load-bearing facts, all learned the hard way:
 - **Never swallow an archive lookup error.** A completeness check that reports
   rate-limiting as "does not exist" is worse than none — it claims to have
   looked. `archive.ArchiveUnavailable` exists for this.
+- **A recovery that is not in `data/recovered.json` does not survive the next
+  nightly run.** The database is rebuilt from the listing every night, and the
+  listing is the one source that cannot contain these documents. `backfill`
+  writes the record; `restore` reads it after `sync`. On 2026-09-10 the record
+  did not exist and the first unattended run dropped all seven, deleted their
+  summaries and committed it as "0 new" (`COMPLETENESS.md` §5a).
+- **`vidhana guard` runs before every nightly commit and fails on any shrink**
+  in the gazette or summary sets. Do not weaken it to a warning or teach it
+  exceptions: it is deliberately ignorant of cause, and a deliberate removal is
+  a hand-made commit, never the bot's.
 - **`source` is `ird-listing` or `web-archive` and must stay visible.** A
   recovered document is never indistinguishable from one the department
   published.
@@ -54,7 +64,10 @@ force the hosting decision that is still open.
 
 **`data/summaries.json` is tracked and is the only copy of the LLM output git
 keeps.** Run `summaries export` after any `structure` run, and `summaries
-import` before one, or a rebuild re-summarises 137 documents for no reason. A
+import` before one, or a rebuild re-summarises 137 documents for no reason.
+Export merges and never prunes — a row the database cannot see is kept, because
+"not in tonight's database" has already once meant "failed to re-acquire".
+Removing a summary is a deliberate edit to the file. A
 clone plus a fetch reproduces the whole corpus with no API key; keep that
 property.
 
