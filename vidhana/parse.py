@@ -6,6 +6,7 @@ document forced it.
 """
 from __future__ import annotations
 
+import datetime as dt
 import re
 
 from .util import normalise_no, parse_date
@@ -86,6 +87,11 @@ DATE_KINDS = (
 # corpus (1868/10) without reaching into a schedule.
 OPERATIVE = re.compile(r"\bdo\s+(?:by\s+th(?:is|ese)|hereby)\b", re.I)
 OPERATIVE_REACH = 400
+
+# "with effect from the mid night of 31st December, 2006" is the first moment
+# of 1 January 2007, which 1478/08 spells out in the same breath
+# ("31st December, 2006/1st January, 2007").
+MIDNIGHT = re.compile(r"mid\s*-?\s*night\s+of\s*(?:the\s+)?$", re.I)
 
 _MONTH = (r"(?:January|February|March|April|May|June|July|August|September|October|"
           r"November|December)")
@@ -265,6 +271,8 @@ def dates(text: str) -> list[dict]:
             reach = re.sub(r"\s+", " ", text[max(0, m.start() - OPERATIVE_REACH):m.start()])
             if OPERATIVE.search(reach):
                 kind = "operative"
+        if kind in ("effective", "operative", "rescind_effective") and MIDNIGHT.search(window):
+            iso = (dt.date.fromisoformat(iso) + dt.timedelta(days=1)).isoformat()
         ctx = re.sub(r"\s+", " ",
                      text[max(0, m.start() - 110):m.end() + 30]).strip()
         out.setdefault((kind, iso), dict(kind=kind, date=iso, context=ctx[:300]))

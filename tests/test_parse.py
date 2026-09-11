@@ -182,6 +182,20 @@ class TestDateTyping(unittest.TestCase):
             "01.01.2014 subject to the specific dates mentioned in the Schedule")
         self.assertIn(("operative", "2014-01-01"), kinds)
 
+    def test_midnight_starts_the_next_day(self):
+        # 1478/08, verbatim, including "mid night" and the date given twice.
+        kinds = self._kinds(
+            "I, Mahinda Rajapaksa, President of the Democratic Socialist Republic of Sri "
+            "Lanka, do by this Order, amend with effect from the mid night of 31st December, "
+            "2006/1st January, 2007, the Order made under the said Section")
+        self.assertEqual({d for k, d in kinds if k == "operative"}, {"2007-01-01"})
+
+    def test_midnight_does_not_move_a_deadline(self):
+        # "on or before midnight of" a day is the end of that day, not the
+        # start of the next. Only dates things take effect from are shifted.
+        kinds = self._kinds("and furnish the return on or before midnight of 30th June, 2025.")
+        self.assertNotIn(("deadline", "2025-07-01"), kinds)
+
     def test_rescission_date_is_distinct_from_effective(self):
         kinds = self._kinds("are hereby rescinded with effect from July 01, 2026.")
         self.assertIn(("rescind_effective", "2026-07-01"), kinds)
