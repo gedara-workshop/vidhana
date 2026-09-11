@@ -62,6 +62,16 @@ jobs:
           NEXT_PUBLIC_BASE_PATH: /vidhana
         run: npm run build
 
+      # Runs after the build because it reads the export, and before the
+      # deploy because a sitemap that disagrees with the site is worse than
+      # none — it sends crawlers to pages that are not there and hides the
+      # ones that are.
+      - name: Check the sitemap
+        working-directory: web
+        env:
+          NEXT_PUBLIC_BASE_PATH: /vidhana
+        run: npm run check:sitemap
+
       # The feeds are written by the Python pipeline and are not Next's to
       # render. They are copied in verbatim so their URLs never move — people
       # are subscribed to them.
@@ -85,6 +95,8 @@ jobs:
           test -f web/out/data/bodies.json
           test -f web/out/feeds/all.xml
           test -f web/out/feeds/index.html
+          test -f web/out/sitemap.xml
+          test -f web/out/robots.txt
           echo "$(ls web/out/gazette | wc -l) gazette pages, \
                 $(ls web/out/rule | wc -l) rule pages, \
                 $(ls web/out/feeds/*.xml | wc -l) feeds"
