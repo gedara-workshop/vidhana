@@ -95,6 +95,13 @@ first run it caught four bugs in Phase 1 rather than in the model.
 into rule threads with in-force state, so `vidhana rule <no> --as-of <date>`
 answers "what is the rule right now". This is the product differentiator and it
 is deterministic — keep it that way, and do not move any of it into the LLM pass.
+**A document's effective date is the one in its operative clause** — "I,
+<name>, do by this Order ... with effect from" — typed `operative` by the
+parser; only without one does the earliest `effective` date stand. "Earliest"
+alone reported a December 2012 gazette (`1791/08`) as effective from 2003,
+because it reproduces older regulations in full, and an as-of query for 2010
+returned it. `resolve.stated_effective` is the single place this is decided,
+and `validate` grades against it rather than a query of its own.
 **Never order anything by date alone.** The IRD issues in same-day batches, and
 a date tie used to fall through to Python set iteration, which is randomised
 per process: one corpus gave three different roots and two different current
@@ -321,21 +328,28 @@ Not yet chosen — do not assume, ask:
 
 **Administration is deferred, and its shape is already decided — do not build an
 admin UI.** Measured over the corpus there are ~10 things a human might ever
-want to correct (1 parse warning in 144, 6 validate disagreements, 3 needing
-OCR, 30 non-high-confidence summaries), growing by 3-6 gazettes a year. An
+want to correct (1 parse warning in 144, 6 validate disagreements — now 0, see
+below — 3 needing OCR, 30 non-high-confidence summaries), growing by 3-6
+gazettes a year. An
 admin UI would need auth and a backend, which would destroy the property that
 has been load-bearing since Phase 1: no server, no hosting decision, everything
 serves as static files. GitHub already is the admin surface — Actions runs the
 pipeline, commits are the audit log, PRs are the review queue.
 
-When it is time, build these three instead:
+Build these three instead. The first exists:
 
-1. **`data/corrections.json`** — tracked in git, applied deterministically after
-   parsing, keyed by gazette number and field, each entry carrying a reason.
-   Same pattern as `data/summaries.json`. This closes a real gap: today a parse
-   fix made in the database is thrown away by the next rebuild, so the only
-   durable fix is changing a regex — the wrong tool for a one-off like
-   `1789/09`, whose signatory is read off an address line.
+1. **`data/corrections.json`** (`vidhana/corrections.py`) — **built, and
+   deliberately narrower than planned.** It was designed around `1789/09`, "a
+   one-off" signatory read off an address line. That turned out to be one of
+   six documents printing "I Mahinda Rajapaksa" without a comma — a pattern,
+   fixed in `parse.py`. Of the six `validate` disagreements, four were parser
+   bugs with general fixes. **Reach for a regex first; a correction is for a
+   judgement only a person who has read the document can make.** It supports
+   one field, `audience` (placing a model string under an Act-map candidate the
+   word match cannot reach), rejects any other field rather than ignoring it,
+   refuses a target outside the Act's candidates, and needs a reason on every
+   entry. `validate` lists reviewed placements apart from the score and fails
+   on a stale one. Add a field only when a real case needs it.
 2. **PR-on-warning in the nightly job** — a new gazette that is clean publishes
    itself; one with a parse warning or a low-confidence summary opens a PR and
    waits. That is the actual job an admin UI would have done.
