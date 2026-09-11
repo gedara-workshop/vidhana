@@ -140,6 +140,18 @@ load-bearing facts:
   never on whole documents, since re-reading a good text layer makes it worse.
   OCR output is marked with `[OCR BEGIN]` / `[OCR END]` and must stay
   distinguishable from the native text layer.
+- **Raw OCR output is tracked in `data/ocr.json`** and reused, keyed by PDF
+  sha256 and page; tesseract runs only on a page the store has never seen.
+  Tesseract is not reproducible across machines — the runner and a Mac read the
+  same page differently — and before the store the nightly job committed that
+  difference as a corpus change. Never regenerate a stored reading casually: it
+  moves the published text for no legal reason.
+- **OCR lines reach search and the site only if half their words are corpus
+  vocabulary** (`ocr.searchable`, applied in `reindex` and `web.build`). It
+  drops the Sinhala masthead and mirror-text from rotated forms. It must stay
+  at the corpus level: the vocabulary depends on every document, so applying
+  it per document in the pipeline would make output depend on processing
+  order. Parsing reads the unfiltered text.
 - **Half the corpus amends or rescinds another gazette.** Gazettes are diffs, not
   standalone statements. `effective_date` is derived, per-provision and mutable —
   never a scraped scalar. See `CORPUS-NOTES.md`.
