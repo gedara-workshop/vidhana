@@ -65,19 +65,32 @@ def _components(edges: list[tuple[str, str]], known: set[str]) -> list[set[str]]
     return out
 
 
+def stated_effective(con, no: str) -> str | None:
+    """The effective date the document itself states, or None.
+
+    A date in the operative clause — "I, <name>, do by this Order ... with
+    effect from" — wins, because that clause is the document's own act. Only
+    without one does the earliest `effective` date stand in: effective dates
+    are frequently retroactive (2316/13 published Jan 2023, effective Oct
+    2022), but "earliest" alone also picked up dates belonging to schedules,
+    transitional provisions and other instruments reproduced in full, and
+    reported a December 2012 gazette as effective from 2003.
+    """
+    by = {r["kind"]: r["d"] for r in con.execute(
+        "SELECT kind, MIN(date) d FROM gazette_date "
+        "WHERE no=? AND kind IN ('operative', 'effective') GROUP BY kind", (no,))}
+    return by.get("operative") or by.get("effective")
+
+
 def effective_from(con, no: str, published: str) -> str:
     """Best single effective date for a document.
 
-    Earliest typed `effective` date if there is one, else the publication date.
-    Deliberately simple and deliberately visible: effective dates are frequently
-    retroactive (2316/13 published Jan 2023, effective Oct 2022), so the fallback
-    to publication is a floor, not a truth, and `gazette_date` keeps every
-    candidate with the clause it came from.
+    What the document states if anything (`stated_effective`), else the
+    publication date. Deliberately visible: the fallback to publication is a
+    floor, not a truth, and `gazette_date` keeps every candidate with the clause
+    it came from.
     """
-    row = con.execute(
-        "SELECT MIN(date) d FROM gazette_date WHERE no=? AND kind='effective'",
-        (no,)).fetchone()
-    return row["d"] or published
+    return stated_effective(con, no) or published
 
 
 def _rescission_date(con, src: str, published: str) -> str:

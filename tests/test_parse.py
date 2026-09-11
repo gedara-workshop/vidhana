@@ -150,6 +150,52 @@ class TestDateTyping(unittest.TestCase):
         self.assertIn(("effective", "2023-06-01"), kinds)
         self.assertIn(("effective", "2024-01-01"), kinds)
 
+    def test_the_operative_clause_is_typed_apart(self):
+        # 1791/08, verbatim. The official's own act carries the document's date.
+        kinds = self._kinds(
+            "BY virtue of the powers vested in me under Sub - section (1) of Section 2 of "
+            "the Finance Act, No. 25 of 2003, I, Mahinda Rajapaksa, Minister of Finance and "
+            "planning do by this Order determine that with effect from January 1, 2013 there "
+            "shall be charged and levied from the persons specified")
+        self.assertIn(("operative", "2013-01-01"), kinds)
+        self.assertNotIn(("effective", "2013-01-01"), kinds)
+
+    def test_a_reproduced_instruments_commencement_is_not_operative(self):
+        # Later in 1791/08: regulations reproduced in full, with their own 2003
+        # commencement. Still an effective date — of those regulations — so it
+        # is kept, but it must not be mistaken for the order's.
+        kinds = self._kinds(
+            "1. These regulations may be cited as the Embarkation Levy (Airlines) Regulations, "
+            "No. 01 of 2003 Short title and date of and shall come into operation on "
+            "September 1, 2003.")
+        self.assertIn(("effective", "2003-09-01"), kinds)
+        self.assertNotIn(("operative", "2003-09-01"), kinds)
+
+    def test_the_operative_clause_reaches_past_a_long_preamble(self):
+        # 1868/10, verbatim: 230 characters between "do by this order" and the
+        # date, and the document names its schedule dates as exceptions.
+        kinds = self._kinds(
+            "I, Mallika Samarasekara, Commissioner General of Inland Revenue do by this order "
+            "specify matters relating to and the manner in which tax is calculated in respect "
+            "of Value Added Tax on Supply of Financial Services (hereinafter referred as VAT on "
+            "Supply of Financial Services) as set out in the Schedule hereto with effect from "
+            "01.01.2014 subject to the specific dates mentioned in the Schedule")
+        self.assertIn(("operative", "2014-01-01"), kinds)
+
+    def test_midnight_starts_the_next_day(self):
+        # 1478/08, verbatim, including "mid night" and the date given twice.
+        kinds = self._kinds(
+            "I, Mahinda Rajapaksa, President of the Democratic Socialist Republic of Sri "
+            "Lanka, do by this Order, amend with effect from the mid night of 31st December, "
+            "2006/1st January, 2007, the Order made under the said Section")
+        self.assertEqual({d for k, d in kinds if k == "operative"}, {"2007-01-01"})
+
+    def test_midnight_does_not_move_a_deadline(self):
+        # "on or before midnight of" a day is the end of that day, not the
+        # start of the next. Only dates things take effect from are shifted.
+        kinds = self._kinds("and furnish the return on or before midnight of 30th June, 2025.")
+        self.assertNotIn(("deadline", "2025-07-01"), kinds)
+
     def test_rescission_date_is_distinct_from_effective(self):
         kinds = self._kinds("are hereby rescinded with effect from July 01, 2026.")
         self.assertIn(("rescind_effective", "2026-07-01"), kinds)
@@ -171,6 +217,35 @@ class TestDateTyping(unittest.TestCase):
         self.assertIn(("sets_effective_date", "2026-10-01"), kinds)
         self.assertIn(("replaces_effective_date", "2026-07-01"), kinds)
         self.assertNotIn(("effective", "2026-10-01"), kinds)
+
+
+class TestAuthorityWithoutComma(unittest.TestCase):
+    """Six documents print the operative clause as "I Mahinda Rajapaksa," with
+    no comma after the "I". Fixtures are verbatim, line breaks included."""
+
+    def test_the_name_is_read_from_the_operative_clause(self):
+        # 1789/09. The signature block sits beside the ministry's address, so
+        # the fallback used to return "Ministry of Finance and Planning".
+        text = ("article 44 (2) of the Constitution, I Mahinda Rajapaksa, President of the "
+                "Democratic Socialist Republic of Sri Lanka, do by this\norder, amend the order\n\n"
+                "                    MAHINDA RAJAPAKSA,\n"
+                "Ministry of Finance and Planning,                    President.\n"
+                "Colombo 01,\n17th December, 2012.")
+        self.assertEqual(parse.authority(text), ("Mahinda Rajapaksa", "President"))
+
+    def test_the_pronoun_is_not_part_of_the_name(self):
+        # 1565/19 used to be recorded as signed by "I Sahampathy Angammana".
+        name, _ = parse.authority("Revenue (Amendment) Act No. 9 of 2008, I Sahampathy "
+                                  "Angammana, Commissioner General of Inland Revenue, do by "
+                                  "this Order specify, for the purposes of that paragraph")
+        self.assertEqual(name, "Sahampathy Angammana")
+
+    def test_the_comma_form_still_works(self):
+        # 2456/02.
+        name, _ = parse.authority("I, Rukdevi Perpetua Himali Fernando, Commissioner General "
+                                  "of Inland Revenue, do by this notification, specify the "
+                                  "conditions")
+        self.assertEqual(name, "Rukdevi Perpetua Himali Fernando")
 
 
 class TestSubject(unittest.TestCase):

@@ -432,17 +432,19 @@ def check(con: sqlite3.Connection) -> dict:
     rows = con.execute(
         "SELECT g.no, g.effective_from, g.enabling_act, g.authority, "
         "       s.effective_date AS m_eff, s.enabling_act AS m_act, s.authority AS m_auth, "
-        "       s.audience AS m_audience, g.subject, "
-        "       (SELECT MIN(date) FROM gazette_date d WHERE d.no=g.no AND d.kind='effective') AS stated_eff "
+        "       s.audience AS m_audience, g.subject "
         "FROM gazette g JOIN gazette_summary s ON s.no=g.no").fetchall()
+    from .resolve import stated_effective
     for r in rows:
         # Only compare effective dates where Phase 1 actually found one stated;
-        # its fallback to the publication date is a floor, not a claim.
-        if r["stated_eff"]:
+        # its fallback to the publication date is a floor, not a claim. Graded
+        # against the same rule the resolver uses, so validate measures the
+        # value the product shows rather than a second opinion of its own.
+        stated = stated_effective(con, r["no"])
+        if stated:
             con.execute(
                 "INSERT OR REPLACE INTO summary_check VALUES (?,?,?,?,?)",
-                (r["no"], "effective_date", r["stated_eff"], r["m_eff"],
-                 int(r["stated_eff"] == r["m_eff"])))
+                (r["no"], "effective_date", stated, r["m_eff"], int(stated == r["m_eff"])))
         # Where neither side found a value there is nothing to compare, so the
         # row is skipped rather than counted as a disagreement. 1599/13 is a
         # full-page scan with no text layer: both correctly return nothing, and
@@ -468,11 +470,12 @@ def check(con: sqlite3.Connection) -> dict:
         cands = audience_candidates((r["enabling_act"] or "").replace("The ", ""), r["subject"])
         strings = json.loads(r["m_audience"] or "[]")
         if cands and strings:
-            results = [ground_audience(r["enabling_act"], a, r["subject"]) for a in strings]
+            results = [ground_audience(r["enabling_act"], a, r["subject"], no=r["no"])
+                       for a in strings]
             con.execute("INSERT OR REPLACE INTO summary_check VALUES (?,?,?,?,?)",
                         (r["no"], "audience_grounded", "; ".join(cands),
                          "; ".join(strings),
-                         int(all(why == "grounded" for _, why in results))))
+                         int(all(why in ("grounded", "reviewed") for _, why in results))))
     con.commit()
     out = {}
     for f in ("effective_date", "enabling_act", "authority", "audience_grounded"):

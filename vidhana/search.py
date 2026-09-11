@@ -96,7 +96,8 @@ def _words(s: str) -> list[str]:
     return [w for w in "".join(c if c.isalnum() else " " for c in s.lower()).split()]
 
 
-def ground_audience(act: str | None, audience: str, subject: str | None = None):
+def ground_audience(act: str | None, audience: str, subject: str | None = None,
+                    no: str | None = None, reviewed: tuple | None = None):
     """Match one model-written audience string back to its Act's candidate list.
 
     CLAUDE.md: the audience is not in the documents. It is inferred from the
@@ -109,13 +110,26 @@ def ground_audience(act: str | None, audience: str, subject: str | None = None):
         ("VAT-registered businesses", "grounded")  narrowed within the map
         (None, "no-map")                           the Act has no map to obey
         (None, "ungrounded")                       it had a map and left it
+        ("parties to leases, …", "reviewed")       a person placed it
 
     Only the third is a finding about the model. Collapsing the first two into
     "not grounded" would report a gap in our curation as a model failure.
+
+    The fourth comes from data/corrections.json, and exists because the word
+    match below cannot know that a mortgage or a share certificate is a
+    "stampable instrument". It is checked against the same candidate list: a
+    correction that names an audience the Act does not allow is an error.
     """
     candidates = audience_candidates((act or "").replace("The ", ""), subject)
     if not candidates:
         return None, "no-map"
+    from . import corrections
+    placed = corrections.audience(no, audience, reviewed)
+    if placed:
+        if placed["to"] not in candidates:
+            raise ValueError(f"correction for {no} places {audience!r} under {placed['to']!r}, "
+                             f"which is not an audience its Act allows")
+        return placed["to"], "reviewed"
     if not audience:
         return None, "ungrounded"
     got = {_depluralise(w) for w in _words(audience)}
@@ -160,7 +174,8 @@ def reindex(con) -> dict:
     raws = [t for r in rows for t in json.loads(r["tags"] or "[]")]
     canon = canonical_tags(raws)
 
-    out = dict(rebuilt=rebuilt, indexed=0, tags=0, audiences=0, ungrounded=0, no_map=0)
+    out = dict(rebuilt=rebuilt, indexed=0, tags=0, audiences=0, ungrounded=0, no_map=0,
+               reviewed=0)
     for r in rows:
         body = ""
         if r["text_path"]:
@@ -185,13 +200,13 @@ def reindex(con) -> dict:
 
         con.execute("DELETE FROM gazette_audience WHERE no=?", (r["no"],))
         for aud in json.loads(r["audience"] or "[]"):
-            coarse, why = ground_audience(r["enabling_act"], aud, r["subject"])
+            coarse, why = ground_audience(r["enabling_act"], aud, r["subject"], no=r["no"])
             con.execute(
                 "INSERT OR IGNORE INTO gazette_audience (no, audience, coarse) VALUES (?,?,?)",
                 (r["no"], aud, coarse))
             out["audiences"] += 1
             if why != "grounded":
-                out["ungrounded" if why == "ungrounded" else "no_map"] += 1
+                out[{"ungrounded": "ungrounded", "reviewed": "reviewed"}.get(why, "no_map")] += 1
     con.commit()
     return out
 

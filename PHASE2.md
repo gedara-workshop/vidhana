@@ -114,6 +114,29 @@ None is a clear model error:
   text was not supplied. Correct behaviour under the circumstances; the real fix
   is OCR.
 
+### Update, 2026-09-11: all resolved
+
+Three of these, plus two stamp-duty audiences flagged later, are closed. None
+needed the model changed, and none of the value fixes needed a hand edit:
+
+- `1868/10` and `1478/08`, with `1791/08`, which was worse than either: a
+  December 2012 gazette recorded as effective from 2003, because it reproduces
+  older regulations in full. The effective date is now the one in the
+  **operative clause** ("do by this Order ... with effect from"), and "with
+  effect from midnight of X" is the start of X+1 — which 1478/08 itself
+  confirms by writing "31st December, 2006/1st January, 2007". All three now
+  match the model.
+- `1789/09` was not a one-off. Six documents print "I Mahinda Rajapaksa"
+  without a comma after "I"; five had the pronoun kept in the name, and this
+  one fell through to the address line. Fixed in the parser.
+- `1778/32` and `1933/14` (stamp-duty audiences) were the model narrowing
+  correctly — to the parties of a share certificate and of a bond or mortgage
+  — in words the grounding heuristic cannot match. Placed by review in
+  `data/corrections.json`, with the schedule item each rests on.
+
+`validate` now agrees 59/59 on effective dates and 144/144 on each other
+field, with the reviewed placements listed separately.
+
 ## OCR
 
 Six pages across three documents carried content only as images. They are now

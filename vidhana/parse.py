@@ -6,6 +6,7 @@ document forced it.
 """
 from __future__ import annotations
 
+import datetime as dt
 import re
 
 from .util import normalise_no, parse_date
@@ -73,6 +74,25 @@ DATE_KINDS = (
                           r"|with\s+effects\s+from)"),
     ("deadline",         r"(?:on\s+or\s+before|not\s+later\s+than|no\s+later\s+than|by\s+the\s+twentieth)"),
 )
+# The operative clause: "I, <name>, <office>, do by this Order ... with effect
+# from <date>". It is the document's own act, so a date it carries is this
+# document's effective date — unlike an effective date inside a schedule, a
+# transitional provision, or another instrument reproduced in full, all of
+# which the minimum used to pick. 1791/08 (published December 2012) reproduces
+# regulations that "shall come into operation on September 1, 2003"; its own
+# order is "with effect from January 1, 2013". 1868/10 says it in words: "with
+# effect from 01.01.2014 subject to the specific dates mentioned in the
+# Schedule". The lookback is wide because the clause names the Act and the
+# official before it reaches the date; 400 characters holds the longest in the
+# corpus (1868/10) without reaching into a schedule.
+OPERATIVE = re.compile(r"\bdo\s+(?:by\s+th(?:is|ese)|hereby)\b", re.I)
+OPERATIVE_REACH = 400
+
+# "with effect from the mid night of 31st December, 2006" is the first moment
+# of 1 January 2007, which 1478/08 spells out in the same breath
+# ("31st December, 2006/1st January, 2007").
+MIDNIGHT = re.compile(r"mid\s*-?\s*night\s+of\s*(?:the\s+)?$", re.I)
+
 _MONTH = (r"(?:January|February|March|April|May|June|July|August|September|October|"
           r"November|December)")
 DATE_TOKEN = re.compile(
@@ -109,10 +129,16 @@ def authority(text: str) -> tuple[str | None, str | None]:
     whitespace-normalised first because names wrap across lines — 2316/13 splits
     "Don Ranjith Sisirakumara / Hapuarachchi" over two lines with a tab.
 
-    Note the `[I1]` in the operative form: 2429/39 prints "1," for "I,".
+    Note the `[I1]` in the operative form: 2429/39 prints "1," for "I,". And the
+    comma after it is optional: six documents print "I Mahinda Rajapaksa,
+    President". Requiring it did two kinds of damage. Where the fallback could
+    still reach the name, the "I" was kept as part of it ("I Sahampathy
+    Angammana"). Where it could not, 1789/09, the signature fallback read the
+    two-column block — "MAHINDA RAJAPAKSA," beside "Ministry of Finance and
+    Planning, / President." — and took the address as the signatory.
     """
     flat = re.sub(r"\s+", " ", text)
-    m = re.search(r"\b[I1]\s*,\s*([A-Z][A-Za-z.\-' ]{4,60}?)\s*,\s*"
+    m = re.search(r"\b[I1](?:\s*,\s*|\s+)([A-Z][A-Za-z.\-' ]{4,60}?)\s*,\s*"
                   r"(?:Acting\s+)?(?=Commissioner|Minister|President|Chairman)", flat)
     name = m.group(1).strip() if m else None
     if not name:
@@ -247,6 +273,12 @@ def dates(text: str) -> list[dict]:
                 break
         if not kind:
             continue
+        if kind == "effective":
+            reach = re.sub(r"\s+", " ", text[max(0, m.start() - OPERATIVE_REACH):m.start()])
+            if OPERATIVE.search(reach):
+                kind = "operative"
+        if kind in ("effective", "operative", "rescind_effective") and MIDNIGHT.search(window):
+            iso = (dt.date.fromisoformat(iso) + dt.timedelta(days=1)).isoformat()
         ctx = re.sub(r"\s+", " ",
                      text[max(0, m.start() - 110):m.end() + 30]).strip()
         out.setdefault((kind, iso), dict(kind=kind, date=iso, context=ctx[:300]))
