@@ -122,5 +122,28 @@ class Staleness(unittest.TestCase):
         self.assertEqual(answers.basis(self.con, self.root), answers.basis(self.con, self.root))
 
 
+class Prompt(unittest.TestCase):
+    def setUp(self):
+        self.con = corpus()
+        self.root = self.con.execute("SELECT root_no FROM rule_thread").fetchone()[0]
+
+    def test_an_amended_document_is_not_called_superseded(self):
+        # 2481/22 is the invoice format in force; 2500/106 only moved its date.
+        # "Superseded" in the prompt invites "the format no longer applies".
+        p = answers.build_prompt(self.con, self.root)
+        line = next(l for l in p.splitlines() if "standing:" in l and "in force, as amended" in l)
+        self.assertNotIn("superseded", p.lower())
+        self.assertIn("2500/106", line)
+
+    def test_a_rescission_is_stated_with_its_date(self):
+        p = answers.build_prompt(self.con, self.root)
+        self.assertIn("RESCINDED by 2481/22 from 2026-10-01", p)
+
+    def test_an_incomplete_history_is_disclosed_to_the_model(self):
+        self.con.execute("INSERT INTO gazette_reference (src_no, dst_no, relation) "
+                         "VALUES ('2481/22','1680/21','amends')")
+        self.assertIn("HISTORY INCOMPLETE", answers.build_prompt(self.con, self.root))
+
+
 if __name__ == "__main__":
     unittest.main()

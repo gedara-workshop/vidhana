@@ -89,7 +89,12 @@ def basis(con, root_no: str) -> str:
 
 
 def known_dates(con, root_no: str) -> set[str]:
-    """Every date the rule's documents state or the resolver derived from them."""
+    """Every date the rule's documents contain, or the resolver derived from them.
+
+    From the text itself, not only the dates the parser typed: "optional until
+    30.06.2026" is a date the document states even though no pattern classifies
+    it, and refusing it would reject a true answer.
+    """
     out: set[str] = set()
     for m in members(con, root_no):
         for k in ("published_date", "effective_from", "rescinded_from"):
@@ -97,6 +102,12 @@ def known_dates(con, root_no: str) -> set[str]:
                 out.add(m[k])
         out.update(r["date"] for r in con.execute(
             "SELECT date FROM gazette_date WHERE no=?", (m["no"],)))
+        if m["text_path"]:
+            try:
+                with open(m["text_path"]) as fh:
+                    out |= _dates_in(fh.read())
+            except OSError:
+                pass
     return out
 
 
@@ -189,4 +200,161 @@ def publishable(con, path: str = ANSWERS) -> dict[str, list[dict]]:
             continue                      # the rule no longer exists in this shape
         if s["basis"] == current and not verify(con, root, s["questions"]):
             out[root] = s["questions"]
+    return out
+
+
+# --- writing them ---------------------------------------------------------------
+
+SYSTEM = """You write the questions people actually ask about one Sri Lankan tax rule, \
+and answer them, for a public page on a gazette-tracking site.
+
+Readers are business owners, their accountants and tax practitioners. A rule is \
+usually several gazettes: one sets it up, later ones amend or rescind it. You are given \
+the resolver's facts about every document in the rule — which one is current, what \
+superseded what, and when — and the documents' text.
+
+Rules:
+
+1. Write 3 to 5 questions a reader would really ask about this rule — what it requires, \
+who it binds, from when, what changed, what happens if they do nothing. Not questions about \
+gazette numbers for their own sake.
+2. Answer ONLY from the documents and facts given. Never add a date, amount, rate, form, \
+deadline or exception the documents do not state. If the documents cannot answer something, \
+do not ask that question.
+3. The resolver's facts are authoritative about which document is current and what was \
+superseded or rescinded. Never present a superseded or rescinded provision as the rule.
+4. Cite the gazettes each answer rests on, by number, in `cites`, and mention them in the \
+answer text where it helps. Always cite the current document somewhere in the set.
+5. Write dates as "1 October 2026". Never write relative time — no "currently", "now", \
+"will", "soon", "next year", "recently". The page is read long after it is written, so \
+state what applies from which date: "From 1 October 2026, every VAT-registered business \
+must…", not "Businesses will have to…".
+6. Plain English, no legalese, at most 110 words per answer. Do not give advice beyond what \
+the documents say, and do not tell the reader to consult anyone.
+7. If the facts say the rule's history is incomplete, do not claim that nothing else \
+changed it."""
+
+
+def _schema():
+    from pydantic import BaseModel, Field
+
+    class QA(BaseModel):
+        question: str = Field(description="A question a reader would ask, ending in ?")
+        answer: str = Field(description="Plain English, at most 110 words, dated, no relative time")
+        cites: list[str] = Field(description="Gazette numbers (NNNN/NN) the answer rests on")
+
+    class RuleQuestions(BaseModel):
+        questions: list[QA]
+
+    return RuleQuestions
+
+
+def _standing(m: dict, head: str) -> str:
+    """What the resolver says, in words that do not overstate it.
+
+    Not "superseded": in the tax-invoice rule 2481/22 is still the format in
+    force — 2500/106 only moved its start date — and the resolver's status for
+    it is in_force. Calling it superseded invites an answer saying the format
+    no longer applies.
+    """
+    if m["status"] == "rescinded":
+        return f"RESCINDED by {m['rescinded_by']} from {m['rescinded_from']}"
+    if m["no"] == head:
+        return "in force; the latest document in force in this rule"
+    return f"in force, as amended by later documents in this rule (the latest is {head})"
+
+
+# Character budgets. The largest rule in the corpus carries 300,000 characters
+# of text; the current document matters most, the others mostly for history.
+HEAD_CHARS, OTHER_CHARS, TOTAL_CHARS = 24_000, 5_000, 70_000
+
+
+def build_prompt(con, root_no: str) -> str:
+    t = rule(con, root_no)
+    ms = members(con, root_no)
+    summaries = {r["no"]: r["summary"] for r in con.execute(
+        "SELECT no, summary FROM gazette_summary WHERE no IN (%s)" % ",".join("?" * len(ms)),
+        [m["no"] for m in ms])}
+    missing = sorted({r["dst_no"] for m in ms for r in con.execute(
+        "SELECT dst_no FROM gazette_reference WHERE src_no=? AND dst_no NOT IN "
+        "(SELECT no FROM gazette)", (m["no"],))})
+
+    parts = [f"RULE: {t['label']}", f"Enabling Act: {t['enabling_act']}",
+             f"Latest document in force: {t['head_no']}", "",
+             "The summaries below are earlier paraphrases and may round a date or infer "
+             "one; where a summary and the document text differ, the text wins.", "",
+             "DOCUMENTS, oldest first:"]
+    for m in ms:
+        parts.append(f"- {m['no']}, published {m['published_date']}: {m['title']}\n"
+                     f"  standing: {_standing(m, t['head_no'])}; "
+                     f"effective from {m['effective_from']}\n"
+                     f"  summary: {summaries.get(m['no']) or '(none)'}")
+    if missing:
+        parts.append(f"\nHISTORY INCOMPLETE: these gazettes are referenced but not held: "
+                     f"{', '.join(missing)}. A change made by one of them would not appear here.")
+
+    used = 0
+    for m in sorted(ms, key=lambda m: m["no"] != t["head_no"]):   # current document first
+        if not m["text_path"]:
+            continue
+        with open(m["text_path"]) as fh:
+            body = fh.read()
+        cap = min(HEAD_CHARS if m["no"] == t["head_no"] else OTHER_CHARS, TOTAL_CHARS - used)
+        if cap <= 0:
+            parts.append(f"\n--- TEXT OF {m['no']} omitted for length ---")
+            continue
+        if len(body) > cap:
+            body = body[:cap] + "\n[... truncated ...]"
+        used += len(body)
+        parts.append(f"\n--- TEXT OF {m['no']} ---\n{body}")
+    return "\n".join(parts)
+
+
+def generate(con, root_no: str, model: str, attempts: int = 3) -> dict:
+    """Write one rule's questions, retrying with the checker's objections.
+
+    Returns the set with `problems` empty if it passed, or the last attempt's
+    problems if it never did — in which case nothing is stored for the rule.
+    """
+    import datetime as dt
+
+    from .structure import _client
+
+    client, schema = _client(), _schema()
+    prompt = build_prompt(con, root_no)
+    feedback = ""
+    tin = tout = 0
+    for _ in range(attempts):
+        r = client.responses.parse(
+            model=model, instructions=SYSTEM,
+            input=[{"role": "user", "content": prompt + feedback}], text_format=schema)
+        tin += r.usage.input_tokens
+        tout += r.usage.output_tokens
+        qs = [q.model_dump() for q in r.output_parsed.questions]
+        problems = verify(con, root_no, qs)
+        if not problems:
+            break
+        feedback = ("\n\nA PREVIOUS ATTEMPT FAILED THESE CHECKS. Rewrite the whole set so "
+                    "none of them apply:\n- " + "\n- ".join(problems))
+    return dict(rule=root_no, basis=basis(con, root_no), model=model,
+                generated_at=dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+                questions=qs, problems=problems, input_tokens=tin, output_tokens=tout)
+
+
+def status(con, path: str = ANSWERS) -> list[dict]:
+    """Every rule, and whether its answers are current, stale, failing or missing."""
+    sets = load(path)
+    out = []
+    for r in con.execute("SELECT root_no, head_no FROM rule_thread ORDER BY root_no"):
+        s = sets.get(r["root_no"])
+        if not s:
+            state = "missing"
+        elif s["basis"] != basis(con, r["root_no"]):
+            state = "stale"
+        elif verify(con, r["root_no"], s["questions"]):
+            state = "failing"
+        else:
+            state = "current"
+        out.append(dict(rule=r["root_no"], state=state,
+                        questions=len(s["questions"]) if s else 0))
     return out
