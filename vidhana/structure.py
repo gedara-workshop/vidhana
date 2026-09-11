@@ -470,11 +470,12 @@ def check(con: sqlite3.Connection) -> dict:
         cands = audience_candidates((r["enabling_act"] or "").replace("The ", ""), r["subject"])
         strings = json.loads(r["m_audience"] or "[]")
         if cands and strings:
-            results = [ground_audience(r["enabling_act"], a, r["subject"]) for a in strings]
+            results = [ground_audience(r["enabling_act"], a, r["subject"], no=r["no"])
+                       for a in strings]
             con.execute("INSERT OR REPLACE INTO summary_check VALUES (?,?,?,?,?)",
                         (r["no"], "audience_grounded", "; ".join(cands),
                          "; ".join(strings),
-                         int(all(why == "grounded" for _, why in results))))
+                         int(all(why in ("grounded", "reviewed") for _, why in results))))
     con.commit()
     out = {}
     for f in ("effective_date", "enabling_act", "authority", "audience_grounded"):

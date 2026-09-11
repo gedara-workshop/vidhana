@@ -332,6 +332,21 @@ def cmd_validate(a):
             print(f"  {d['no']:>9}  {d['field']:<15} phase1={str(d['deterministic'])[:34]!r}  "
                   f"model={str(d['model_value'])[:34]!r}")
 
+    # Agreement that a person supplied is not agreement the check found, so it
+    # is shown apart rather than folded silently into the score above.
+    from . import corrections
+    reviewed = corrections.load()
+    if reviewed:
+        print(f"\nplaced by review ({len(reviewed)}) — data/corrections.json:")
+        for e in reviewed:
+            print(f"  {e['no']:>9}  {e['field']:<15} {e['from'][:40]!r} -> {e['to'][:30]!r}")
+    gone = corrections.stale(con)
+    if gone:
+        print(f"\nstale corrections ({len(gone)}) — the model no longer writes what was reviewed:")
+        for e in gone:
+            print(f"  {e['no']:>9}  {e['field']:<15} {e['from'][:60]!r}")
+        raise SystemExit(1)
+
 
 def _search_filters(a):
     return dict(subject=a.subject, tag=a.tag, audience=a.audience, act=a.act,
@@ -379,6 +394,8 @@ def cmd_reindex(a):
     if r["rebuilt"]:
         print("full-text index columns changed — index was rebuilt from scratch")
     print(f"indexed {r['indexed']} documents, {r['tags']} tags, {r['audiences']} audiences")
+    if r.get("reviewed"):
+        print(f"  {r['reviewed']} audience string(s) placed by review (data/corrections.json)")
     if r["ungrounded"] or r["no_map"]:
         print(f"  {r['ungrounded']} audience string(s) did not ground on their Act's map"
               f"{f', {r["no_map"]} had no map' if r['no_map'] else ''}")
