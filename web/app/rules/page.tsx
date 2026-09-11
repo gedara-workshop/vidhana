@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { allThreads, gazetteMap, threadMembers } from "@/lib/corpus";
+import { rulePath } from "@/lib/rules";
 import { formatDate } from "@/lib/standing";
 
 export const metadata: Metadata = {
@@ -46,7 +47,7 @@ export default function RulesPage() {
                   <tr key={t.thread_id} className="border-t hover:bg-[var(--raised)]"
                       style={{ borderColor: "var(--line-soft)" }}>
                     <td className="px-3 py-[9px]">
-                      <Link href={`/rule/${t.thread_id}/`} className="block">
+                      <Link href={rulePath(t)} className="block">
                         <span className="flex items-center gap-2">
                           <span className="mono text-[12px] font-semibold">{t.head_no}</span>
                           {gaps > 0 && <span className="tag tag-warn">gap</span>}
