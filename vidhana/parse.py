@@ -129,10 +129,16 @@ def authority(text: str) -> tuple[str | None, str | None]:
     whitespace-normalised first because names wrap across lines — 2316/13 splits
     "Don Ranjith Sisirakumara / Hapuarachchi" over two lines with a tab.
 
-    Note the `[I1]` in the operative form: 2429/39 prints "1," for "I,".
+    Note the `[I1]` in the operative form: 2429/39 prints "1," for "I,". And the
+    comma after it is optional: six documents print "I Mahinda Rajapaksa,
+    President". Requiring it did two kinds of damage. Where the fallback could
+    still reach the name, the "I" was kept as part of it ("I Sahampathy
+    Angammana"). Where it could not, 1789/09, the signature fallback read the
+    two-column block — "MAHINDA RAJAPAKSA," beside "Ministry of Finance and
+    Planning, / President." — and took the address as the signatory.
     """
     flat = re.sub(r"\s+", " ", text)
-    m = re.search(r"\b[I1]\s*,\s*([A-Z][A-Za-z.\-' ]{4,60}?)\s*,\s*"
+    m = re.search(r"\b[I1](?:\s*,\s*|\s+)([A-Z][A-Za-z.\-' ]{4,60}?)\s*,\s*"
                   r"(?:Acting\s+)?(?=Commissioner|Minister|President|Chairman)", flat)
     name = m.group(1).strip() if m else None
     if not name:

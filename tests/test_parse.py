@@ -219,6 +219,35 @@ class TestDateTyping(unittest.TestCase):
         self.assertNotIn(("effective", "2026-10-01"), kinds)
 
 
+class TestAuthorityWithoutComma(unittest.TestCase):
+    """Six documents print the operative clause as "I Mahinda Rajapaksa," with
+    no comma after the "I". Fixtures are verbatim, line breaks included."""
+
+    def test_the_name_is_read_from_the_operative_clause(self):
+        # 1789/09. The signature block sits beside the ministry's address, so
+        # the fallback used to return "Ministry of Finance and Planning".
+        text = ("article 44 (2) of the Constitution, I Mahinda Rajapaksa, President of the "
+                "Democratic Socialist Republic of Sri Lanka, do by this\norder, amend the order\n\n"
+                "                    MAHINDA RAJAPAKSA,\n"
+                "Ministry of Finance and Planning,                    President.\n"
+                "Colombo 01,\n17th December, 2012.")
+        self.assertEqual(parse.authority(text), ("Mahinda Rajapaksa", "President"))
+
+    def test_the_pronoun_is_not_part_of_the_name(self):
+        # 1565/19 used to be recorded as signed by "I Sahampathy Angammana".
+        name, _ = parse.authority("Revenue (Amendment) Act No. 9 of 2008, I Sahampathy "
+                                  "Angammana, Commissioner General of Inland Revenue, do by "
+                                  "this Order specify, for the purposes of that paragraph")
+        self.assertEqual(name, "Sahampathy Angammana")
+
+    def test_the_comma_form_still_works(self):
+        # 2456/02.
+        name, _ = parse.authority("I, Rukdevi Perpetua Himali Fernando, Commissioner General "
+                                  "of Inland Revenue, do by this notification, specify the "
+                                  "conditions")
+        self.assertEqual(name, "Rukdevi Perpetua Himali Fernando")
+
+
 class TestSubject(unittest.TestCase):
     def test_classifies_from_act_not_title(self):
         # 34 of 137 listing titles say nothing about subject matter.
