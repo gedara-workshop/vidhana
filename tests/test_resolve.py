@@ -144,6 +144,25 @@ class TestEffectiveDate(unittest.TestCase):
             con.execute("SELECT effective_from FROM gazette WHERE no='2316/13'")
                .fetchone()["effective_from"], "2022-10-01")
 
+    def test_the_operative_clause_beats_an_earlier_date_elsewhere(self):
+        # 1791/08, published December 2012, reproduces regulations that "shall
+        # come into operation on September 1, 2003". Its own order is "with
+        # effect from January 1, 2013". The minimum picked 2003.
+        con = make_db()
+        add(con, "1791/08", "2012-12-31")
+        date(con, "1791/08", "effective", "2003-09-01")
+        date(con, "1791/08", "operative", "2013-01-01")
+        self.assertEqual(resolve.effective_from(con, "1791/08", "2012-12-31"), "2013-01-01")
+
+    def test_without_an_operative_clause_the_earliest_stands(self):
+        # Retroactivity is real and common; the earliest stated date is still
+        # the right answer when no clause says otherwise.
+        con = make_db()
+        add(con, "2334/21", "2023-05-31")
+        date(con, "2334/21", "effective", "2023-06-01")
+        date(con, "2334/21", "effective", "2024-01-01")
+        self.assertEqual(resolve.effective_from(con, "2334/21", "2023-05-31"), "2023-06-01")
+
     def test_falls_back_to_publication(self):
         con = make_db()
         add(con, "1991/35", "2016-11-02")
