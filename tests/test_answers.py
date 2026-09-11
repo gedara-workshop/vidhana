@@ -55,6 +55,9 @@ class Verify(unittest.TestCase):
     def setUp(self):
         self.con = corpus()
         self.root = self.con.execute("SELECT root_no FROM rule_thread").fetchone()[0]
+        self.text = os.path.join(tempfile.mkdtemp(), "2481-22.txt")
+        open(self.text, "w").close()
+        self.con.execute("UPDATE gazette SET text_path=? WHERE no='2481/22'", (self.text,))
 
     def problems(self, qs):
         return answers.verify(self.con, self.root, qs)
@@ -87,6 +90,21 @@ class Verify(unittest.TestCase):
         bad = [dict(GOOD[0], answer="Businesses will need the new format from 1 October "
                                     "2026 (2500/106).")] + GOOD[1:]
         self.assertTrue(any("'will'" in p for p in self.problems(bad)))
+
+    def test_an_invented_amount_is_refused(self):
+        with open(self.text, "w") as f:
+            f.write("a penalty of Rs. 2,000.00 or 10% of the fee")
+        ok = [dict(GOOD[0], answer=GOOD[0]["answer"] + " The penalty is Rs. 2,000 or 10%.")]
+        bad = [dict(GOOD[0], answer=GOOD[0]["answer"] + " The penalty is Rs. 5,000.")]
+        self.assertEqual(self.problems(ok + GOOD[1:]), [])
+        self.assertTrue(any("5000" in p for p in self.problems(bad + GOOD[1:])))
+
+    def test_the_prompts_framing_does_not_reach_the_page(self):
+        # A real first-draft answer: "The supplied documents do not state a
+        # later amendment to this item."
+        bad = [dict(GOOD[0], answer=GOOD[0]["answer"] + " The supplied documents do not "
+                                                        "state a later amendment.")] + GOOD[1:]
+        self.assertTrue(any("supplied documents" in p for p in self.problems(bad)))
 
     def test_too_few_questions_is_refused(self):
         self.assertTrue(any("questions" in p for p in self.problems(GOOD[:2])))

@@ -53,6 +53,19 @@ GAZETTE_NO = re.compile(r"\b(\d{3,4})\s*/\s*(\d{1,3})\b")
 
 MIN_QUESTIONS, MAX_QUESTIONS = 3, 6
 
+# Money and rates: after dates, the thing most damaging to get wrong. Written
+# many ways in the corpus ("Rs. 2,000.00", "Rs.25, 000.00", "10%of"), so both
+# sides are reduced to bare numbers before comparing.
+AMOUNT = re.compile(
+    r"(?:Rs\.?|LKR|USD|US\s?\$)\s?(\d[\d,\s]*(?:\.\d+)?)"
+    r"|(\d+(?:\.\d+)?)\s?(?:%|per\s?cent)", re.I)
+
+# The prompt's framing, which means nothing to a reader of a public page.
+FRAMING = re.compile(
+    r"\b(?:supplied|provided|given)\s+(?:documents?|texts?|facts|gazettes?)\b"
+    r"|\bthe\s+(?:documents?|texts?|facts)\s+(?:supplied|provided|given|above|below)\b"
+    r"|\bresolver\b|\bprompt\b", re.I)
+
 
 def members(con, root_no: str) -> list[dict]:
     """The rule's documents, oldest first, with what the resolver says of each."""
@@ -124,6 +137,37 @@ def _numbers_in(text: str) -> set[str]:
     return {f"{int(a):d}/{int(b):02d}" for a, b in GAZETTE_NO.findall(text)}
 
 
+def _amount(raw: str) -> str:
+    """"2,000.00" and "2000" and "2, 000" are one amount."""
+    v = re.sub(r"[,\s]", "", raw)
+    return re.sub(r"\.0+$", "", v)
+
+
+def _amounts_in(text: str) -> set[str]:
+    return {_amount(a or b) for a, b in AMOUNT.findall(text)}
+
+
+def known_amounts(con, root_no: str) -> set[str]:
+    """Every figure in the rule's documents, amounts or not.
+
+    Deliberately generous: an amount in an answer only has to appear somewhere
+    in the documents as a number. What this catches is an invented figure, not
+    a misattributed one — that is what reading the pull request is for.
+    """
+    out: set[str] = set()
+    for m in members(con, root_no):
+        if not m["text_path"]:
+            continue
+        try:
+            with open(m["text_path"]) as fh:
+                text = fh.read()
+        except OSError:
+            continue
+        joined = re.sub(r"(\d),\s+(\d)", r"\1,\2", text)      # "25, 000.00"
+        out |= {_amount(n) for n in re.findall(r"\d[\d,]*(?:\.\d+)?", joined)}
+    return out
+
+
 def _dates_in(text: str) -> set[str]:
     return {d for d in (parse.parse_date(m.group(1)) for m in parse.DATE_TOKEN.finditer(text)) if d}
 
@@ -139,6 +183,7 @@ def verify(con, root_no: str, questions: list[dict]) -> list[str]:
     in_rule = {m["no"] for m in members(con, root_no)}
     numbers = known_numbers(con, root_no)
     dates = known_dates(con, root_no)
+    amounts = known_amounts(con, root_no)
     problems: list[str] = []
 
     if not MIN_QUESTIONS <= len(questions) <= MAX_QUESTIONS:
@@ -160,6 +205,12 @@ def verify(con, root_no: str, questions: list[dict]) -> list[str]:
             problems.append(f"{where}: mentions gazette {n}, which no document here refers to")
         for d in _dates_in(q + " " + a) - dates:
             problems.append(f"{where}: states {d}, a date no document here contains")
+        for amt in sorted(_amounts_in(a) - amounts):
+            problems.append(f"{where}: states the figure {amt}, which no document here contains")
+        f = FRAMING.search(q + " " + a)
+        if f:
+            problems.append(f"{where}: {f.group(0)!r} is how the question was put to you, "
+                            f"not something a reader knows — say 'the gazettes in this rule'")
         m = STALE_WORDING.search(a)
         if m:
             problems.append(f"{where}: {m.group(0)!r} goes stale on a static page — "
