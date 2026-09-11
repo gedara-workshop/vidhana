@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import ThemeToggle from "@/components/ThemeToggle";
+import { ORIGIN } from "@/lib/site";
 import "./globals.css";
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://gedara-workshop.github.io"),
+  metadataBase: new URL(ORIGIN),
   title: {
     default: "Vidhana — what the rule actually is",
     template: "%s · Vidhana",

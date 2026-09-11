@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 
 import { allGazettes, gazette, missingFrom, thread, threadMembers } from "@/lib/corpus";
+import { url } from "@/lib/site";
 import { formatDate, fromSlug, standingOf, toSlug } from "@/lib/standing";
 
 /* One static page per gazette. This is the reason for the framework: 144 pages
@@ -30,7 +31,7 @@ export async function generateMetadata(
   return {
     title: `${g.no} — ${g.title}`,
     description: `${lead} ${g.summary ?? ""}`.trim().slice(0, 300),
-    alternates: { canonical: `/vidhana/gazette/${slug}/` },
+    alternates: { canonical: url(`/gazette/${slug}/`) },
   };
 }
 

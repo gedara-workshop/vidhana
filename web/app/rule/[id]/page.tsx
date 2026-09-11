@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { allThreads, missingFrom, thread, threadMembers } from "@/lib/corpus";
+import { url } from "@/lib/site";
 import { formatDate, standingOf, toSlug } from "@/lib/standing";
 
 /* One static page per rule. The answer a reader wants usually exists in no
@@ -28,7 +29,7 @@ export async function generateMetadata(
     description:
       `${t.size} gazettes between ${t.first_date.slice(0, 4)} and ${t.last_date.slice(0, 4)} define this rule. ` +
       `${t.head_no} is the current document. ${head?.summary ?? ""}`.slice(0, 300),
-    alternates: { canonical: `/vidhana/rule/${id}/` },
+    alternates: { canonical: url(`/rule/${id}/`) },
   };
 }
 
