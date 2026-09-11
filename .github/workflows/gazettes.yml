@@ -95,7 +95,13 @@ jobs:
           key: gazettes-${{ hashFiles('data/gazettes/*.pdf') }}
 
       - name: Report what changed
-        run: python3 -m vidhana whatsnew --since "$(date -u -d '30 days ago' +%F)"
+        run: |
+          python3 -m vidhana whatsnew --since "$(date -u -d '30 days ago' +%F)"
+          # A rule that changed tonight has its pre-answered questions withdrawn
+          # from the site until someone regenerates and reviews them. Reported,
+          # not fixed here: answers are written by a model and read by a person
+          # before they are published, and this job does neither.
+          python3 -m vidhana answers check | tail -1
 
       # Compares what is about to be committed with what already is, and fails
       # if any gazette or summary would disappear. A failure here commits
