@@ -5,8 +5,9 @@
 # it must leave no trace when there is nothing to say.
 #
 # State lives in the repository, not in the runner. `data/manifest.csv` records
-# every PDF fetched and `data/summaries.json` holds the LLM output, so a cold
-# runner rebuilds the corpus without re-summarising it. The database itself is
+# every PDF fetched, `data/recovered.json` every gazette recovered from outside
+# the IRD listing, and `data/summaries.json` holds the LLM output, so a cold
+# runner rebuilds the whole corpus without re-summarising it. The database itself is
 # gitignored and rebuilt each run; the PDFs are cached because they are bulky
 # and re-fetchable, never because they are precious.
 name: gazettes
@@ -49,7 +50,10 @@ jobs:
           path: |
             data/gazettes
             data/text
-          key: gazettes-${{ hashFiles('data/manifest.csv') }}
+          # recovered.json is in the key so the first run after a recovery
+          # saves a cache holding it; otherwise an exact hit on an unchanged
+          # manifest never re-saves, and the archive is asked every night.
+          key: gazettes-${{ hashFiles('data/manifest.csv', 'data/recovered.json') }}
           restore-keys: gazettes-
 
       - name: Build the corpus
@@ -59,6 +63,11 @@ jobs:
           set -euo pipefail
           python3 -m vidhana init
           python3 -m vidhana sync
+          # The listing is not the whole corpus. Gazettes the IRD omits were
+          # recovered from the Internet Archive and are recorded in
+          # data/recovered.json; without this a cold runner cannot know they
+          # exist, and on 2026-09-10 it dropped all seven. Fatal on failure.
+          python3 -m vidhana restore
           python3 -m vidhana fetch
           # Load what we already paid for before asking for anything new, so
           # only genuinely new gazettes reach the model.
@@ -72,6 +81,13 @@ jobs:
 
       - name: Report what changed
         run: python3 -m vidhana whatsnew --since "$(date -u -d '30 days ago' +%F)"
+
+      # Compares what is about to be committed with what already is, and fails
+      # if any gazette or summary would disappear. A failure here commits
+      # nothing and, because pages.yml deploys only on success, publishes
+      # nothing — a missed night loses nothing, since events are derived.
+      - name: Refuse to publish a smaller corpus
+        run: python3 -m vidhana guard
 
       # Only the derived artefacts that are meant to be tracked. The database,
       # the PDFs and the extracted text are all gitignored and stay that way.

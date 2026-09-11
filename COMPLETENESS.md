@@ -11,7 +11,8 @@ here and forgotten.
 
 ```bash
 python3 -m vidhana verify [--find]   # what is missing, and is it recoverable
-python3 -m vidhana backfill          # recover it
+python3 -m vidhana backfill          # recover it, and record it in data/recovered.json
+python3 -m vidhana restore           # re-acquire every recorded recovery (cold rebuilds)
 ```
 
 ## 1. The official source is gone
@@ -118,6 +119,46 @@ Two guards now, deliberately independent:
 
 A URL is a filing convention maintained by hand across two decades of a
 government website. The printed header is the gazette.
+
+## 5a. A third bug, caught by production: the recoveries were never written down
+
+The seven recoveries lived only in the gitignored database. The nightly job
+rebuilds from scratch, starting from the IRD listing — the one source
+guaranteed *not* to contain them — so on its first unattended run
+(2026-09-10, commit `3d8771f`) it:
+
+- published a 137-gazette corpus: seven gazette pages disappeared, five rules
+  lost the document they were rooted at, and because rule ids are assigned by
+  position, 11 of the 20 `/rule/N/` URLs silently pointed at a different rule;
+- rewrote `data/summaries.json` from a database that did not hold them,
+  deleting seven paid-for summaries;
+- reopened three rule chains that had been closed, so pages that could say
+  "in force" went back to saying it conditionally;
+- committed all of it as *"nightly gazette check, 0 new in the last 30 days"*.
+
+No subscriber was misled: no feed entry id was new, so nothing re-notified;
+six old entries quietly dropped out. It was found because the sitemap listed
+159 URLs where the local build listed 167.
+
+Every step did what it was asked on the input it had, so the fix is three
+guards that do not depend on each other:
+
+1. **`data/recovered.json`** records each recovery — exact archived URL, crawl
+   timestamp, sha256 — and `vidhana restore` re-acquires them after `sync`. A
+   Wayback `if_` capture at a fixed timestamp is immutable, so no archive
+   search is involved, and the hash is checked before anything is ingested.
+   All seven were re-fetched and came back byte-identical.
+2. **`summaries export` merges and never prunes.** A document the rebuild
+   failed to get back can no longer take its summary with it.
+3. **`vidhana guard`** fails the nightly job, before it commits, if any gazette
+   or summary would disappear. It does not know why, on purpose: a failed
+   restore, a gazette the IRD delisted and a parser regression all look the
+   same, and all want a human. Replayed against `3d8771f`, it refuses and
+   names all seven.
+
+The repair was produced by the fixed pipeline on a cold database, not by
+`git checkout`, and every tracked artefact came out byte-identical to the last
+state before the loss.
 
 ## 6. What the product now says
 
