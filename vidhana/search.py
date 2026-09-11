@@ -171,6 +171,9 @@ def reindex(con) -> dict:
         "       s.summary, s.tags, s.audience "
         "FROM gazette g LEFT JOIN gazette_summary s ON s.no = g.no").fetchall()
 
+    from . import ocr
+    vocab = ocr.vocabulary(con)
+
     raws = [t for r in rows for t in json.loads(r["tags"] or "[]")]
     canon = canonical_tags(raws)
 
@@ -181,7 +184,7 @@ def reindex(con) -> dict:
         if r["text_path"]:
             try:
                 with open(r["text_path"]) as fh:
-                    body = fh.read()
+                    body = ocr.searchable(fh.read(), vocab)
             except OSError:
                 body = ""            # PDFs are gitignored; a fresh clone has no text yet
         db.index_fts(con, r["no"], r["title"], body, r["summary"])

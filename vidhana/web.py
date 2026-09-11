@@ -91,6 +91,11 @@ def build(con) -> tuple[dict, dict]:
         gazettes=gazettes,
         threads=list(threads.values()),
     )
+    # The same filter the search index gets, so the site's full text and its
+    # search agree with the CLI's: OCR lines that do not read as English — the
+    # Sinhala masthead, mirror-text from rotated forms — are left out.
+    from . import ocr
+    vocab = ocr.vocabulary(con)
     bodies = {}
     for g in gazettes:
         row = con.execute("SELECT text_path FROM gazette WHERE no=?", (g["no"],)).fetchone()
@@ -98,7 +103,7 @@ def build(con) -> tuple[dict, dict]:
             continue
         try:
             with open(row["text_path"]) as f:
-                bodies[g["no"]] = f.read()
+                bodies[g["no"]] = ocr.searchable(f.read(), vocab)
         except OSError:
             continue          # PDFs are gitignored; a fresh clone has no text yet
     return index, bodies

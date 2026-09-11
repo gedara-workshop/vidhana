@@ -89,6 +89,50 @@ class TestStore(unittest.TestCase):
         self.assertEqual(ocr.load_store(self.path), {})
 
 
+class TestSearchable(unittest.TestCase):
+    """The corpus-vocabulary filter applied before text reaches search and the
+    site. Lines are verbatim OCR from 1599/13 and 2064/59."""
+
+    VOCAB = frozenset("the gazette democratic socialist republic sri lanka tuesday april "
+                      "inland revenue act notice under section commissioner general cost "
+                      "improvements maintenance repairs".split())
+
+    def block(self, *lines):
+        return f"{ocr.BEGIN} (page 1)\n" + "\n".join(lines) + f"\n{ocr.END}"
+
+    def test_the_sinhala_masthead_is_dropped_and_english_kept(self):
+        out = ocr.searchable(self.block(
+            "Goth) Geant wore) cndded od oad",
+            "The Gazette of the Democrat Socialis Republic of Sri Lanka",
+            "No. 1599/13 - TUESDAY, APRIL 28, 2009"), self.VOCAB)
+        self.assertNotIn("Geant", out)
+        self.assertIn("The Gazette of the Democrat Socialis Republic", out)
+        self.assertIn("TUESDAY, APRIL 28, 2009", out)
+
+    def test_mirror_text_from_a_rotated_form_is_dropped(self):
+        out = ocr.searchable(self.block(
+            "(5909) (£9) (os-o) (0r+0€+07) (opjuonezteas soueuoyureat (02) uonrsmboy (9)",
+            "Cost of improvements/ maintenance/ repairs"), self.VOCAB)
+        self.assertNotIn("soueuoyureat", out)
+        self.assertIn("Cost of improvements", out)
+
+    def test_the_text_layer_is_never_touched(self):
+        # Only OCR blocks are filtered. A text-layer line of the same shape as
+        # the masthead is the parser's problem, not this function's.
+        layer = "Goth) Geant wore) cndded od oad\n"
+        self.assertEqual(ocr.searchable(layer + self.block("Geant"), self.VOCAB)[:len(layer)],
+                         layer)
+
+    def test_the_markers_survive(self):
+        out = ocr.searchable(self.block("Goth) Geant wore)"), self.VOCAB)
+        self.assertTrue(out.startswith(ocr.BEGIN))
+        self.assertTrue(out.endswith(ocr.END))
+
+    def test_without_a_vocabulary_nothing_is_emptied(self):
+        text = self.block("Goth) Geant wore) cndded od oad")
+        self.assertEqual(ocr.searchable(text, frozenset()), text)
+
+
 class TestMarkers(unittest.TestCase):
     def test_markers_are_distinguishable(self):
         """OCR text is materially noisier than the text layer, so it must never

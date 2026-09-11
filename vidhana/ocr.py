@@ -141,3 +141,65 @@ def _tidy(text: str) -> str:
             continue
         kept.append(line.rstrip())
     return re.sub(r"\n{3,}", "\n\n", "\n".join(kept)).strip()
+
+
+# --- what reaches search and the site -----------------------------------------
+#
+# `_tidy` judges one line at a time with nothing to compare it to, and lets
+# through exactly the lines it was written for: the legacy-Sinhala masthead on
+# every scanned page ("Goth) Geant wore) cndded od oad") has plenty of vowels.
+# Rotated form pages come out as mirror-text ("(opjuonezteas soueuoyureat") that
+# passes too. All of it went into the search index and the site's full text.
+#
+# The corpus itself says what English looks like here: 141 documents carry a
+# real text layer. A line of OCR is kept for search when at least half its
+# words are words those documents use. The masthead and the mirror-text score
+# zero; "Cost of improvements/ maintenance/ repairs" scores a half and stays.
+#
+# This runs where the whole corpus is visible — `reindex` and `web.build` —
+# and never in the per-document pipeline: the vocabulary depends on every
+# other document, so filtering one document at a time would depend on the
+# order they were processed in. Parsing still reads the unfiltered text, so no
+# parsed field can change because of it.
+
+_WORD = re.compile(r"[A-Za-z]{3,}")
+_BLOCK = re.compile(rf"({re.escape(BEGIN)}[^\n]*\n)(.*?)(\n{re.escape(END)})", re.S)
+KEEP_RATIO = 0.5
+
+
+def vocabulary(con) -> frozenset[str]:
+    """Words used at least twice across the documents with a real text layer."""
+    import collections
+
+    seen: collections.Counter = collections.Counter()
+    for r in con.execute(
+            "SELECT text_path FROM gazette WHERE needs_ocr = 0 AND text_path IS NOT NULL"):
+        try:
+            with open(r["text_path"]) as f:
+                seen.update(w.lower() for w in _WORD.findall(f.read()))
+        except FileNotFoundError:
+            continue
+    return frozenset(w for w, n in seen.items() if n >= 2)
+
+
+def _english(line: str, vocab: frozenset[str]) -> bool:
+    words = [w.lower() for w in _WORD.findall(line)]
+    return bool(words) and sum(w in vocab for w in words) / len(words) >= KEEP_RATIO
+
+
+def searchable(text: str, vocab: frozenset[str]) -> str:
+    """`text` with OCR blocks reduced to the lines that read as English.
+
+    Only inside the OCR markers; the text layer is never touched. With no
+    vocabulary — no text layer anywhere yet — the text is returned as it is
+    rather than emptied.
+    """
+    if not vocab or BEGIN not in text:
+        return text
+
+    def keep(m: re.Match) -> str:
+        lines = [l for l in m.group(2).split("\n") if not l.strip() or _english(l, vocab)]
+        body = re.sub(r"\n{3,}", "\n\n", "\n".join(lines)).strip("\n")
+        return m.group(1) + body + m.group(3)
+
+    return _BLOCK.sub(keep, text)
