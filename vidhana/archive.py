@@ -27,6 +27,7 @@ disclose an incomplete chain rather than quietly asserting "in force".
 from __future__ import annotations
 
 import json
+import os
 import re
 import urllib.parse
 import urllib.request
@@ -35,6 +36,8 @@ from .fetch import UA
 from .util import normalise_no
 
 CDX = "http://web.archive.org/cdx/search/cdx"
+RECOVERED = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                         "data", "recovered.json")
 WAYBACK = "https://web.archive.org/web/{ts}if_/{url}"
 
 # The two filename layouts documents.gov.lk used. Both put the gazette number in
@@ -239,3 +242,63 @@ def _discard(con, no: str) -> None:
                                  os.path.basename(path).replace(".pdf", ".txt"))):
         if os.path.exists(p):
             os.remove(p)
+
+
+# --- the tracked record ------------------------------------------------------
+#
+# The database is gitignored and rebuilt from scratch on every nightly run, and
+# the IRD listing is the only enumeration a rebuild starts from. A gazette the
+# listing omits therefore exists nowhere a cold runner can see unless it is
+# written down. It was not, and the first unattended run dropped all seven,
+# deleted their summaries, and reported "0 new".
+#
+# So each recovery is recorded here: the exact archived URL and crawl timestamp
+# (a Wayback `if_` capture at a fixed timestamp is immutable, so it can be
+# fetched again without searching the archive) and the sha256 of what was
+# verified, so a re-fetch that returns something else is caught.
+
+_RECORD_KEYS = ("no", "original", "timestamp", "sha256")
+
+
+def snapshot_of(rec: dict) -> dict:
+    """The `backfill` snapshot argument for a recorded recovery."""
+    return dict(no=rec["no"], url=rec["original"], timestamp=rec["timestamp"],
+                snapshot=WAYBACK.format(ts=rec["timestamp"], url=rec["original"]))
+
+
+def load_recovered(path: str = RECOVERED) -> list[dict]:
+    if not os.path.exists(path):
+        return []
+    with open(path) as f:
+        return json.load(f)
+
+
+def export_recovered(con, path: str = RECOVERED) -> dict:
+    """Write every web-archive gazette the database holds into the record.
+
+    Merges, never prunes. An entry whose gazette the database does not hold is
+    kept, because "not in this database" is exactly the state a cold rebuild is
+    in before it reads this file — pruning on that basis is the bug this record
+    exists to fix. Removing a recovery is a deliberate edit to the file.
+
+    Sorted, stable key order and one entry per line of diff, like
+    `data/summaries.json`, so a new recovery reads as a one-record change.
+    """
+    have = {r["no"]: r for r in load_recovered(path)}
+    added = 0
+    for g in con.execute(
+            "SELECT no, source_detail, pdf_sha256 FROM gazette "
+            "WHERE source='web-archive' AND pdf_sha256 IS NOT NULL"):
+        original, _, ts = (g["source_detail"] or "").rpartition(" @ ")
+        if not original or not ts:
+            raise ValueError(f"{g['no']}: source_detail is not 'url @ timestamp'")
+        rec = dict(no=g["no"], original=original, timestamp=ts, sha256=g["pdf_sha256"])
+        if have.get(g["no"]) != rec:
+            added += g["no"] not in have
+            have[g["no"]] = rec
+    rows = [{k: r[k] for k in _RECORD_KEYS} for _, r in sorted(have.items())]
+    with open(path, "w") as f:
+        json.dump(rows, f, indent=2)
+        f.write("\n")
+    return dict(total=len(rows), added=added)
+

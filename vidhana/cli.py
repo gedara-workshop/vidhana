@@ -470,7 +470,7 @@ def cmd_backfill(a):
     con = db.connect(a.db)
     todo = a.only or [m["no"] for m in archive.missing(con) if m["in_range"]]
     if not todo:
-        print("nothing to backfill"); return
+        print("nothing to backfill")
     for no in todo:
         try:
             r = archive.backfill(con, no, use_ocr=not a.no_ocr)
@@ -479,7 +479,12 @@ def cmd_backfill(a):
             continue
         detail = r.get("detail") or r.get("act") or ""
         print(f"  {no:<9} {r['status']:<15} {detail}")
-    print("\nrun `vidhana resolve && vidhana structure && vidhana reindex` to finish")
+    # Written on every run, not only when something was recovered: the record is
+    # what lets a cold rebuild get these documents back, and a recovery that
+    # exists only in a gitignored database is one nightly run from being lost.
+    rec = archive.export_recovered(con)
+    print(f"\n{rec['total']} recoveries recorded in data/recovered.json ({rec['added']} new)")
+    print("run `vidhana resolve && vidhana structure && vidhana reindex` to finish")
 
 
 def cmd_export_web(a):

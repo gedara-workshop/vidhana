@@ -106,3 +106,70 @@ class Provenance(unittest.TestCase):
                              "WHERE no='1791/08'").fetchone()
         self.assertEqual(r["source"], "web-archive")
         self.assertIn("1791-08", r["source_detail"])
+
+
+def _recovered(con, no, original, ts, sha):
+    db.upsert_gazette(con, dict(
+        no=no, year=2006, published_date="2006-04-03", title="t",
+        source_url=archive.WAYBACK.format(ts=ts, url=original),
+        source="web-archive", source_detail=f"{original} @ {ts}"))
+    con.execute("UPDATE gazette SET pdf_sha256=? WHERE no=?", (sha, no))
+
+
+class Record(unittest.TestCase):
+    """The tracked record of recoveries. It exists because the first unattended
+    nightly run, on a cold database, could not see the seven recovered gazettes
+    and silently dropped them from the published corpus."""
+
+    ORIG = "http://www.documents.gov.lk/old/gazette/forms/Extgzt/2006/Pdf/Apr/1439-1/1439-1e.pdf"
+
+    def setUp(self):
+        import tempfile
+        self.con = sqlite3.connect(":memory:")
+        self.con.row_factory = sqlite3.Row
+        db.init(self.con)
+        self.dir = tempfile.mkdtemp()
+        self.path = os.path.join(self.dir, "recovered.json")
+
+    def test_records_what_is_needed_to_fetch_it_again(self):
+        _recovered(self.con, "1439/01", self.ORIG, "20241121131244", "478346d4")
+        archive.export_recovered(self.con, self.path)
+        [rec] = archive.load_recovered(self.path)
+        self.assertEqual(rec, dict(no="1439/01", original=self.ORIG,
+                                   timestamp="20241121131244", sha256="478346d4"))
+        # The snapshot is rebuilt from the record, not searched for: an `if_`
+        # capture at a fixed timestamp is immutable.
+        self.assertEqual(archive.snapshot_of(rec)["snapshot"],
+                         f"https://web.archive.org/web/20241121131244if_/{self.ORIG}")
+
+    def test_never_prunes_a_recovery_the_database_does_not_hold(self):
+        # This is the cold-rebuild state exactly: the record lists a gazette the
+        # fresh database has not re-acquired yet. Pruning on that basis is the
+        # bug the record exists to fix.
+        _recovered(self.con, "1439/01", self.ORIG, "20241121131244", "478346d4")
+        archive.export_recovered(self.con, self.path)
+        empty = sqlite3.connect(":memory:"); empty.row_factory = sqlite3.Row
+        db.init(empty)
+        r = archive.export_recovered(empty, self.path)
+        self.assertEqual(r["total"], 1)
+        self.assertEqual([x["no"] for x in archive.load_recovered(self.path)], ["1439/01"])
+
+    def test_listing_documents_are_not_recorded(self):
+        self.con.execute(
+            "INSERT INTO gazette (no, year, published_date, title, source_url, pdf_sha256) "
+            "VALUES ('2500/106',2026,'2026-08-06','t','http://x','abc')")
+        self.assertEqual(archive.export_recovered(self.con, self.path)["total"], 0)
+
+    def test_output_is_stable(self):
+        # Sorted and byte-identical on re-export, so the file only ever shows a
+        # diff when a recovery actually changed.
+        _recovered(self.con, "1791/08", "http://documents.gov.lk/files/egz/2012/12/1791-08_E.pdf",
+                   "20230126031356", "fafbf395")
+        _recovered(self.con, "1439/01", self.ORIG, "20241121131244", "478346d4")
+        archive.export_recovered(self.con, self.path)
+        first = open(self.path).read()
+        r = archive.export_recovered(self.con, self.path)
+        self.assertEqual(open(self.path).read(), first)
+        self.assertEqual(r["added"], 0)
+        self.assertEqual([x["no"] for x in archive.load_recovered(self.path)],
+                         ["1439/01", "1791/08"])
