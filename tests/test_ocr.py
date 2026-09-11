@@ -36,6 +36,59 @@ class TestTidy(unittest.TestCase):
         self.assertIn("TIN", ocr._tidy("TIN"))
 
 
+class TestStore(unittest.TestCase):
+    """Raw OCR is tracked in data/ocr.json because tesseract on the CI runner
+    and tesseract on a Mac read the same page differently, and the nightly job
+    committed that difference as a change to the corpus. Tesseract is faked:
+    what is under test is when it is allowed to run."""
+
+    RAW = "No. 1599/13 - TUESDAY, APRIL 28, 2009\n\nfad I, Sahampathi Angammana, Commissioner"
+
+    def setUp(self):
+        import tempfile
+        self.path = os.path.join(tempfile.mkdtemp(), "ocr.json")
+        self.calls = []
+        self.saved = (ocr._tesseract, ocr.engine)
+
+        def fake(pdf, page, dpi=ocr.DPI, lang=ocr.LANG):
+            self.calls.append((pdf, page))
+            return self.RAW
+        ocr._tesseract, ocr.engine = fake, lambda *a, **k: "tesseract 5.5.2, eng, 300dpi"
+
+    def tearDown(self):
+        ocr._tesseract, ocr.engine = self.saved
+
+    def test_a_page_is_read_once_and_then_always_comes_from_the_store(self):
+        first = ocr.read_page("x.pdf", "abc", "1599/13", 1, self.path)
+        second = ocr.read_page("x.pdf", "abc", "1599/13", 1, self.path)
+        self.assertEqual(first, second)
+        self.assertEqual(len(self.calls), 1)
+
+    def test_the_stored_text_is_raw_so_the_tidy_can_improve_later(self):
+        ocr.read_page("x.pdf", "abc", "1599/13", 1, self.path)
+        [rec] = ocr.load_store(self.path).values()
+        self.assertEqual(rec["text"], self.RAW)
+        self.assertEqual(rec["engine"], "tesseract 5.5.2, eng, 300dpi")
+
+    def test_a_changed_pdf_is_read_afresh(self):
+        # Keyed by content, not by gazette number: if the IRD replaces a PDF,
+        # the old reading must not be reused for the new document.
+        ocr.read_page("x.pdf", "abc", "1599/13", 1, self.path)
+        ocr.read_page("x.pdf", "def", "1599/13", 1, self.path)
+        self.assertEqual(len(self.calls), 2)
+
+    def test_a_machine_without_tesseract_builds_from_the_store(self):
+        ocr.read_page("x.pdf", "abc", "1599/13", 1, self.path)
+        ocr._tesseract = lambda *a, **k: None
+        self.assertIn("Sahampathi Angammana", ocr.read_page("x.pdf", "abc", "1599/13", 1, self.path))
+
+    def test_a_failed_read_records_nothing(self):
+        # Otherwise an empty reading would be cached and never retried.
+        ocr._tesseract = lambda *a, **k: None
+        self.assertEqual(ocr.read_page("x.pdf", "abc", "1599/13", 1, self.path), "")
+        self.assertEqual(ocr.load_store(self.path), {})
+
+
 class TestMarkers(unittest.TestCase):
     def test_markers_are_distinguishable(self):
         """OCR text is materially noisier than the text layer, so it must never
