@@ -113,7 +113,7 @@ jobs:
           set -euo pipefail
           git config user.name  "vidhana-bot"
           git config user.email "noreply@github.com"
-          git add data/listing data/manifest.csv data/summaries.json docs/feeds docs/data
+          git add data/listing data/manifest.csv data/summaries.json data/ocr.json docs/feeds docs/data
           if git diff --cached --quiet; then
             echo "no change — nothing published today"
             exit 0

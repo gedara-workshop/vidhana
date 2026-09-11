@@ -56,7 +56,7 @@ def process(con, row, force: bool = False, use_ocr: bool = True) -> dict:
         for p in pages_meta:
             if not p["needs_ocr"]:
                 continue
-            got = ocr.ocr_page(dest, p["page"])
+            got = ocr.read_page(dest, digest, no, p["page"])
             p["ocr_chars"] = len(got)
             if got:
                 text += (f"\n\n{ocr.BEGIN} (page {p['page']})\n{got}\n{ocr.END}\n")
