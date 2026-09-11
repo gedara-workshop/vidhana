@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { RuleQuestions, RuleQuestionsJsonLd } from "@/components/RuleQuestions";
 import { allGazettes, allThreads, missingFrom, threadMembers } from "@/lib/corpus";
 import { resolveRuleAddress, ruleAddresses, rulePath } from "@/lib/rules";
 import { url } from "@/lib/site";
@@ -137,6 +138,9 @@ export default async function RulePage({ params }: { params: Promise<{ slug: str
             the IRD listing, so a change made by a gazette we do not hold would not appear below.
           </p>
         )}
+
+        <RuleQuestions questions={t.questions} />
+        <RuleQuestionsJsonLd questions={t.questions} />
 
         <p className="sec mt-6 mb-2">Every document in this rule</p>
         <div className="overflow-hidden rounded-[8px] border" style={{ borderColor: "var(--line)" }}>
