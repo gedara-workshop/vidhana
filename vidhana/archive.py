@@ -67,6 +67,15 @@ def _numbers(url: str) -> list[tuple[int, int]]:
     return []
 
 
+class ArchiveUnavailable(RuntimeError):
+    """The archive could not be reached or would not answer.
+
+    Deliberately distinct from "no snapshots exist". A completeness check whose
+    network error is indistinguishable from an authoritative absence is worse
+    than no completeness check at all — it reports a gap it never looked for.
+    """
+
+
 def _get(url: str, timeout: int = 60, attempts: int = 3) -> bytes:
     """GET with backoff. The Internet Archive rate-limits, and it does so most
     readily in the middle of exactly the kind of bulk lookup this module makes."""

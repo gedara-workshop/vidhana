@@ -173,3 +173,23 @@ class Record(unittest.TestCase):
         self.assertEqual(r["added"], 0)
         self.assertEqual([x["no"] for x in archive.load_recovered(self.path)],
                          ["1439/01", "1791/08"])
+
+
+class Unavailable(unittest.TestCase):
+    """ae2d2cd deleted this class by accident while adding `_numbers`, leaving
+    every `raise ArchiveUnavailable` in place. A rate-limited lookup then died
+    with NameError instead of being reported as a lookup failure, and nothing
+    noticed because nothing was rate-limited in between."""
+
+    def test_an_exhausted_retry_raises_the_documented_error(self):
+        import urllib.request
+        saved = urllib.request.urlopen
+
+        def refuse(*a, **k):
+            raise OSError("429 Too Many Requests")
+        urllib.request.urlopen = refuse
+        try:
+            with self.assertRaises(archive.ArchiveUnavailable):
+                archive._get("http://web.archive.org/x", attempts=1)
+        finally:
+            urllib.request.urlopen = saved
