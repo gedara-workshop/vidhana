@@ -201,5 +201,28 @@ class SummaryExport(unittest.TestCase):
             rows = json.load(f)
         self.assertEqual([r["no"] for r in rows], sorted(r["no"] for r in rows))
 
+    def test_export_never_deletes_a_summary_the_database_cannot_see(self):
+        # The exact sequence of 3d8771f: a cold rebuild failed to re-acquire a
+        # gazette, the export ran against a database without it, and the
+        # nightly job committed seven paid-for summaries' deletion.
+        structure.export_summaries(self.con, self.path)
+        self.con.execute("DELETE FROM gazette_summary WHERE no='2481/22'")
+        self.con.execute("DELETE FROM gazette WHERE no='2481/22'")
+        n = structure.export_summaries(self.con, self.path)
+        self.assertEqual(n, 2)
+        with open(self.path) as f:
+            kept = {r["no"]: r for r in json.load(f)}
+        self.assertEqual(kept["2481/22"]["summary"], "summary for 2481/22")
+
+    def test_the_database_wins_for_a_summary_it_does_hold(self):
+        # Merging must not freeze the file: a re-summarised document replaces
+        # its old row rather than being shadowed by it.
+        structure.export_summaries(self.con, self.path)
+        self.con.execute("UPDATE gazette_summary SET summary='newer' WHERE no='2481/22'")
+        structure.export_summaries(self.con, self.path)
+        with open(self.path) as f:
+            kept = {r["no"]: r for r in json.load(f)}
+        self.assertEqual(kept["2481/22"]["summary"], "newer")
+
     def test_missing_export_file_is_not_an_error(self):
         self.assertEqual(structure.import_summaries(self.con, self.path)["loaded"], 0)

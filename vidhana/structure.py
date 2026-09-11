@@ -508,15 +508,28 @@ def export_summaries(con: sqlite3.Connection, path: str = SUMMARY_EXPORT) -> int
     Sorted by gazette number and written with a stable key order, so a re-export
     after summarising one new document produces a one-record diff rather than a
     reshuffled file. The point of tracking it is to be able to read that diff.
+
+    Merges, never prunes. A row already in the file whose summary this database
+    does not hold is kept as it is. The file is the ledger of what we paid the
+    model for; the database is rebuilt from scratch every night, and "not in
+    tonight's database" has already once meant "a document the rebuild failed
+    to re-acquire" — the export then deleted seven paid-for summaries and the
+    nightly job committed the deletion. Removing a summary is a deliberate edit.
     """
-    rows = [{c: r[c] for c in _EXPORT_COLUMNS}
+    import os
+
+    rows = {r["no"]: {c: r[c] for c in _EXPORT_COLUMNS}
             for r in con.execute(
-                f"SELECT {', '.join(_EXPORT_COLUMNS)} FROM gazette_summary "
-                "ORDER BY no")]
+                f"SELECT {', '.join(_EXPORT_COLUMNS)} FROM gazette_summary")}
+    if os.path.exists(path):
+        with open(path) as f:
+            for kept in json.load(f):
+                rows.setdefault(kept["no"], {c: kept.get(c) for c in _EXPORT_COLUMNS})
+    out = [rows[no] for no in sorted(rows)]
     with open(path, "w") as f:
-        json.dump(rows, f, indent=2, ensure_ascii=False, sort_keys=False)
+        json.dump(out, f, indent=2, ensure_ascii=False, sort_keys=False)
         f.write("\n")
-    return len(rows)
+    return len(out)
 
 
 def import_summaries(con: sqlite3.Connection, path: str = SUMMARY_EXPORT,
