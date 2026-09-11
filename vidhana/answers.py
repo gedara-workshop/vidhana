@@ -79,7 +79,13 @@ def members(con, root_no: str) -> list[dict]:
 
 
 def rule(con, root_no: str) -> dict:
-    return dict(con.execute("SELECT * FROM rule_thread WHERE root_no=?", (root_no,)).fetchone())
+    """The rule rooted at `root_no`. KeyError if the corpus has no such rule —
+    after a merge or a recovery the answers file can name a root that is no
+    longer one, and `publishable` must skip it, not crash the export."""
+    row = con.execute("SELECT * FROM rule_thread WHERE root_no=?", (root_no,)).fetchone()
+    if row is None:
+        raise KeyError(root_no)
+    return dict(row)
 
 
 def basis(con, root_no: str) -> str:

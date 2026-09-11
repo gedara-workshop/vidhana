@@ -136,6 +136,14 @@ class Staleness(unittest.TestCase):
         self.con.execute("UPDATE gazette SET pdf_sha256='replaced' WHERE no='2481/22'")
         self.assertNotEqual(answers.basis(self.con, self.root), before)
 
+    def test_a_set_for_a_rule_that_no_longer_exists_is_skipped(self):
+        # A recovery can give a rule an older root; the old root then names
+        # no rule. The export must carry on without it.
+        sets = answers.load(self.path)
+        sets["9999/99"] = dict(sets[self.root], rule="9999/99")
+        answers.save(sets, self.path)
+        self.assertEqual(set(answers.publishable(self.con, self.path)), {self.root})
+
     def test_the_fingerprint_is_stable_when_nothing_changed(self):
         self.assertEqual(answers.basis(self.con, self.root), answers.basis(self.con, self.root))
 
