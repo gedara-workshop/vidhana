@@ -263,6 +263,19 @@ Not yet chosen — do not assume, ask:
   that draws the eye. Do not introduce a brand accent colour.
 - **Theme is system/light/dark**, applied by an inline script before paint.
   Keep "system" reachable.
+- **`web/lib/site.ts` owns every absolute URL.** `basePath` is applied by Next
+  to links and assets but *not* to sitemap or robots contents, and canonical
+  tags were hardcoded to `/vidhana/` until they were routed through `url()`.
+  Add a route and it must be added to `sitemapEntries` — `npm run check:sitemap`
+  fails the build if a rendered page is missing from the sitemap or vice versa,
+  and CI runs it before the deploy.
+- **`robots.txt` at `/vidhana/robots.txt` is not honoured by crawlers.**
+  robots.txt is read only at the origin root, and
+  `https://gedara-workshop.github.io/robots.txt` belongs to a
+  `gedara-workshop.github.io` repo that does not exist. The file is still built
+  — it becomes authoritative on a custom domain — but **sitemap discovery today
+  is the Search Console submission, not the file.** Do not "fix" a reported
+  discovery problem by editing `robots.ts`.
 
 ## Agreed direction
 
