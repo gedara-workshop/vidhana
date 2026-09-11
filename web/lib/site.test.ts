@@ -15,7 +15,7 @@ const g = (over: Partial<Gazette> & { no: string }): Gazette => ({
 
 const t = (over: Partial<Thread> & { thread_id: number }): Thread => ({
   subject: "vat", enabling_act: null, root_no: "1/1", head_no: "1/1",
-  first_date: "2006-01-01", last_date: "2026-01-01", size: 1, unresolved: 0, ...over,
+  first_date: "2006-01-01", last_date: "2026-01-01", size: 1, unresolved: 0, questions: [], ...over,
 });
 
 test("every URL is absolute and carries the base path", () => {

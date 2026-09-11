@@ -190,6 +190,49 @@ class TestEffectiveDate(unittest.TestCase):
         self.assertEqual(rows["2500/106"], "2026-08-06")
 
 
+class TestDateMovingAmendment(unittest.TestCase):
+    """2500/106 moves 2481/22's date from July to October. 2481/22 also
+    rescinds 2463/05 from that same July date."""
+
+    def setUp(self):
+        self.con = con = make_db()
+        add(con, "2463/05", "2025-11-17")
+        add(con, "2481/22", "2026-03-27")
+        add(con, "2500/106", "2026-08-06")
+        ref(con, "2481/22", "2463/05", "rescinds")
+        ref(con, "2500/106", "2481/22", "amends")
+        date(con, "2481/22", "effective", "2026-07-01")
+        date(con, "2481/22", "rescind_effective", "2026-07-01")
+        date(con, "2500/106", "sets_effective_date", "2026-10-01")
+        date(con, "2500/106", "replaces_effective_date", "2026-07-01")
+        resolve.resolve(con)
+
+    def at(self, when):
+        return {r["no"] for r in resolve.operative_on(self.con, 1, when)}
+
+    def test_the_rescission_moves_with_the_date(self):
+        self.assertEqual(self.con.execute(
+            "SELECT rescinded_from FROM gazette WHERE no='2463/05'").fetchone()[0], "2026-10-01")
+
+    def test_there_is_no_quarter_without_an_invoice_format(self):
+        # Before the fix, 1 August 2026 had nothing in force.
+        self.assertEqual(self.at("2026-08-01"), {"2463/05"})
+        self.assertIn("2481/22", self.at("2026-10-01"))
+        self.assertNotIn("2463/05", self.at("2026-10-01"))
+
+    def test_only_the_exact_replaced_date_moves(self):
+        con = make_db()
+        add(con, "1000/01", "2020-01-01"); add(con, "2000/01", "2021-01-01"); add(con, "3000/01", "2021-06-01")
+        ref(con, "2000/01", "1000/01", "rescinds"); ref(con, "3000/01", "2000/01", "amends")
+        date(con, "2000/01", "effective", "2021-07-01")
+        date(con, "2000/01", "rescind_effective", "2021-03-01")      # a different date
+        date(con, "3000/01", "sets_effective_date", "2021-10-01")
+        date(con, "3000/01", "replaces_effective_date", "2021-07-01")
+        resolve.resolve(con)
+        self.assertEqual(con.execute(
+            "SELECT rescinded_from FROM gazette WHERE no='1000/01'").fetchone()[0], "2021-03-01")
+
+
 class TestOperativeOn(unittest.TestCase):
     def setUp(self):
         self.con = make_db()

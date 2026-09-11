@@ -102,6 +102,11 @@ alone reported a December 2012 gazette (`1791/08`) as effective from 2003,
 because it reproduces older regulations in full, and an as-of query for 2010
 returned it. `resolve.stated_effective` is the single place this is decided,
 and `validate` grades against it rather than a query of its own.
+**A date-moving amendment moves every rescission its target makes on that
+date** (`2500/106` moved 2481/22's date from July to October; 2481/22 also
+rescinds the 2025 format "with effect from July 01, 2026"). Moving only one
+left a quarter with no invoice format in force at all. The substitution is
+literal — only the exact replaced date moves.
 **Never order anything by date alone.** The IRD issues in same-day batches, and
 a date tie used to fall through to Python set iteration, which is randomised
 per process: one corpus gave three different roots and two different current
@@ -260,6 +265,14 @@ load-bearing facts:
   data, and composes with all three later.
 - **The nightly job commits nothing when nothing changed.** The history is a
   record of the law changing, not of the workflow running.
+- **Questions are answered in advance, not live** — Dinal's decision,
+  2026-09-11, choosing between pre-answered questions, live Q&A, and the first
+  then the second. Pre-answered questions are built (`vidhana/answers.py`,
+  `data/answers.json`): written offline per rule, checked, reviewed as a PR,
+  published statically. **Live Q&A is deferred until people are actually
+  using the site**, and needs the hosting decision below, because a static site
+  cannot hold an API key. "No LLM at query time" stays true — as a consequence
+  of that choice, not as a standing rule to cite against it.
 - **Facets are rebuilt wholesale, not incrementally.** The canonical tag display
   form is a corpus-level fact: adding one document can change how an existing
   tag is spelled, and an incremental update leaves both spellings in the list.
@@ -315,6 +328,32 @@ Not yet chosen — do not assume, ask:
   as *too plain, too much text, no furniture, doesn't feel like an app*. The
   brief was density and structure. **Do not drift back towards a spare,
   typographic page** — it has been tried twice and rejected twice.
+- **Rule pages carry pre-answered questions**, and the rules for them are the
+  product's rules for anything a model writes:
+  - **The resolver decides; the model only phrases.** The prompt carries the
+    resolver's facts and the text. Never describe an amended-but-in-force
+    document as "superseded" in a prompt — 2481/22 is the invoice format in
+    force, and that word invites "it no longer applies".
+  - **`answers.verify` decides what is published, not the model.** Every cited
+    gazette in the rule; every gazette number, date, amount and percentage
+    present in the documents; the current document cited; no wording that goes
+    stale on a static page ("will", "currently"); no prompt framing ("the
+    documents supplied"). Extend it when a review finds a new failure — that
+    is how amounts and framing were added.
+  - **A stale set is withdrawn, never caveated.** Each set stores the rule's
+    `basis` fingerprint; `publishable` drops any set written against a rule
+    that has since changed. The nightly job reports withdrawn sets and does not
+    regenerate them — a person reads answers before they go out.
+  - **Read every answer against the gazette before committing a set.** The
+    checker catches invented figures, not misreadings. Reading the first
+    tax-invoice answers found a resolver bug (below) no test had.
+  - The disclosure sits directly under the answers: model-written, how it was
+    checked, withdrawn on change, not legal advice, the PDF is the source.
+- **Known issue — "Superseded" overstates in schedule rules.** Some rules
+  (1439/01 and 1439/02, stamp duty) are one schedule amended item by item over
+  years; a 2016 gazette amending item 05 is not overridden by a 2025 one
+  amending item 09, yet the standing pill calls every non-head document
+  "Superseded". The answers avoid this; the pills do not yet.
 - **The brand is achromatic on purpose.** The only saturated colour belongs to
   the three standing states, so the thing a reader must act on is the thing
   that draws the eye. Do not introduce a brand accent colour.
@@ -377,4 +416,6 @@ when the stack is not stated, ask.
 
 Whatever the UI shows, it must carry the disclosures the CLI and the feed
 carry: incomplete rule history, low model confidence, and archive provenance.
-The resolver stays deterministic — **no LLM at query time**.
+The resolver stays deterministic. A model may phrase what the resolver has
+decided — summaries, pre-answered questions — but never decides standing,
+dates or what is in force.

@@ -92,7 +92,12 @@ export default async function GazettePage(
               Go to {head.no}, current
             </Link>
           )}
-          {t && <Link className="btn" href={rulePath(t)}>See the whole rule</Link>}
+          {t && (
+            <Link className="btn" href={rulePath(t)}>
+              See the whole rule
+              {t.questions.length > 0 && ` · ${t.questions.length} questions answered`}
+            </Link>
+          )}
         </div>
 
         {g.summary && (

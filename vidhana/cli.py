@@ -534,6 +534,36 @@ def cmd_guard(a):
     print("\nnothing would disappear")
 
 
+def cmd_answers(a):
+    from . import answers
+    con = db.connect(a.db)
+    if a.action == "check":
+        rows = answers.status(con)
+        for r in rows:
+            print(f"  {r['rule']:<9} {r['state']:<8} {r['questions']} questions")
+        by = {k: sum(r["state"] == k for r in rows) for k in ("current", "stale", "failing", "missing")}
+        print("\n" + ", ".join(f"{v} {k}" for k, v in by.items()))
+        return
+    sets = answers.load()
+    todo = a.only or [r["rule"] for r in answers.status(con)
+                      if a.force or r["state"] != "current"]
+    print(f"{len(todo)} rules -> {a.model}\n")
+    tin = tout = ok = 0
+    for root in todo:
+        s = answers.generate(con, root, a.model)
+        tin, tout = tin + s["input_tokens"], tout + s["output_tokens"]
+        if s.pop("problems"):
+            print(f"  FAIL {root}: did not pass the checks after retries; nothing stored")
+            continue
+        ok += 1
+        sets[root] = s
+        answers.save(sets)       # after each rule, so an interruption loses nothing paid for
+        print(f"  ok {root:>9}  {len(s['questions'])} questions")
+    cost = tin / 1e6 * 0.20 + tout / 1e6 * 1.20
+    print(f"\n{ok} of {len(todo)} rules answered")
+    print(f"tokens {tin:,} in / {tout:,} out   approx ${cost:.4f} at gpt-5.6-luna list price")
+
+
 def cmd_export_web(a):
     con = db.connect(a.db)
     out = web.export(con, a.out)
@@ -619,6 +649,13 @@ def main(argv=None):
     v.add_argument("--find", action="store_true",
                    help="also ask the Internet Archive about the in-range gaps")
     v.set_defaults(fn=cmd_verify)
+
+    an = sub.add_parser("answers")
+    an.add_argument("action", choices=("generate", "check"))
+    an.add_argument("--only", nargs="*", metavar="ROOT")
+    an.add_argument("--force", action="store_true")
+    an.add_argument("--model", default=structure.DEFAULT_MODEL)
+    an.set_defaults(fn=cmd_answers)
 
     gd = sub.add_parser("guard")
     gd.add_argument("--against", default="HEAD", metavar="REV")

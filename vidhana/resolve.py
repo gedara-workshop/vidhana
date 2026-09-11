@@ -138,6 +138,23 @@ def resolve(con) -> dict:
             "UPDATE gazette SET status='rescinded', rescinded_by=?, rescinded_from=? "
             "WHERE no=?", (r["src_no"], when, r["dst_no"]))
 
+    # A date-moving amendment moves the date everywhere the target uses it.
+    # 2500/106: 'The effective date of "July 01, 2026", is hereby amended as
+    # "October 01, 2026"'. 2481/22 uses that date twice — for its own start
+    # and for rescinding the 2025 format ("rescinded with effect from July 01,
+    # 2026"). Moving only the first left a quarter in which no invoice format
+    # was in force at all: asked what applied on 1 August 2026, search
+    # answered nothing. The substitution is literal — only a rescission dated
+    # exactly the replaced date moves — so nothing is interpreted.
+    for r in con.execute(
+            "SELECT ref.dst_no, s.date AS moved_to, x.date AS moved_from "
+            "FROM gazette_reference ref "
+            "JOIN gazette_date s ON s.no = ref.src_no AND s.kind = 'sets_effective_date' "
+            "JOIN gazette_date x ON x.no = ref.src_no AND x.kind = 'replaces_effective_date' "
+            "WHERE ref.relation = 'amends'"):
+        con.execute("UPDATE gazette SET rescinded_from=? WHERE rescinded_by=? AND rescinded_from=?",
+                    (r["moved_to"], r["dst_no"], r["moved_from"]))
+
     edges = [(r["src_no"], r["dst_no"]) for r in con.execute(
         f"SELECT src_no, dst_no FROM gazette_reference "
         f"WHERE relation IN ({','.join('?' * len(THREAD_RELATIONS))})", THREAD_RELATIONS)]
