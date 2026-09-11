@@ -6,6 +6,12 @@
  * in the sitemap resolves to a rendered page, and every rendered page appears
  * in the sitemap.
  *
+ * Redirect pages are the exception, and are checked harder rather than
+ * skipped. A static host cannot send a 301, so an alias such as
+ * /rule/2500-106/ is a page carrying a zero-second refresh. Each one must be
+ * absent from the sitemap, marked noindex, and land in one hop on a real page
+ * that *is* listed — a redirect to a redirect, or to nothing, fails.
+ *
  * Run from web/ after a build: `node scripts/check-sitemap.mjs`
  */
 import { readFileSync, readdirSync, statSync } from "node:fs";
@@ -41,6 +47,19 @@ function rendered(dir = OUT, found = new Set()) {
 const pages = rendered();
 const listed = new Set();
 
+const REFRESH = /<meta http-equiv="refresh" content="0;url=([^"]+)"/;
+
+/** Redirect pages, as site path -> target site path. */
+const redirects = new Map();
+for (const p of pages) {
+  const html = readFileSync(join(OUT, p, "index.html"), "utf8");
+  const m = html.slice(0, html.indexOf("</head>")).match(REFRESH);
+  if (!m) continue;
+  if (!m[1].startsWith(`${BASE}/`)) { fail(`${p} redirects outside basePath: ${m[1]}`); continue; }
+  redirects.set(p, m[1].slice(BASE.length));
+  if (!/<meta name="robots" content="noindex"/.test(html)) fail(`${p} redirects but is indexable`);
+}
+
 for (const loc of locs) {
   if (!loc.startsWith("https://")) { fail(`not an absolute URL: ${loc}`); continue; }
   if (!loc.endsWith("/") && !loc.endsWith(".xml")) fail(`missing trailing slash: ${loc}`);
@@ -61,6 +80,13 @@ for (const loc of locs) {
 
 for (const p of [...pages].sort()) {
   if (UNLISTED.has(p)) continue;
+  if (redirects.has(p)) {
+    const to = redirects.get(p);
+    if (listed.has(p)) fail(`sitemap lists ${p}, which is a redirect to ${to}`);
+    if (redirects.has(to)) fail(`${p} redirects to ${to}, which redirects again`);
+    else if (!listed.has(to)) fail(`${p} redirects to ${to}, which is not a listed page`);
+    continue;
+  }
   if (!listed.has(p)) fail(`${p} is rendered but missing from the sitemap — add it in lib/site.ts`);
 }
 
@@ -68,4 +94,5 @@ const robots = readFileSync(join(OUT, "robots.txt"), "utf8");
 if (!robots.includes("Sitemap: ")) fail("robots.txt does not name the sitemap");
 
 if (process.exitCode) process.exit(1);
-console.log(`✓ sitemap and export agree: ${listed.size} URLs, ${pages.size} rendered pages`);
+console.log(`✓ sitemap and export agree: ${listed.size} URLs listed, ` +
+            `${redirects.size} redirects each landing on one, ${pages.size} rendered pages`);
