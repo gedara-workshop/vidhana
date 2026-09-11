@@ -487,6 +487,21 @@ def cmd_backfill(a):
     print("run `vidhana resolve && vidhana structure && vidhana reindex` to finish")
 
 
+def cmd_restore(a):
+    con = db.connect(a.db)
+    results = archive.restore(con, use_ocr=not a.no_ocr)
+    bad = [r for r in results if r["status"] not in ("recovered", "already held")]
+    for r in results:
+        print(f"  {r['no']:<9} {r['status']:<15} {r.get('detail') or r.get('act') or ''}")
+    held = sum(r["status"] == "already held" for r in results)
+    print(f"\n{len(results) - len(bad) - held} restored, {held} already held, {len(bad)} failed")
+    if bad:
+        # Fatal on purpose. Carrying on would publish a corpus missing these
+        # documents, which is the failure this command exists to prevent — and
+        # a missed nightly run loses nothing, since events are derived.
+        raise SystemExit(f"could not restore {', '.join(r['no'] for r in bad)}")
+
+
 def cmd_export_web(a):
     con = db.connect(a.db)
     out = web.export(con, a.out)
@@ -572,6 +587,10 @@ def main(argv=None):
     v.add_argument("--find", action="store_true",
                    help="also ask the Internet Archive about the in-range gaps")
     v.set_defaults(fn=cmd_verify)
+
+    rs = sub.add_parser("restore")
+    rs.add_argument("--no-ocr", dest="no_ocr", action="store_true")
+    rs.set_defaults(fn=cmd_restore)
 
     bf = sub.add_parser("backfill")
     bf.add_argument("--only", nargs="*", metavar="NO")

@@ -193,3 +193,114 @@ class Unavailable(unittest.TestCase):
                 archive._get("http://web.archive.org/x", attempts=1)
         finally:
             urllib.request.urlopen = saved
+class Restore(unittest.TestCase):
+    """Re-acquiring recorded recoveries on a cold rebuild. Network and the
+    pipeline are faked: what is under test is which document is allowed into
+    the database, and what happens when the archive does not cooperate."""
+
+    GOOD = b"%PDF-1.4 the gazette we verified"
+    SHA = __import__("hashlib").sha256(GOOD).hexdigest()
+
+    def setUp(self):
+        import json, tempfile
+        from vidhana import pipeline
+        self.con = sqlite3.connect(":memory:")
+        self.con.row_factory = sqlite3.Row
+        db.init(self.con)
+        self.dir = tempfile.mkdtemp()
+        self.path = os.path.join(self.dir, "recovered.json")
+        with open(self.path, "w") as f:
+            json.dump([dict(no="1791/08", original="http://documents.gov.lk/files/egz/2012/12/1791-08_E.pdf",
+                            timestamp="20230126031356", sha256=self.SHA)], f)
+        self.calls = []
+        self.served = self.GOOD
+        self.saved = (archive._get, archive.backfill, pipeline.PDF_DIR, pipeline.TEXT_DIR)
+        pipeline.PDF_DIR = os.path.join(self.dir, "pdf")
+        pipeline.TEXT_DIR = os.path.join(self.dir, "text")
+
+        def fake_get(url, timeout=60, attempts=3):
+            self.calls.append(url)
+            if isinstance(self.served, Exception):
+                raise self.served
+            return self.served
+
+        def fake_backfill(con, no, snapshot=None, use_ocr=True):
+            db.upsert_gazette(con, dict(no=no, year=2012, published_date="2012-12-31",
+                                        title="t", source_url=snapshot["snapshot"],
+                                        source="web-archive"))
+            return dict(no=no, status="recovered")
+
+        archive._get, archive.backfill = fake_get, fake_backfill
+
+    def tearDown(self):
+        from vidhana import pipeline
+        archive._get, archive.backfill, pipeline.PDF_DIR, pipeline.TEXT_DIR = self.saved
+
+    def pdf(self):
+        from vidhana import pipeline
+        from vidhana.fetch import pdf_path
+        return pdf_path(pipeline.PDF_DIR, "1791/08")
+
+    def held(self):
+        return bool(self.con.execute("SELECT 1 FROM gazette WHERE no='1791/08'").fetchone())
+
+    def test_a_cold_rebuild_gets_the_document_back(self):
+        [r] = archive.restore(self.con, self.path)
+        self.assertEqual(r["status"], "recovered")
+        self.assertTrue(self.held())
+        # By exact snapshot URL — never a CDX search.
+        self.assertEqual(self.calls, [
+            "https://web.archive.org/web/20230126031356if_/"
+            "http://documents.gov.lk/files/egz/2012/12/1791-08_E.pdf"])
+
+    def test_a_document_that_is_not_the_verified_one_never_reaches_the_database(self):
+        self.served = b"%PDF-1.4 something else entirely"
+        [r] = archive.restore(self.con, self.path)
+        self.assertEqual(r["status"], "hash mismatch")
+        self.assertFalse(self.held())
+        self.assertFalse(os.path.exists(self.pdf()), "a foreign PDF was left in the cache")
+
+    def test_an_unreachable_archive_is_reported_not_swallowed(self):
+        self.served = archive.ArchiveUnavailable("429 Too Many Requests")
+        [r] = archive.restore(self.con, self.path)
+        self.assertEqual(r["status"], "unavailable")
+        self.assertFalse(self.held())
+
+    def test_a_verified_cached_pdf_costs_no_request(self):
+        os.makedirs(os.path.dirname(self.pdf()), exist_ok=True)
+        with open(self.pdf(), "wb") as f:
+            f.write(self.GOOD)
+        [r] = archive.restore(self.con, self.path)
+        self.assertEqual(r["status"], "recovered")
+        self.assertEqual(self.calls, [])
+
+    def test_a_stale_cached_pdf_is_replaced_rather_than_trusted(self):
+        # fetch.ensure skips any file that exists, so a wrong one left in the
+        # CI cache would otherwise be ingested as if it were right.
+        os.makedirs(os.path.dirname(self.pdf()), exist_ok=True)
+        with open(self.pdf(), "wb") as f:
+            f.write(b"%PDF-1.4 stale")
+        archive.restore(self.con, self.path)
+        self.assertEqual(len(self.calls), 1)
+        with open(self.pdf(), "rb") as f:
+            self.assertEqual(f.read(), self.GOOD)
+
+    def test_a_gazette_the_listing_now_carries_is_left_to_the_listing(self):
+        self.con.execute(
+            "INSERT INTO gazette (no, year, published_date, title, source_url) "
+            "VALUES ('1791/08',2012,'2012-12-31','t','http://ird')")
+        [r] = archive.restore(self.con, self.path)
+        self.assertEqual(r["status"], "already held")
+        self.assertEqual(self.calls, [])
+        self.assertEqual(self.con.execute(
+            "SELECT source FROM gazette WHERE no='1791/08'").fetchone()[0], "ird-listing")
+
+    def test_a_pipeline_failure_leaves_no_half_ingested_row(self):
+        def boom(con, no, snapshot=None, use_ocr=True):
+            db.upsert_gazette(con, dict(no=no, year=2012, published_date="2012-01-01",
+                                        title="placeholder", source_url="x", source="web-archive"))
+            raise RuntimeError("pdftotext exploded")
+        archive.backfill = boom
+        [r] = archive.restore(self.con, self.path)
+        self.assertEqual(r["status"], "failed")
+        self.assertFalse(self.held(), "a placeholder row survived a failed restore")

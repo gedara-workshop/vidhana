@@ -311,3 +311,66 @@ def export_recovered(con, path: str = RECOVERED) -> dict:
         f.write("\n")
     return dict(total=len(rows), added=added)
 
+
+
+def restore(con, path: str = RECOVERED, use_ocr: bool = True) -> list[dict]:
+    """Re-acquire every recorded recovery the database does not hold.
+
+    This is what a cold rebuild runs after `sync`. Each document is fetched by
+    its exact snapshot URL — no archive search, so nothing here depends on the
+    CDX API being up — and its sha256 is checked *before* it is ingested, so a
+    document that is not the one we verified never reaches the database. After
+    that it goes through `backfill`, which re-verifies the printed header.
+
+    A gazette that has since appeared in the IRD listing is already held once
+    `sync` has run, and is left alone: the listing is the better source.
+
+    Returns one result per record. The caller decides what a failure means; the
+    CLI treats any as fatal, because a corpus quietly missing a document is the
+    exact outcome this function exists to prevent.
+    """
+    import hashlib
+
+    from . import pipeline
+    from .fetch import pdf_path
+
+    out = []
+    for rec in load_recovered(path):
+        no = rec["no"]
+        if con.execute("SELECT 1 FROM gazette WHERE no=?", (no,)).fetchone():
+            out.append(dict(no=no, status="already held"))
+            continue
+        snap = snapshot_of(rec)
+        dest = pdf_path(pipeline.PDF_DIR, no)
+
+        # A cached PDF is reused only if it is the document we verified. A stale
+        # or foreign file left in the cache would otherwise be skipped over by
+        # `fetch.ensure` and ingested as if it were right.
+        if os.path.exists(dest):
+            with open(dest, "rb") as f:
+                if hashlib.sha256(f.read()).hexdigest() != rec["sha256"]:
+                    os.remove(dest)
+        if not os.path.exists(dest):
+            try:
+                body = _get(snap["snapshot"], timeout=120)
+            except ArchiveUnavailable as e:
+                out.append(dict(no=no, status="unavailable", detail=str(e)[:120]))
+                continue
+            got = hashlib.sha256(body).hexdigest()
+            if got != rec["sha256"]:
+                out.append(dict(no=no, status="hash mismatch",
+                                detail=f"expected {rec['sha256'][:12]}, archive served {got[:12]}"))
+                continue
+            os.makedirs(os.path.dirname(dest), exist_ok=True)
+            with open(dest + ".part", "wb") as f:
+                f.write(body)
+            os.replace(dest + ".part", dest)
+
+        try:
+            r = backfill(con, no, snapshot=snap, use_ocr=use_ocr)
+        except Exception as e:                # extraction, parsing — leave no half-row
+            _discard(con, no)
+            out.append(dict(no=no, status="failed", detail=f"{type(e).__name__}: {e}"[:120]))
+            continue
+        out.append(r)
+    return out
