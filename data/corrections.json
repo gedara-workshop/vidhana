@@ -1,0 +1,23 @@
+[
+  {
+    "no": "1778/32",
+    "field": "audience",
+    "from": "companies issuing qualifying shares to other companies owned by the Government of Sri Lanka",
+    "to": "parties to leases, transfers and other stampable instruments",
+    "reason": "The order adds Schedule item 29, “Share Certificate on the initial issue of any share by” a Government-owned company, or a BOI Strategic Development Project company, to a Government-owned company. A share certificate is a stampable instrument and the issuing companies are its parties; the word match cannot know that."
+  },
+  {
+    "no": "1778/32",
+    "field": "audience",
+    "from": "companies covered by an agreement with the Board of Investment of Sri Lanka under the Strategic Development Project Act issuing shares to a Government-owned company",
+    "to": "parties to leases, transfers and other stampable instruments",
+    "reason": "The order adds Schedule item 29, “Share Certificate on the initial issue of any share by” a Government-owned company, or a BOI Strategic Development Project company, to a Government-owned company. A share certificate is a stampable instrument and the issuing companies are its parties; the word match cannot know that."
+  },
+  {
+    "no": "1933/14",
+    "field": "audience",
+    "from": "parties to bonds and mortgages that secure a definite and certain sum of money",
+    "to": "parties to leases, transfers and other stampable instruments",
+    "reason": "The order substitutes Schedule item 07, “Any Bond or Mortgage for any definite and certain sum of money and affecting any property”. A bond or mortgage is a stampable instrument and the model named its parties; the word match cannot know that."
+  }
+]
