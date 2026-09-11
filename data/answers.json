@@ -1,0 +1,848 @@
+[
+  {
+    "rule": "1439/01",
+    "basis": "0228d5ec91832f3bb318f2b00398c83d21796c7e791cf2d362ceddc2cb68defd",
+    "model": "gpt-5.6-luna",
+    "generated_at": "2026-09-11T18:13:47+00:00",
+    "questions": [
+      {
+        "question": "From 1 April 2025, how is stamp duty calculated on leases and property-hire agreements?",
+        "answer": "From 1 April 2025, an instrument relating to the lease or hire of property is charged Rs. 20 for every Rs. 1,000 or part of Rs. 1,000 of the total lease or hire payable for the full term, including any premium. If the term exceeds 20 years, calculate the total using only the amount payable for the first 20 years. Gazette 2429/39 replaced the earlier item 09.",
+        "cites": [
+          "2429/39"
+        ]
+      },
+      {
+        "question": "What stamp duty applies to a qualifying hire-purchase agreement?",
+        "answer": "From 1 April 2025, a hire-purchase agreement entered into under the Consumer Credit Act, No. 29 of 1982, is charged Rs. 10 for every Rs. 1,000 or part of Rs. 1,000 of the total amount payable under the agreement. This is the separate rate in item 09(b), replacing the ordinary property-lease or hire rate for qualifying hire-purchase agreements. The rule is set out in Gazette 2429/39.",
+        "cites": [
+          "2429/39"
+        ]
+      },
+      {
+        "question": "What stamp duty applies to trade, business, professional and liquor licences?",
+        "answer": "From 1 January 2019, a non-liquor trade, business, professional or vocational licence is charged Rs. 2,000 or 10% of the licence fee, whichever is lower. Most liquor licences are charged Rs. 20,000. Arrack licences AFL 1, AFL 2, AFL 3 and AFL 4 issued with foreign-liquor licences, and licences for bottled toddy, are charged Rs. 2,000 or 10% of the licence fee, whichever is higher. Gazette 2104/05 rescinded Gazette 2091/03 from that date.",
+        "cites": [
+          "2104/05",
+          "2091/03"
+        ]
+      },
+      {
+        "question": "What stamp duty applies to credit-card transactions involving a merchant outside Sri Lanka?",
+        "answer": "For credit-card transactions entered into during a period commencing on 1 January 2016, the charge is Rs. 25 for every Rs. 1,000 or part of Rs. 1,000 claimed, demanded or requested. Finance and service charges are excluded. The rule applies where the merchant country is outside Sri Lanka, whether the card is present or not, and in any currency. Gazette 1947/45 states this item 05 rule.",
+        "cites": [
+          "1947/45"
+        ]
+      },
+      {
+        "question": "What are the stated rates for affidavits, share certificates and bonds or mortgages?",
+        "answer": "An affidavit is charged Rs. 50 under Gazette 1809/19, from 13 May 2013. A share certificate issued after the issue, transfer or assignment of shares is charged Rs. 5 for every Rs. 1,000 or part of Rs. 1,000 of the shares’ open-market value, assessed by the specified revenue official, under Gazette 1882/17. A bond or mortgage securing a definite and certain sum is charged Rs. 1 for every Rs. 1,000 or part under Gazette 1933/14. Gazette 2429/39 is the latest gazette in this rule and changes item 09 only.",
+        "cites": [
+          "1809/19",
+          "1882/17",
+          "1933/14",
+          "2429/39"
+        ]
+      }
+    ],
+    "input_tokens": 9673,
+    "output_tokens": 1252
+  },
+  {
+    "rule": "1439/02",
+    "basis": "1afcdcfbf939b78bf3ecc7f81768d1166c2bc6f1f6d7294e0fec9cda004a3736",
+    "model": "gpt-5.6-luna",
+    "generated_at": "2026-09-11T18:08:48+00:00",
+    "questions": [
+      {
+        "question": "What is the operative stamp-duty exemption schedule under this rule?",
+        "answer": "From 6 October 2006, Gazette 1465/20 replaced the 3 April 2006 and 20 April 2006 orders and exempted the instruments listed in its Schedule from stamp duty, subject to each item’s conditions. The schedule includes specified affidavits, public-officer bonds and mortgages, certain insurance policies, mortgages, leases, receipts, share certificates, court documents and other instruments. Gazette 2312/73 is the latest amendment in force and adds item 37 for qualifying Colombo Port City land leases. The exemption applies only when the instrument satisfies the relevant listed conditions.",
+        "cites": [
+          "1465/20",
+          "2312/73"
+        ]
+      },
+      {
+        "question": "Which Colombo Port City leases qualify for the exemption, and from when?",
+        "answer": "Item 37, added by Gazette 2312/73, covers an instrument relating to a lease of land within the Colombo Port City Economic Commission’s area of authority, where the lease is by the Commission, the lessee does not pay the lease premium, rent or other consideration in cash to the Government or the Commission, and the agreement is one to which the Government is a party. The text states that this treatment applies from the date the Colombo Port City Economic Commission Act, No. 11 of 2021, came into force. Gazette 2312/73 took effect on 31 December 2022.",
+        "cites": [
+          "2312/73"
+        ]
+      },
+      {
+        "question": "What important exclusions or limits apply to insurance, finance leases and hire-purchase agreements?",
+        "answer": "From 21 February 2017, Gazette 2007/24 replaced items 12, 15 and 16. The insurance exemption excludes cars and dual-purpose motor vehicles in Class B. The finance-lease exemption excludes finance leases for those vehicles. The hire-purchase exemption covers movable property but excludes those vehicles. The exemption therefore depends on the instrument and, for vehicles, its classification under the Motor Traffic Act. These are exemptions within the Schedule continued from Gazette 1465/20.",
+        "cites": [
+          "2007/24",
+          "1465/20"
+        ]
+      },
+      {
+        "question": "What other significant transactions were added to the exemption schedule?",
+        "answer": "The schedule was expanded over time. From 1 January 2007, it included qualifying unit-trust or mutual-fund certificates and Regional Development Bank instruments. From 1 January 2013, it included transfers of stocks to or from margin-trading accounts. From 1 January 2016, it included qualifying Sri Lankan-merchant credit-card payment claims and share certificates issued after an issue, transfer or assignment of shares. Gazette 2149/18 added qualifying non-cash Government or Urban Development Authority land leases, and Gazette 2312/73 added the Colombo Port City category. Each exemption remains subject to its wording.",
+        "cites": [
+          "1478/07",
+          "1789/15",
+          "1947/46",
+          "2149/18",
+          "2312/73"
+        ]
+      }
+    ],
+    "input_tokens": 10411,
+    "output_tokens": 1029
+  },
+  {
+    "rule": "1447/10",
+    "basis": "5f4930e66b7cd92a0bf80ee74129fe8df8c80b10cc330b559ba1be1230083c0c",
+    "model": "gpt-5.6-luna",
+    "generated_at": "2026-09-11T18:08:58+00:00",
+    "questions": [
+      {
+        "question": "Who can choose the special Economic Service Charge turnover calculations?",
+        "answer": "From 13 September 2017, a person or partnership engaged in any trade or business listed in regulation 03 or 04 of Gazette 2036/23 may choose the special calculation for a quarter. The choice allows the business to calculate turnover under the relevant paragraph, disregard section 2(2) of the Economic Service Charge Act except its proviso, and calculate the charge at the rate specified in item I of Schedule IV. A person or partnership that makes this choice is treated as complying with the Act’s Schedule. (Gazette 2036/23)",
+        "cites": [
+          "2036/23"
+        ]
+      },
+      {
+        "question": "How is turnover calculated for a qualifying freight forwarder?",
+        "answer": "For a qualifying freight forwarder, quarterly turnover is reduced by amounts payable in that quarter to another person for carrying cargo loaded into a ship or aircraft owned or chartered by that person. The freight forwarder must be registered with the Central Bank of Sri Lanka, issue qualifying multi-modal carriage documents covered by the required insurance policy, and provide the specified monthly turnover and net-collection statements with the relevant turnover return. (Gazette 2036/23)",
+        "cites": [
+          "2036/23"
+        ]
+      },
+      {
+        "question": "What turnover calculations apply to the specified exporters and primary dealers?",
+        "answer": "For the listed export businesses, turnover is the quarterly excess of FOB export value over the relevant CIF value: imported rough gems or diamonds, NFE materials used for garments, or NFE materials used for other articles manufactured in Sri Lanka. For a primary dealer, turnover is sale proceeds of securities less quarterly securities purchases and related repurchase-transaction interest or discounts, subject to the Act’s specified additions and deductions. These calculations are available where the business makes the regulation 02 choice. (Gazette 2036/23)",
+        "cites": [
+          "2036/23"
+        ]
+      },
+      {
+        "question": "What happened to the earlier Economic Service Charge turnover regulations?",
+        "answer": "From 13 September 2017, Gazette 2036/23 rescinded and replaced the regulations published in Gazettes 1502/10, 1506/06 and 1546/09, without affecting anything previously done under them. The earlier freight-forwarder, export and primary-dealer calculation provisions therefore do not state the rule for quarters governed by the replacement regulations. Gazette 2036/23 sets the replacement framework, including the option to use the prescribed turnover calculations and the Schedule IV rate reference. (Gazettes 1502/10, 1506/06, 1546/09 and 2036/23)",
+        "cites": [
+          "1502/10",
+          "1506/06",
+          "1546/09",
+          "2036/23"
+        ]
+      }
+    ],
+    "input_tokens": 6115,
+    "output_tokens": 927
+  },
+  {
+    "rule": "1447/42",
+    "basis": "a3ef84db39a4be80572adc50c58931597dff971988e3e6abe1cded70dbb0078e",
+    "model": "gpt-5.6-luna",
+    "generated_at": "2026-09-11T18:13:54+00:00",
+    "questions": [
+      {
+        "question": "Which products are specified under section 16(2)(c) after the final amendment?",
+        "answer": "From 4 December 2007, the order specifies five products: tea bags containing wholly Sri Lankan-origin made tea weighing no more than four grammes each; yoghurt made from fresh milk produced in Sri Lanka; curd made from fresh milk produced in Sri Lanka; chilli powder made from chillies produced in Sri Lanka; and ready-to-drink milk made from locally produced fresh milk. Gazette 1526/10 is the latest document in force and adds the fifth item to the list.",
+        "cites": [
+          "1447/42",
+          "1502/05",
+          "1526/10"
+        ]
+      },
+      {
+        "question": "When did the product list first take effect?",
+        "answer": "The first order was published on 2 June 2006 and specified only tea bags, with each bag containing wholly Sri Lankan-origin made tea weighing no more than four grammes. Gazette 1502/05 later replaced that wording and added yoghurt, curd and chilli powder. The rule's documents record the first order as effective from 2 June 2006.",
+        "cites": [
+          "1447/42",
+          "1502/05"
+        ]
+      },
+      {
+        "question": "What changed on 4 December 2007?",
+        "answer": "Gazette 1526/10 amended the order published in Gazette 1502/05 by adding “Ready to Drink Milk made from the locally produced fresh milk” as item (5). It does not state a separate compliance deadline or describe any underlying tax treatment beyond this amendment. The amendment is effective from 4 December 2007.",
+        "cites": [
+          "1502/05",
+          "1526/10"
+        ]
+      },
+      {
+        "question": "Do these gazettes state a filing deadline or what happens if a business does nothing?",
+        "answer": "No. The gazettes in this rule specify products for the purposes of section 16(2)(c), and Gazette 1526/10 adds ready-to-drink milk. They do not state a filing deadline, a separate compliance deadline, or a consequence for failing to act.",
+        "cites": [
+          "1447/42",
+          "1502/05",
+          "1526/10"
+        ]
+      }
+    ],
+    "input_tokens": 1878,
+    "output_tokens": 611
+  },
+  {
+    "rule": "1479/06",
+    "basis": "4d322aa6a3bdca0728861ca301323aade895ec992f3eeab54b8c56fa575e37b7",
+    "model": "gpt-5.6-luna",
+    "generated_at": "2026-09-11T18:09:18+00:00",
+    "questions": [
+      {
+        "question": "Who must complete the transfer-pricing disclosure form, and for which assessment years?",
+        "answer": "From 1 April 2015, an income taxpayer with transactions involving associated undertakings must use the prescribed Part IA transfer-pricing disclosure form for the relevant year of assessment. The form covers disclosures by the taxpayer and certification by an approved accountant. Gazette 1960/42 is the current notice and applies to any year of assessment commencing on or after 1 April 2015.",
+        "cites": [
+          "1907/26",
+          "1960/42"
+        ]
+      },
+      {
+        "question": "What information must the revised Part IA form contain?",
+        "answer": "The revised form requires taxpayer and associated-undertaking details; receipts and payments for goods, services, rents, royalties, intangibles and financial transactions; loans, advances and intercompany balances; the arm’s-length pricing methods used; no-consideration transactions; transfer-pricing compliance and documentation details; basic financial information; and a declaration by a director, principal officer, precedent partner or proprietor. An approved accountant must certify the relevant records and information. These requirements are set out in Gazette 1960/42.",
+        "cites": [
+          "1960/42"
+        ]
+      },
+      {
+        "question": "Did Gazette 1960/42 replace the whole earlier accountant certificate?",
+        "answer": "No. Gazette 1960/42 deletes and substitutes only Part IA of the Schedule introduced by Gazette 1907/26. It replaces the earlier Part IA transfer-pricing certificate with the revised transfer-pricing disclosure form. The original Part I certificate under Section 107(2)(a), introduced by Gazette 1479/06, is not replaced by the wording of Gazette 1960/42.",
+        "cites": [
+          "1479/06",
+          "1907/26",
+          "1960/42"
+        ]
+      },
+      {
+        "question": "What must the taxpayer and approved accountant certify in the revised form?",
+        "answer": "The taxpayer’s director, principal officer, precedent partner or proprietor must declare that the form is true, correct and complete as at the stated date. The approved accountant’s section records the accountant’s examination of the taxpayer’s accounts and records relating to associated-undertaking transactions, and asks whether required transfer-pricing information and documents were maintained and whether the required particulars were furnished. These declarations and certification appear in the Part IA form substituted by Gazette 1960/42.",
+        "cites": [
+          "1960/42"
+        ]
+      }
+    ],
+    "input_tokens": 5590,
+    "output_tokens": 898
+  },
+  {
+    "rule": "1487/03",
+    "basis": "20f13112ba106505d218596b782590f286f9d94f299cadbabf244be0d0842d4c",
+    "model": "gpt-5.6-luna",
+    "generated_at": "2026-09-11T18:09:27+00:00",
+    "questions": [
+      {
+        "question": "From what date do the current authorized representative rules apply?",
+        "answer": "The Approval of Authorized Representative Regulations No. 1 of 2006 operate from 9 February 2017. Gazette 2006/37 rescinded the regulations in Gazette 1487/03 and the amendment in Gazette 1712/18, with effect from 9 February 2017. The rules apply to registration and approval of authorized representatives under the Inland Revenue Act.",
+        "cites": [
+          "2006/37",
+          "1487/03",
+          "1712/18"
+        ]
+      },
+      {
+        "question": "Who can be registered as an authorized representative?",
+        "answer": "From 9 February 2017, an applicant must be at least 21, be a Sri Lankan citizen residing in Sri Lanka, and meet one of the listed routes. These include specified Inland Revenue Department experience, registration as an auditor, qualifying service in the Sri Lanka Audit Service or Government Accountant’s Service, or one of the listed accounting qualifications together with at least ten years’ post-qualification accounting experience that is not self-employment. Gazette 2006/37 sets these requirements.",
+        "cites": [
+          "2006/37"
+        ]
+      },
+      {
+        "question": "How does a person apply for approval as an authorized representative?",
+        "answer": "An individual must apply to the Commissioner General using the form provided by the Commissioner General. If satisfied that the applicant is entitled to registration, the Commissioner General registers the person and issues a letter certifying registration. The Commissioner General must maintain the register. These procedures apply from 9 February 2017 under Gazette 2006/37.",
+        "cites": [
+          "2006/37"
+        ]
+      },
+      {
+        "question": "What can prevent registration or cause an authorized representative to be removed?",
+        "answer": "Registration is not available to a person who has been declared of unsound mind, remains an insolvent or bankrupt without the specified court certificate, has been convicted of an offence involving moral turpitude, or has been found guilty of professional misconduct. From 9 February 2017, employment restrictions also apply: the person must not accept employment except in an audit firm or under an approved authorized representative carrying on that business. The Commissioner General may remove a person for these disabilities, written removal request, or professional act, negligence, dishonesty or misconduct.",
+        "cites": [
+          "2006/37"
+        ]
+      },
+      {
+        "question": "How are approved authorized representatives made public?",
+        "answer": "The Commissioner General must arrange for a list of authorized representatives registered under the regulations to be published in the Gazette at least once each year, no later than 31 March of that year. The Commissioner General must also maintain the register. These obligations are in force from 9 February 2017 under Gazette 2006/37; the earlier provisions in Gazettes 1487/03 and 1712/18 were rescinded from that date.",
+        "cites": [
+          "2006/37",
+          "1487/03",
+          "1712/18"
+        ]
+      }
+    ],
+    "input_tokens": 3406,
+    "output_tokens": 708
+  },
+  {
+    "rule": "1546/10",
+    "basis": "a322c6a4d8d1b20ea71b508ede7b97c2b04b614e6eb5ad31ec0fd0def4350464",
+    "model": "gpt-5.6-luna",
+    "generated_at": "2026-09-11T18:09:39+00:00",
+    "questions": [
+      {
+        "question": "From what date do the present transfer-pricing regulations apply, and which earlier regulations did they replace?",
+        "answer": "Regulations on Transfer Pricing No. 02 of 2020 apply from 1 April 2020. Gazette 2217/07 rescinded the regulations published in Gazette 2104/04 with effect from that same date. Therefore, for periods beginning on or after 1 April 2020, Gazette 2217/07 is the applicable document for this rule. The earlier gazettes in this rule are not the operative regulations for those periods.",
+        "cites": [
+          "2217/07",
+          "2104/04"
+        ]
+      },
+      {
+        "question": "Which transactions and businesses are covered by the transfer-pricing rules?",
+        "answer": "The rules apply to international transactions under section 76 and to specified transactions between associated enterprises under section 77. The specified non-international cases include situations where an associated enterprise has a tax exemption, a different applicable income-tax rate, or a loss brought forward from the year of assessment or the immediately preceding years. For covered controlled transactions, the arm’s-length principle is mandatory: the terms should reflect those that independent enterprises would have used.",
+        "cites": [
+          "2217/07"
+        ]
+      },
+      {
+        "question": "How must an associated-enterprise transaction be priced?",
+        "answer": "From 1 April 2020, the arm’s-length price must be determined using the method most appropriate to the facts and circumstances. The recognised methods are the comparable uncontrolled price, resale price, cost plus, transactional net margin and profit split methods. The choice must consider the transaction’s functions, assets and risks, the availability and reliability of data, comparability, and the ability to make reliable adjustments. If the actual price falls within the interquartile arm’s-length range, it is treated as arm’s length; otherwise, the median is used.",
+        "cites": [
+          "2217/07"
+        ]
+      },
+      {
+        "question": "When must transfer-pricing files and the annual disclosure form be prepared?",
+        "answer": "An enterprise whose aggregate controlled transactions with associated enterprises exceed LKR 200 million in a year of assessment must prepare and maintain a Local File and submit an annual transfer-pricing disclosure form with its Return of Income. The Local File must be kept for six years from the end of the relevant year of assessment and must be in English for international transactions. A Master File is required where group revenue exceeds EUR 50 million, or its Sri Lankan-rupee equivalent, for each year of assessment beginning with 2020/2021. These requirements are set out in Gazette 2217/07.",
+        "cites": [
+          "2217/07"
+        ]
+      },
+      {
+        "question": "What must a taxpayer do if the Commissioner General requests transfer-pricing documentation?",
+        "answer": "The Local File and Master File specified by the regulations must be submitted within 60 calendar days of a written request duly issued by the Commissioner General of Inland Revenue. The Commissioner General may also request additional information needed for audit procedures. Even where fresh documentation is not required for every year, compliance with the arm’s-length principle remains mandatory, and the taxpayer must be able to substantiate the pricing using the specified documents or other material when notice is given.",
+        "cites": [
+          "2217/07"
+        ]
+      }
+    ],
+    "input_tokens": 9333,
+    "output_tokens": 1066
+  },
+  {
+    "rule": "1565/19",
+    "basis": "5f2108d014ffb16a2bd8548299887c0dfca4d9849b0bba11f94389f394d49cd4",
+    "model": "gpt-5.6-luna",
+    "generated_at": "2026-09-11T18:09:47+00:00",
+    "questions": [
+      {
+        "question": "Which services are treated as services rendered in carrying on a profession or vocation for income tax purposes?",
+        "answer": "From the year of assessment 2008/2009, the order treats listed services as services rendered in carrying on a profession or vocation, provided they are not rendered in the course of employment. The list includes accounting, bookkeeping, auditing, tax advice, engineering, software development, health care, photography, publishing outside Sri Lanka, advertising outside Sri Lanka, sports or artistic services, valuation or auctioneering, plumbing, masonry, carpentry and quantity surveying. Gazette 1627/31 leaves these categories in the amended order. [Gazettes 1565/19 and 1627/31]",
+        "cites": [
+          "1565/19",
+          "1627/31"
+        ]
+      },
+      {
+        "question": "Does the rule cover management of agricultural property outside Sri Lanka?",
+        "answer": "Yes. Management of any agricultural property situated outside Sri Lanka is included in the specified services. Gazette 1627/31 amended Gazette 1565/19 by retaining that category and adding a further category. The original order applies it from the year of assessment 2008/2009. [Gazettes 1565/19 and 1627/31]",
+        "cites": [
+          "1565/19",
+          "1627/31"
+        ]
+      },
+      {
+        "question": "What additional services were added by the amendment?",
+        "answer": "Gazette 1627/31 added any other service that the Commissioner-General considers to be in the interest of Sri Lanka’s national economy. The document states that this additional category is effective from 1 April 2008. It amended the order made under section 13(ddd) of the Inland Revenue Act No. 10 of 2006. [Gazette 1627/31]",
+        "cites": [
+          "1627/31"
+        ]
+      },
+      {
+        "question": "Who does this classification apply to, and does it include employees?",
+        "answer": "The order concerns services rendered by an individual and specifies them, for section 13(ddd) purposes, as services rendered in carrying on a profession or vocation. Gazette 1565/19 expressly excludes services rendered in the course of employment. Therefore, the listed classification applies to the specified services outside employment, subject to the added national-economic-interest category in Gazette 1627/31. [Gazettes 1565/19 and 1627/31]",
+        "cites": [
+          "1565/19",
+          "1627/31"
+        ]
+      }
+    ],
+    "input_tokens": 1715,
+    "output_tokens": 724
+  },
+  {
+    "rule": "1599/13",
+    "basis": "e2d3f25c78852fd4d1eeb9c87c383194143af2ec0cc04046f737d08c96812ad6",
+    "model": "gpt-5.6-luna",
+    "generated_at": "2026-09-11T18:09:58+00:00",
+    "questions": [
+      {
+        "question": "Which funds are covered by these conditions?",
+        "answer": "The conditions apply to provident, gratuity, pension and savings funds that are approved, or already approved, by the Commissioner General of Inland Revenue for the purposes of sections 25(1)(g) and 25(1)(o) of the Inland Revenue Act. Gazette 1604/14 extended the original reference from section 25(1)(g) to both provisions. Gazette 1704/18 replaced the earlier schedule with the conditions applying from 6 May 2011. From 19 October 2011, Gazette 1728/13 changes one of those investment conditions.",
+        "cites": [
+          "1604/14",
+          "1704/18",
+          "1728/13"
+        ]
+      },
+      {
+        "question": "What limit applies to an employer’s contributions to these funds?",
+        "answer": "For each accounting year, the total contribution by an employer to all its provident, savings, pension, trust or gratuity funds must not exceed 25% of that employer’s total salary bill for that year. This condition was set in Gazette 1704/18 and was not changed by Gazette 1728/13, which amended only the first investment paragraph.",
+        "cites": [
+          "1704/18",
+          "1728/13"
+        ]
+      },
+      {
+        "question": "How must the fund’s investments be allocated from 19 October 2011?",
+        "answer": "From 19 October 2011, at least 40% of the fund’s money may be invested through deposits in the Bank of Ceylon, People’s Bank, National Savings Bank or Regional Development Bank, or through investments in Government Securities. Gazette 1728/13 added the Regional Development Bank by replacing paragraph (i) of the schedule in Gazette 1704/18.",
+        "cites": [
+          "1704/18",
+          "1728/13"
+        ]
+      },
+      {
+        "question": "What other investment limits apply to an approved fund?",
+        "answer": "Unless special approval has been granted for a specific investment, no more than 20% of the fund’s money may be invested in listed debentures or other stocks. Any balance must be invested through deposits in other commercial banks. These limits come from the schedule in Gazette 1704/18; Gazette 1728/13 changed only the paragraph covering the minimum 40% investment category.",
+        "cites": [
+          "1704/18",
+          "1728/13"
+        ]
+      }
+    ],
+    "input_tokens": 2871,
+    "output_tokens": 896
+  },
+  {
+    "rule": "1606/31",
+    "basis": "b4867350f28777569cbc30a4c275b03bda56c4ce0491d0602164a62431352273",
+    "model": "gpt-5.6-luna",
+    "generated_at": "2026-09-11T18:10:06+00:00",
+    "questions": [
+      {
+        "question": "What amount is treated as a prescribed levy for Inland Revenue Act purposes?",
+        "answer": "Two-thirds of the Nation Building Tax charged under the Nation Building Tax Act No. 9 of 2009 is treated as a prescribed levy for the purposes of section 26(1)(l)(iii) of the Inland Revenue Act No. 10 of 2006. This applies to the amount payable for the period from 1 May 2009 to 30 June 2009 and to the specified quarterly periods. (Gazette 1606/31.)",
+        "cites": [
+          "1606/31"
+        ]
+      },
+      {
+        "question": "Which quarterly periods are covered by the rule?",
+        "answer": "The rule covers every quarter commencing on or after 1 July 2009 but before 1 January 2011. It therefore does not cover a quarter commencing on or after 1 January 2011. This limit is set by the amendment in Gazette 1686/55, the latest document in force in this rule.",
+        "cites": [
+          "1606/31",
+          "1686/55"
+        ]
+      },
+      {
+        "question": "What did Gazette 1686/55 change?",
+        "answer": "Gazette 1686/55 amended Gazette 1606/31 by replacing wording that covered every quarter commencing on or after 1 July 2009. The amended wording limits the prescribed-levy treatment to quarters commencing on or after 1 July 2009 but before 1 January 2011. The amendment is effective from 1 January 2011.",
+        "cites": [
+          "1686/55"
+        ]
+      }
+    ],
+    "input_tokens": 1490,
+    "output_tokens": 638
+  },
+  {
+    "rule": "1791/08",
+    "basis": "b8c45ebb80ecf4f33ad233bbbb47e79bc374fce7ebe96d29870cee9ee433ba40",
+    "model": "gpt-5.6-luna",
+    "generated_at": "2026-09-11T18:14:02+00:00",
+    "questions": [
+      {
+        "question": "What is the Embarkation Levy from 1 January 2016?",
+        "answer": "From 1 January 2016, the levy is US $30 for each person leaving Sri Lanka by aircraft and US $30 for each person leaving Sri Lanka by ship. Gazette 1947/48 replaced Schedule I of Gazette 1791/08 with these rates. The 1947/48 Order applies with effect from 1 January 2016.",
+        "cites": [
+          "1947/48",
+          "1791/08"
+        ]
+      },
+      {
+        "question": "Which airline operators must collect the levy?",
+        "answer": "Every operator of an airline operating a flight out of Sri Lanka must collect the Embarkation Levy for each passenger departing on that flight, unless the passenger is exempt under section 2(2) of the Finance Act. The operator must follow the Director-General’s directions on collection, payment and remittance. These requirements are in the regulations continued by Gazette 1791/08; Gazette 1947/48 changes the amount to US $30 for each departing person by aircraft.",
+        "cites": [
+          "1791/08",
+          "1947/48"
+        ]
+      },
+      {
+        "question": "What information and security must an airline provide?",
+        "answer": "An airline operator must provide returns or other information required by the Director-General, including information about aircraft, flight schedules, passengers uplifted, applicable passenger manifests and levy collections. As directed, the operator must also deposit money or provide a bank guarantee as security for levy collections. The security amount may consider aircraft seating capacity, weekly flights, operations and estimated 15-day collections; a required bank guarantee may not exceed one year at a time.",
+        "cites": [
+          "1791/08"
+        ]
+      },
+      {
+        "question": "What changed from the earlier levy rates?",
+        "answer": "From 1 January 2016, Gazette 1947/48 repealed and replaced Schedule I of Gazette 1791/08. It changed the listed rates to US $30 for travel by aircraft and US $30 for travel by ship. The earlier Schedule I rates—US $25 by aircraft and US $5 by ship—are therefore not the rates set by the current gazette in this rule.",
+        "cites": [
+          "1947/48",
+          "1791/08"
+        ]
+      }
+    ],
+    "input_tokens": 2228,
+    "output_tokens": 644
+  },
+  {
+    "rule": "1868/10",
+    "basis": "f9a77512e82d137cc06679b0634b8cc73297b6ada51ebd125e01c11d497bcf24",
+    "model": "gpt-5.6-luna",
+    "generated_at": "2026-09-11T18:10:31+00:00",
+    "questions": [
+      {
+        "question": "Who must calculate VAT on the supply of financial services under this order, and from what date?",
+        "answer": "From 1 October 2022, every registered specified institution or any person covered by the order is liable to tax for each taxable period on total value addition. Gazette 2316/13 applies to VAT on the supply of financial services and operates from 1 October 2022. It covers the calculation of total value addition, including adjustments for economic depreciation, employee emoluments, VAT and Social Security Contribution Levy (SSCL).",
+        "cites": [
+          "2316/13"
+        ]
+      },
+      {
+        "question": "How is total value addition calculated for VAT on financial services?",
+        "answer": "Under Gazette 2316/13, start with net profit or loss before income tax, calculated using the accepted accounting standards for the taxable period. Add VAT and SSCL charged to the income statement, depreciation charged to the income statement, and gross remuneration payable to employees. Deduct economic depreciation, then deduct VAT payable under Chapter IIIA of the VAT Act and SSCL payable on financial services. The result is total value addition.",
+        "cites": [
+          "2316/13"
+        ]
+      },
+      {
+        "question": "How should a business deal with non-financial services when calculating VAT on financial services?",
+        "answer": "If separate accounts for non-financial services are maintained and certified by an approved accountant under section 120 of the Inland Revenue Act, value addition for those activities must be calculated separately. If separate accounts are not kept, the business must apportion value addition based on the proportion of monthly turnover from non-financial services to total monthly turnover, where receipts are recognised without a material difference for profit and turnover calculations.",
+        "cites": [
+          "2316/13"
+        ]
+      },
+      {
+        "question": "What must be submitted with the annual return?",
+        "answer": "For the adjustment under section 25C(1), Gazette 2316/13 requires these documents with the annual return: audited financial statements for the relevant period; a detailed profit and loss account; schedules for employee emoluments and economic depreciation; a breakdown of the value of supplies declared in the relevant VAT returns; and a reconciliation of turnover with the financial statements. The reconciliation includes VAT-related turnover, VAT payable, value addition attributable to non-financial activities, total financial-statement turnover and the capital portion of leasing instalments.",
+        "cites": [
+          "2316/13"
+        ]
+      },
+      {
+        "question": "What changed from the earlier VAT-on-financial-services order?",
+        "answer": "Gazette 2316/13 rescinded Gazette Extraordinary No. 1868/10 with effect from 1 October 2022. The replacement order refers to SSCL on financial services in the value-addition calculation and deductions, whereas the earlier order referred to Nation Building Tax. Gazette 2316/13 also sets out the separate-account and turnover-apportionment rules for non-financial services and the documents required with the annual return. The earlier order does not govern periods from 1 October 2022.",
+        "cites": [
+          "1868/10",
+          "2316/13"
+        ]
+      }
+    ],
+    "input_tokens": 3664,
+    "output_tokens": 856
+  },
+  {
+    "rule": "1910/02",
+    "basis": "32a1192b8545ca028c715d3b43846f04e64698e3ff03cb1a0bf56e00e1a9c5a9",
+    "model": "gpt-5.6-luna",
+    "generated_at": "2026-09-11T18:10:40+00:00",
+    "questions": [
+      {
+        "question": "What scheme applies to VAT refunds from 1 October 2025?",
+        "answer": "From 1 October 2025, the Simplified Value Added Tax (SVAT) Scheme is repealed and its 2016 guidelines are rescinded. VAT refunds for eligible persons are processed under the Risk Based Refund Scheme. Gazette 2456/02 replaces the SVAT refund arrangements with risk-based processing.",
+        "cites": [
+          "2456/02",
+          "1986/09"
+        ]
+      },
+      {
+        "question": "Who can claim a VAT refund under the Risk Based Refund Scheme?",
+        "answer": "The scheme covers eligible exporters; registered persons whose supplies to a Strategic Development Project or specified project exceeded 50% of their total supplies for the taxable period; and projects approved by the Commissioner General under section 22(7) of the VAT Act during the project implementation period. The Commissioner General identifies eligible persons using the records or VAT return data specified in Gazette 2456/02.",
+        "cites": [
+          "2456/02"
+        ]
+      },
+      {
+        "question": "How does the risk rating affect the refund process?",
+        "answer": "From the taxable period beginning 1 October 2025, eligible persons are classified as low, medium or high risk. Low- and medium-risk claims can receive refunds without pre-verification, although officials may still verify them. High-risk claims receive refunds only after pre-verification. The Commissioner General may review risk ratings at six-month intervals or whenever considered necessary.",
+        "cites": [
+          "2456/02"
+        ]
+      },
+      {
+        "question": "What information must an eligible person keep updated for a refund claim?",
+        "answer": "An eligible person must keep accurate profile and bank details in RAMIS, submit the required schedules through IRD e-service, verify uploaded schedules with the official Schedule Verification Tool, and provide requested documents, information, access and facilities for inspections or verification. Contact details for authorised representatives must also be kept up to date. Failure or delay in providing required information may lead to rejection of the claim or delay in processing or payment.",
+        "cites": [
+          "2456/02"
+        ]
+      },
+      {
+        "question": "What must businesses do with SVAT transactions made up to 30 September 2025?",
+        "answer": "For suspended supplies or purchases made up to 30 September 2025, the RIS must submit SVAT 04 by 15 October 2025, resubmit rejected details by 20 October 2025 where applicable, and submit SVAT 07, SVAT 05, SVAT 05a and SVAT 05b where applicable by 30 October 2025. The RIP must issue credit vouchers by 20 October 2025 and submit SVAT 06 by 30 October 2025. Unused vouchers must be handed over by 10 November 2025.",
+        "cites": [
+          "2456/02"
+        ]
+      }
+    ],
+    "input_tokens": 5584,
+    "output_tokens": 879
+  },
+  {
+    "rule": "2064/53",
+    "basis": "ee7a5b8665be36d5051591422841d3d3769ff2bc1707068308f2698d8210deed",
+    "model": "gpt-5.6-luna",
+    "generated_at": "2026-09-11T18:10:48+00:00",
+    "questions": [
+      {
+        "question": "What transitional tax treatment applies from 1 April 2018?",
+        "answer": "From 1 April 2018, the Inland Revenue Act, No. 10 of 2006 generally does not apply to income tax for a year of assessment beginning on or after that date, unless the Inland Revenue Act, No. 24 of 2017 or these transitional provisions says otherwise. Unexpired exemptions, concessionary-rate periods, qualifying losses and certain allowances under the 2006 Act continue under the stated conditions. Gazette 2089/01 amended the treatment of qualifying Board of Investment agreements.",
+        "cites": [
+          "2064/53",
+          "2089/01"
+        ]
+      },
+      {
+        "question": "Which Board of Investment agreements preserve an exemption or reduced tax rate?",
+        "answer": "From 17 September 2018, an enterprise qualifies if it entered into a section 17 agreement with the Board of Investment of Sri Lanka before April 2018, and the agreement provides for its profits and income, or a dividend it pays, to be fully or partly exempt, taxed at a reduced rate, or calculated on an agreed basis under the earlier Inland Revenue Acts. The agreed exemption, basis or rate continues under the Inland Revenue Act, No. 24 of 2017.",
+        "cites": [
+          "2089/01"
+        ]
+      },
+      {
+        "question": "Are pre-1 April 2018 losses and allowances still available?",
+        "answer": "Yes, subject to the stated conditions. A loss balance existing on 31 March 2018 is treated as a loss for the year of assessment beginning on or after 1 April 2018 under the Inland Revenue Act, No. 24 of 2017 and may be deducted under that Act. A balance of allowances under section 34 of the 2006 Act may also be deducted in a later year beginning on or after 1 April 2018, subject to the conditions governing the deduction.",
+        "cites": [
+          "2064/53",
+          "2089/01"
+        ]
+      },
+      {
+        "question": "Which depreciation and finance-lease rules apply to arrangements made before 1 April 2018?",
+        "answer": "Depreciation for the specified capital assets and qualified buildings acquired or constructed before 1 April 2018 is computed under the corresponding provisions of the Inland Revenue Act, No. 10 of 2006 and deducted. Any profit, loss, receipt or payment relating to a finance-lease agreement entered into before 1 April 2018 is also computed under the corresponding provisions of that Act. These transitional rules took effect on 1 April 2018 and remain amended by Gazette 2089/01.",
+        "cites": [
+          "2064/53",
+          "2089/01"
+        ]
+      }
+    ],
+    "input_tokens": 2654,
+    "output_tokens": 842
+  },
+  {
+    "rule": "2064/54",
+    "basis": "309db19a02a1dfd926efb9d1cc2fae7c29622d8e21fd3485ef72ea211eb3f579",
+    "model": "gpt-5.6-luna",
+    "generated_at": "2026-09-11T18:14:11+00:00",
+    "questions": [
+      {
+        "question": "Which foreign taxes must be left out when calculating a person's income?",
+        "answer": "From 1 April 2018, income tax, super tax, surtax, or another tax of a similar character paid in any country must not be deducted when calculating a person’s income. However, the rule does not cover the portion above the maximum Sri Lanka income-tax credit allowed under sections 80 and 81 of the Inland Revenue Act. This wording is set out in Gazette 2130/02.",
+        "cites": [
+          "2130/02"
+        ]
+      },
+      {
+        "question": "Did the rule change which countries' income taxes are covered?",
+        "answer": "Yes. Gazette 2064/54 referred to comparable foreign taxes paid in a country with which Sri Lanka had a double-tax agreement. Gazette 2130/02 repealed that item and replaced it, with effect from 1 April 2018, so the item covers comparable taxes paid in any country. The restriction for amounts above the maximum credit allowed under sections 80 and 81 remains part of the replacement wording.",
+        "cites": [
+          "2064/54",
+          "2130/02"
+        ]
+      },
+      {
+        "question": "What happens if a person deducts one of the specified taxes when calculating income?",
+        "answer": "The deduction is not allowed for a tax or levy specified under the rule. For the foreign-tax item, this means the tax must be left out except for the portion covered by the wording on the maximum Sri Lanka income-tax credit under sections 80 and 81. Gazette 2130/02 applies this replacement from 1 April 2018.",
+        "cites": [
+          "2130/02"
+        ]
+      },
+      {
+        "question": "Which other taxes and levies are listed as non-deductible under the schedule?",
+        "answer": "The schedule also lists Economic Service Charge; Value Added Tax and Nation Building Tax on financial services; Crop Insurance Levy; and the supper gain tax, Bars and Taverns Levy, Casino Industry Levy, Mobile Telephone Operator Levy, Satellite Location Levy and Mansion Tax imposed under the Finance Act, No. 10 of 2015. Gazette 2130/02 replaced only item (i) of the schedule, while these other listed items appear in Gazette 2064/54.",
+        "cites": [
+          "2064/54",
+          "2130/02"
+        ]
+      }
+    ],
+    "input_tokens": 1819,
+    "output_tokens": 768
+  },
+  {
+    "rule": "2064/57",
+    "basis": "df01572c4aa769b5e74fcf8561ac36202027b8151ebc53db09d3444e1a211892",
+    "model": "gpt-5.6-luna",
+    "generated_at": "2026-09-11T18:11:04+00:00",
+    "questions": [
+      {
+        "question": "Who does this notice apply to, and what does it control?",
+        "answer": "Gazette 2303/05 applies to financial institutions calculating gains and profits from a banking business. It specifies the extent to which a specific provision for a debt claim may be deducted and requires records of those provisions to be maintained in the format in Schedule 2. The specifications operate from 1 April 2022.",
+        "cites": [
+          "2303/05"
+        ]
+      },
+      {
+        "question": "Which debt claims cannot be deducted as specific provisions?",
+        "answer": "From 1 April 2022, no specific provision may be deducted for a pawning debtor’s debt claim in pawn broking activities; a debt claim given to an associate or associated person; a debt claim given to a person outside Sri Lanka; or a debt claim given to an employee of the financial institution. The same applies where a borrower has multiple facilities and made a payment on any facility within the 90 days before the specific provision date. These exclusions are in Gazette 2303/05.",
+        "cites": [
+          "2303/05"
+        ]
+      },
+      {
+        "question": "Can a financial institution deduct Stage 1 or Stage 2 impairment charges?",
+        "answer": "No. From 1 April 2022, Gazette 2303/05 states that no specific provision may be deducted for impairment charges of Stage 1 and Stage 2 credit facilities classified under Sri Lanka Accounting Standards (SLFRS 9).",
+        "cites": [
+          "2303/05"
+        ]
+      },
+      {
+        "question": "What records must be maintained, and what changed from the 2018 notice?",
+        "answer": "A financial institution must maintain records of specific provisions for debt claims separately for Stage 1, Stage 2 and Stage 3 credit facilities, using the Schedule 2 format in Gazette 2303/05. That notice applies from 1 April 2022 and rescinded Gazette 2064/57 from the same date. The 2018 specifications therefore no longer apply from 1 April 2022.",
+        "cites": [
+          "2303/05",
+          "2064/57"
+        ]
+      }
+    ],
+    "input_tokens": 2045,
+    "output_tokens": 544
+  },
+  {
+    "rule": "2064/63",
+    "basis": "ea78461da1151a125536c399b5afd5e0765d83e91a43895101e66941f4bb9276",
+    "model": "gpt-5.6-luna",
+    "generated_at": "2026-09-11T18:11:13+00:00",
+    "questions": [
+      {
+        "question": "Who can register as an authorized representative under the Inland Revenue Act?",
+        "answer": "From 23 September 2020, an applicant must be a Sri Lankan citizen and resident, at least 21 years old, satisfy one listed qualification route, and have none of the stated disqualifications. These include being declared of unsound mind, insolvency or bankruptcy, conviction for an offence involving moral turpitude, professional misconduct, or prohibited employment. The requirements are in Schedule 01 substituted by Gazette 2194/50.",
+        "cites": [
+          "2194/50"
+        ]
+      },
+      {
+        "question": "What qualifications can an applicant use to meet the registration requirement?",
+        "answer": "Gazette 2194/50 recognises several routes: specified former Inland Revenue Service officers; registered auditors; qualifying members of the Sri Lanka Audit Service or Government Accountants’ Service; Certified Tax Advisors or Chartered Tax Advisors of CASL; or a person with a listed accounting qualification—such as CAB Level 1, CIMA, ACCA foundation, CMA Level 03 or AAT membership—plus at least 10 years’ post-qualification accounting experience, excluding self-employment.",
+        "cites": [
+          "2194/50"
+        ]
+      },
+      {
+        "question": "How is an authorized representative registered, and when can registration be removed?",
+        "answer": "An individual must forward an application to the Commissioner General. If satisfied that the person qualifies, the Commissioner General registers the person and issues a certification letter. Registration may be removed on the person’s written request, if a stated disqualification arises, or if the Commissioner General considers removal appropriate because of professional act, negligence, dishonesty or misconduct. Gazette 2194/50 also requires the register to be published in the Gazette at least once each year, no later than 31 March.",
+        "cites": [
+          "2194/50"
+        ]
+      },
+      {
+        "question": "What changed from the 2018 authorized-representative requirements?",
+        "answer": "From 23 September 2020, Gazette 2194/50 repealed and replaced Schedule 01 in Gazette 2064/63. The replacement keeps the main eligibility structure but expressly recognises Chartered Tax Advisors of CASL alongside Certified Tax Advisors and changes some qualification wording. Gazette 2064/63 is rescinded for this rule; its requirements should not be used instead of the Schedule 01 in Gazette 2194/50.",
+        "cites": [
+          "2064/63",
+          "2194/50"
+        ]
+      }
+    ],
+    "input_tokens": 2932,
+    "output_tokens": 747
+  },
+  {
+    "rule": "2124/03",
+    "basis": "c0780262790f56d012c24227c31f00b33aae35bfa715f7cff3b06544f6d8e9be",
+    "model": "gpt-5.6-luna",
+    "generated_at": "2026-09-11T18:14:21+00:00",
+    "questions": [
+      {
+        "question": "Which hotel, restaurant and travel-agent services are subject to this VAT order?",
+        "answer": "The order covers services supplied by a hotel, guest house, restaurant or similar business registered with the Sri Lanka Tourism Development Authority. It also covers inbound-tour services supplied by a travel agent registered with that Authority. Gazette 2125/69 sets out both categories.",
+        "cites": [
+          "2125/69"
+        ]
+      },
+      {
+        "question": "What VAT rate applies to these services, and for what period?",
+        "answer": "From 1 June 2019 to 31 March 2020, VAT is charged at 7% on the two categories of services listed in Gazette 2125/69: qualifying services supplied by registered hotels, guest houses, restaurants and similar businesses, and inbound-tour services supplied by registered travel agents.",
+        "cites": [
+          "2125/69"
+        ]
+      },
+      {
+        "question": "What changed on 1 June 2019?",
+        "answer": "The earlier 5% order in Gazette 2124/03 was repealed with effect from 1 June 2019. From that date, Gazette 2125/69 applied a 7% rate to the covered services, replacing the earlier 5% rate.",
+        "cites": [
+          "2124/03",
+          "2125/69"
+        ]
+      },
+      {
+        "question": "What rate applied before 1 June 2019?",
+        "answer": "From 21 May 2019 until the earlier order was repealed on 1 June 2019, Gazette 2124/03 charged VAT at 5% on the specified services of Sri Lanka Tourism Development Authority-registered hotels, guest houses, restaurants and similar businesses, and on inbound-tour services supplied by registered travel agents.",
+        "cites": [
+          "2124/03",
+          "2125/69"
+        ]
+      }
+    ],
+    "input_tokens": 1713,
+    "output_tokens": 525
+  },
+  {
+    "rule": "2151/52",
+    "basis": "472e7808a93ffb64254b96e909a59f5b44195c14c46ca7c670052282d58ccc11",
+    "model": "gpt-5.6-luna",
+    "generated_at": "2026-09-11T18:11:29+00:00",
+    "questions": [
+      {
+        "question": "What VAT rate applies to most imports and supplies from 1 January 2024?",
+        "answer": "From 1 January 2024, VAT is charged at 18% on imports and supplies of goods and on supplies of services, except for imports covered by the order’s paragraph 1(a). Gazette 2363/22 replaced the earlier 15% rate and rescinded Gazette 2295/08 from that date.",
+        "cites": [
+          "2363/22",
+          "2295/08"
+        ]
+      },
+      {
+        "question": "Which transactions are exceptions to the 18% rate?",
+        "answer": "The 18% rate does not apply to imported goods listed in the schedule to Gazette Notification No. 2095/20; those goods use the rates shown in that schedule. Imports and domestic supplies of sanitary towels (pads) and tampons under H.S. Code 9619.00.10 are zero-rated from 7 October 2022. These exceptions continue under Gazette 2300/25 alongside the 18% rule in Gazette 2363/22.",
+        "cites": [
+          "2363/22",
+          "2300/25"
+        ]
+      },
+      {
+        "question": "When did the general VAT rate change from 15% to 18%?",
+        "answer": "The general rate changed from 15% to 18% with effect from 1 January 2024. Gazette 2295/08 had set the 15% rate from 1 September 2022, but Gazette 2363/22 rescinded that Gazette and substituted the 18% rate in the earlier order from 1 January 2024.",
+        "cites": [
+          "2363/22",
+          "2295/08"
+        ]
+      },
+      {
+        "question": "Does the earlier 0% VAT rule for qualifying hotels, restaurants and similar businesses still apply?",
+        "answer": "No. Gazette 2151/52 had provided a 0% rate for qualifying Sri Lanka Tourism Development Authority-registered hotels, guest houses, restaurants and similar businesses meeting its local-input condition. Gazette 2282/26 rescinded that order with effect from 1 June 2022. The later rule instead applies the rates for scheduled imports and the general rate for other covered goods, imports and services.",
+        "cites": [
+          "2151/52",
+          "2282/26"
+        ]
+      }
+    ],
+    "input_tokens": 4023,
+    "output_tokens": 987
+  },
+  {
+    "rule": "2463/05",
+    "basis": "18b21d506324d2ba1f6e170de76f72af4c4b05961eae068c5295ec01ca394cf3",
+    "model": "gpt-5.6-luna",
+    "generated_at": "2026-09-11T18:11:49+00:00",
+    "questions": [
+      {
+        "question": "Who must use the prescribed VAT tax-invoice format, and from what date?",
+        "answer": "From 1 October 2026, every registered person under the Value Added Tax Act must issue tax invoices in the format and specifications set out in Gazette 2481/22. Gazette 2500/106 amended the original effective date from 1 July 2026 to 1 October 2026; all other matters remain unchanged.",
+        "cites": [
+          "2481/22",
+          "2500/106"
+        ]
+      },
+      {
+        "question": "What information must the VAT tax invoice contain?",
+        "answer": "The prescribed invoice must be titled “TAX INVOICE” and include the supplier’s and purchaser’s details, including their nine-digit TINs, names and addresses. It must also include the required invoice serial number, invoice date, supply information, VAT and other value details, and payment information. Telephone numbers are optional under Gazette 2481/22. These requirements apply from 1 October 2026.",
+        "cites": [
+          "2481/22",
+          "2500/106"
+        ]
+      },
+      {
+        "question": "How must the tax-invoice serial number be structured?",
+        "answer": "The serial number must follow the pattern YYMMM_QQQQ_XXXXX, without spaces and within 40 characters. YY is the last two digits of the year, MMM is the first three uppercase letters of the month, QQQQ is an alphanumeric organisational code, and XXXXX is a numeric invoice serial number without letters or symbols. The serial number continues from the preceding month, although numbering may be restarted at the beginning of a month or year where necessary.",
+        "cites": [
+          "2481/22"
+        ]
+      },
+      {
+        "question": "What changed in the VAT tax-invoice rule?",
+        "answer": "Gazette 2500/106 changed only the effective date in Gazette 2481/22: the prescribed format applies from 1 October 2026 instead of 1 July 2026. Gazette 2500/106 states that all other matters remain unchanged. The earlier specifications in Gazette 2463/05 are not the governing format from 1 October 2026.",
+        "cites": [
+          "2463/05",
+          "2481/22",
+          "2500/106"
+        ]
+      }
+    ],
+    "input_tokens": 6825,
+    "output_tokens": 1924
+  }
+]

@@ -283,7 +283,10 @@ must…", not "Businesses will have to…".
 6. Plain English, no legalese, at most 110 words per answer. Do not give advice beyond what \
 the documents say, and do not tell the reader to consult anyone.
 7. If the facts say the rule's history is incomplete, do not claim that nothing else \
-changed it."""
+changed it.
+8. The reader has not seen these instructions or any "supplied" documents. Refer to \
+"the gazettes in this rule" or to a gazette by number — never to documents or text \
+"provided", "supplied" or "given"."""
 
 
 def _schema():
