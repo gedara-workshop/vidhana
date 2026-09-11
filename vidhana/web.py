@@ -64,6 +64,14 @@ def build(con) -> tuple[dict, dict]:
     for r in con.execute("SELECT no, kind, date FROM gazette_date ORDER BY date"):
         dates.setdefault(r["no"], []).append(dict(kind=r["kind"], date=r["date"]))
 
+    # Only sets that are current for the rule as it stands and still pass the
+    # checker. One written before the rule last changed is left out, not shown
+    # with a caveat: it may be the one answer on the page that is wrong.
+    from . import answers
+    ready = answers.publishable(con)
+    for t in threads.values():
+        t["questions"] = ready.get(t["root_no"], [])
+
     held = {g["no"] for g in gazettes}
     for g in gazettes:
         t = threads.get(g["thread_id"])

@@ -14,7 +14,7 @@ const g = (no: string, thread_id: number | null, published_date = "2026-01-01"):
 
 const t = (thread_id: number, root_no: string, head_no = root_no): Thread => ({
   thread_id, subject: "vat", enabling_act: null, root_no, head_no,
-  first_date: "2006-01-01", last_date: "2026-01-01", size: 2, unresolved: 0,
+  first_date: "2006-01-01", last_date: "2026-01-01", size: 2, unresolved: 0, questions: [],
 });
 
 test("a rule is canonically addressed by its first gazette", () => {

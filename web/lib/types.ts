@@ -47,6 +47,16 @@ export interface Gazette {
   missing_refs: string[];
 }
 
+/** A pre-answered question about a rule. Written offline by a model from the
+ *  rule's gazettes, checked deterministically against them (`vidhana/answers.py`)
+ *  and reviewed in a pull request. Exported only while the rule is unchanged
+ *  since it was written. */
+export interface RuleQuestion {
+  question: string;
+  answer: string;
+  cites: string[];
+}
+
 export interface Thread {
   thread_id: number;
   subject: string;
@@ -57,6 +67,7 @@ export interface Thread {
   last_date: string;
   size: number;
   unresolved: number;
+  questions: RuleQuestion[];
 }
 
 export interface CorpusIndex {
