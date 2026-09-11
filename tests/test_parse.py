@@ -150,6 +150,38 @@ class TestDateTyping(unittest.TestCase):
         self.assertIn(("effective", "2023-06-01"), kinds)
         self.assertIn(("effective", "2024-01-01"), kinds)
 
+    def test_the_operative_clause_is_typed_apart(self):
+        # 1791/08, verbatim. The official's own act carries the document's date.
+        kinds = self._kinds(
+            "BY virtue of the powers vested in me under Sub - section (1) of Section 2 of "
+            "the Finance Act, No. 25 of 2003, I, Mahinda Rajapaksa, Minister of Finance and "
+            "planning do by this Order determine that with effect from January 1, 2013 there "
+            "shall be charged and levied from the persons specified")
+        self.assertIn(("operative", "2013-01-01"), kinds)
+        self.assertNotIn(("effective", "2013-01-01"), kinds)
+
+    def test_a_reproduced_instruments_commencement_is_not_operative(self):
+        # Later in 1791/08: regulations reproduced in full, with their own 2003
+        # commencement. Still an effective date — of those regulations — so it
+        # is kept, but it must not be mistaken for the order's.
+        kinds = self._kinds(
+            "1. These regulations may be cited as the Embarkation Levy (Airlines) Regulations, "
+            "No. 01 of 2003 Short title and date of and shall come into operation on "
+            "September 1, 2003.")
+        self.assertIn(("effective", "2003-09-01"), kinds)
+        self.assertNotIn(("operative", "2003-09-01"), kinds)
+
+    def test_the_operative_clause_reaches_past_a_long_preamble(self):
+        # 1868/10, verbatim: 230 characters between "do by this order" and the
+        # date, and the document names its schedule dates as exceptions.
+        kinds = self._kinds(
+            "I, Mallika Samarasekara, Commissioner General of Inland Revenue do by this order "
+            "specify matters relating to and the manner in which tax is calculated in respect "
+            "of Value Added Tax on Supply of Financial Services (hereinafter referred as VAT on "
+            "Supply of Financial Services) as set out in the Schedule hereto with effect from "
+            "01.01.2014 subject to the specific dates mentioned in the Schedule")
+        self.assertIn(("operative", "2014-01-01"), kinds)
+
     def test_rescission_date_is_distinct_from_effective(self):
         kinds = self._kinds("are hereby rescinded with effect from July 01, 2026.")
         self.assertIn(("rescind_effective", "2026-07-01"), kinds)

@@ -73,6 +73,20 @@ DATE_KINDS = (
                           r"|with\s+effects\s+from)"),
     ("deadline",         r"(?:on\s+or\s+before|not\s+later\s+than|no\s+later\s+than|by\s+the\s+twentieth)"),
 )
+# The operative clause: "I, <name>, <office>, do by this Order ... with effect
+# from <date>". It is the document's own act, so a date it carries is this
+# document's effective date — unlike an effective date inside a schedule, a
+# transitional provision, or another instrument reproduced in full, all of
+# which the minimum used to pick. 1791/08 (published December 2012) reproduces
+# regulations that "shall come into operation on September 1, 2003"; its own
+# order is "with effect from January 1, 2013". 1868/10 says it in words: "with
+# effect from 01.01.2014 subject to the specific dates mentioned in the
+# Schedule". The lookback is wide because the clause names the Act and the
+# official before it reaches the date; 400 characters holds the longest in the
+# corpus (1868/10) without reaching into a schedule.
+OPERATIVE = re.compile(r"\bdo\s+(?:by\s+th(?:is|ese)|hereby)\b", re.I)
+OPERATIVE_REACH = 400
+
 _MONTH = (r"(?:January|February|March|April|May|June|July|August|September|October|"
           r"November|December)")
 DATE_TOKEN = re.compile(
@@ -247,6 +261,10 @@ def dates(text: str) -> list[dict]:
                 break
         if not kind:
             continue
+        if kind == "effective":
+            reach = re.sub(r"\s+", " ", text[max(0, m.start() - OPERATIVE_REACH):m.start()])
+            if OPERATIVE.search(reach):
+                kind = "operative"
         ctx = re.sub(r"\s+", " ",
                      text[max(0, m.start() - 110):m.end() + 30]).strip()
         out.setdefault((kind, iso), dict(kind=kind, date=iso, context=ctx[:300]))
