@@ -167,7 +167,7 @@ class JsCore(unittest.TestCase):
         cases = [
             (dict(no="2463/05", status="rescinded", rescinded_by="2481/22",
                   rescinded_from="2026-07-01", head_no="2500/106"), "rescinded"),
-            (dict(no="2481/22", status="in_force", head_no="2500/106"), "superseded"),
+            (dict(no="2481/22", status="in_force", head_no="2500/106"), "amended"),
             (dict(no="2500/106", status="in_force", head_no="2500/106"), "current"),
             (dict(no="2088/25", status="standalone", head_no=None), "current"),
         ]
@@ -256,6 +256,6 @@ class JsCore(unittest.TestCase):
         web_state = json.loads(self.run_js(js))
         for r in search.search(con, "tax OR refund OR format", 50):
             expected = ("Rescinded" if r["status"] == "rescinded"
-                        else "Superseded" if r["head_no"] and r["head_no"] != r["no"]
+                        else "In force · amended" if r["head_no"] and r["head_no"] != r["no"]
                         else "In force · current")
             self.assertEqual(web_state[r["no"]], expected, r["no"])

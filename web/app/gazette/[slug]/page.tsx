@@ -11,7 +11,7 @@ import { formatDate, fromSlug, standingOf, toSlug } from "@/lib/standing";
 /* One static page per gazette. This is the reason for the framework: 144 pages
  * a crawler can read, where a single-page app offered none. Someone searching
  * for a tax invoice format should land here and learn, without ever having
- * heard of this site, that the document they found was superseded. */
+ * heard of this site, that a later gazette has amended or rescinded it. */
 
 export const dynamicParams = false;
 
