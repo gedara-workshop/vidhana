@@ -137,7 +137,7 @@ body {
   .state::before { content: ""; width: 5px; height: 5px; border-radius: 50%;
                    background: currentColor; }
   .state-current, .state-as-of { color: var(--ok); background: var(--ok-bg); }
-  .state-superseded { color: var(--sup); background: var(--sup-bg); }
+  .state-amended { color: var(--sup); background: var(--sup-bg); }
   .state-rescinded { color: var(--res); background: var(--res-bg); }
 
   .tag { display: inline-flex; align-items: center; gap: 4px; height: 18px;

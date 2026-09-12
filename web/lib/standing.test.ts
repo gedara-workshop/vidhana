@@ -21,10 +21,14 @@ test("the current document carries no consequence line", () => {
   assert.equal(s.consequence, null);
 });
 
-test("a superseded document names what replaced it", () => {
+test("an amended document is not called superseded", () => {
+  // 1947/45 amends item 05 of the stamp-duty schedule; 2429/39 amends item 09.
+  // Neither replaces the other, and "Superseded" told readers otherwise.
   const s = standingOf(g({ no: "2481/22", head_no: "2500/106" }));
-  assert.equal(s.pill, "Superseded");
-  assert.match(s.consequence ?? "", /2500\/106 is the current document/);
+  assert.equal(s.kind, "amended");
+  assert.equal(s.pill, "In force · amended");
+  assert.match(s.consequence ?? "", /2500\/106 is the latest document in this rule/);
+  assert.doesNotMatch(s.pill + (s.consequence ?? ""), /superseded/i);
 });
 
 test("a rescission is named with its date", () => {

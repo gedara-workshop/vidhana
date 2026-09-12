@@ -8,7 +8,7 @@ import type { Gazette } from "./types";
  *  today and was transfer-pricing law on 1 January 2015 — labelling it
  *  "Rescinded" while time-travelling contradicts the feature. */
 export interface StandingView {
-  kind: "current" | "superseded" | "rescinded" | "as-of";
+  kind: "current" | "amended" | "rescinded" | "as-of";
   /** Short label. Recognised at a glance, not read. */
   pill: string;
   /** The only sentence. Null when there is nothing to act on. */
@@ -33,7 +33,7 @@ export function standingOf(g: Gazette, asOf?: string | null): StandingView {
       ? `Rescinded since, by ${g.rescinded_by}` +
         (g.rescinded_from ? ` from ${formatDate(g.rescinded_from)}` : "")
       : g.head_no && g.head_no !== g.no
-        ? `Superseded since — ${g.head_no} is the current document`
+        ? `Amended since — ${g.head_no} is the latest document in this rule`
         : null;
     return { kind: "as-of", pill: "In force on this date", consequence: since };
   }
@@ -48,10 +48,19 @@ export function standingOf(g: Gazette, asOf?: string | null): StandingView {
     };
   }
   if (g.head_no && g.head_no !== g.no) {
+    // Not "Superseded". Half these rules are one schedule amended item by item
+    // over twenty years: 1947/45 amends item 05 of the stamp-duty schedule and
+    // 2429/39 amends item 09, so neither replaces the other, and the corpus
+    // cannot reliably say which item a gazette touches — "item 4 and 10" in
+    // one document, "immediately after the item 26" meaning item 27 in
+    // another, "time 10" for "item 10" in a third. What the resolver does know
+    // is that this document is in force and something later in its rule amends
+    // it, which is what this says. The reader is still sent to the latest
+    // document, which is the part they act on.
     return {
-      kind: "superseded",
-      pill: "Superseded",
-      consequence: `${g.head_no} is the current document in this rule`,
+      kind: "amended",
+      pill: "In force · amended",
+      consequence: `${g.head_no} is the latest document in this rule`,
     };
   }
   return { kind: "current", pill: "In force · current", consequence: null };

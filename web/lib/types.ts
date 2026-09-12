@@ -2,7 +2,7 @@
  *  source of truth; these types describe what it writes, and the build fails
  *  loudly if the two drift. */
 
-export type Standing = "current" | "superseded" | "rescinded";
+export type Standing = "current" | "amended" | "rescinded";
 
 export interface Reference {
   to: string;
