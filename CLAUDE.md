@@ -349,11 +349,17 @@ Not yet chosen — do not assume, ask:
     tax-invoice answers found a resolver bug (below) no test had.
   - The disclosure sits directly under the answers: model-written, how it was
     checked, withdrawn on change, not legal advice, the PDF is the source.
-- **Known issue — "Superseded" overstates in schedule rules.** Some rules
-  (1439/01 and 1439/02, stamp duty) are one schedule amended item by item over
-  years; a 2016 gazette amending item 05 is not overridden by a 2025 one
-  amending item 09, yet the standing pill calls every non-head document
-  "Superseded". The answers avoid this; the pills do not yet.
+- **Never say "superseded" of a document the resolver holds in force.** The
+  pill is "In force · amended", with "<head> is the latest document in this
+  rule" under it. Some rules (1439/01, 1439/02) are one schedule amended item
+  by item over twenty years: 1947/45 amends item 05 and 2429/39 amends item
+  09, so neither replaces the other, and 40 of 144 documents wore the wrong
+  label until 2026-09-12. **Per-item supersession was tried and rejected**: the
+  corpus cannot support it — "item 4 and 10" in one document, "immediately
+  after the item 26" meaning item 27 in another, "time 10" for "item 10" in a
+  third, and many amendments replace words rather than items. Guessing would
+  call a replaced document current, which is worse. If this is revisited, it
+  needs item extraction good enough to be wrong in neither direction.
 - **The brand is achromatic on purpose.** The only saturated colour belongs to
   the three standing states, so the thing a reader must act on is the thing
   that draws the eye. Do not introduce a brand accent colour.
