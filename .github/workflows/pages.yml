@@ -96,6 +96,7 @@ jobs:
           # index.html and the feeds page itself is gone.
           test -f web/out/data/index.json
           test -f web/out/data/bodies.json
+          test -f web/out/data/health.json
           test -f web/out/feeds/all.xml
           test -f web/out/feeds/index.html
           test -f web/out/sitemap.xml
