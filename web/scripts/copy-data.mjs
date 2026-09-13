@@ -19,7 +19,13 @@ if (!existsSync(join(from, "index.json"))) {
   process.exit(1);
 }
 mkdirSync(to, { recursive: true });
-for (const f of ["index.json", "bodies.json"]) copyFileSync(join(from, f), join(to, f));
+for (const f of ["index.json", "bodies.json", "health.json"]) {
+  if (!existsSync(join(from, f))) {
+    console.error(`No ${f} at docs/data/${f}. Run \`python3 -m vidhana export-web\` first.`);
+    process.exit(1);
+  }
+  copyFileSync(join(from, f), join(to, f));
+}
 
 // The favicon belongs to the site rather than the corpus, but it lives beside
 // the feeds because the Python pipeline's output is what Pages served before

@@ -74,6 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link className="navlink" href="/">Search</Link>
               <Link className="navlink" href="/rules/">Rules</Link>
               <Link className="navlink" href="/feeds/">Feeds</Link>
+              <Link className="navlink" href="/health/">Health</Link>
             </nav>
             <span className="grow" />
             <span className="mono hidden text-[11px] md:inline" style={{ color: "var(--faint)" }}>

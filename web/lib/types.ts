@@ -85,3 +85,23 @@ export interface CorpusIndex {
 }
 
 export type Bodies = Record<string, string>;
+
+/** `docs/data/health.json` — what the corpus knows about its own condition,
+ *  written by `vidhana/health.py`. Deliberately carries no timestamp: it is
+ *  committed, and a per-run field would make the nightly job commit nightly. */
+export interface Health {
+  corpus: {
+    gazettes: number; listed: number; recovered: number; rescinded: number;
+    rules: number; rules_with_holes: number; first: string; last: string;
+  };
+  validation: {
+    fields: { field: string; agreed: number; compared: number }[];
+    disagreements: { no: string; field: string; derived: string; model: string }[];
+    reviewed: number;
+  };
+  confidence: Record<string, number>;
+  parse_warnings: { no: string; warnings: string[] }[];
+  needs_ocr: { no: string; pages: number }[];
+  missing: { in_range: string[]; before_listing: number };
+  answers: Record<"current" | "stale" | "failing" | "missing", number>;
+}

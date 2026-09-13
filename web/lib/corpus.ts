@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import type { CorpusIndex, Gazette, Thread } from "./types";
+import type { CorpusIndex, Gazette, Health, Thread } from "./types";
 
 /* Build-time corpus access. Read straight off disk rather than imported, so a
  * rebuilt index needs no code change and the 1 MB body file never lands in a
@@ -70,4 +70,13 @@ export function facetCounts() {
       ["rescinded", gz.filter((g) => g.status === "rescinded").length],
     ] as [string, number][],
   };
+}
+
+let cachedHealth: Health | null = null;
+
+/** The corpus-health report. Read at build time like the index. */
+export function health(): Health {
+  if (cachedHealth) return cachedHealth;
+  cachedHealth = JSON.parse(readFileSync(join(DATA, "health.json"), "utf8")) as Health;
+  return cachedHealth;
 }
