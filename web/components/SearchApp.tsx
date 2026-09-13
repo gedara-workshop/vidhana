@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import DetailPane from "@/components/DetailPane";
+import { ScopeNote } from "@/components/Scope";
 import { buildIndex, runSearch, type SearchIndex } from "@/lib/search";
 import { formatDate, standingOf, toSlug } from "@/lib/standing";
 import type { Bodies, CorpusIndex, Gazette } from "@/lib/types";
@@ -129,11 +130,14 @@ export default function SearchApp({ corpus, facets }: { corpus: CorpusIndex; fac
           onPick={(k) => setSubject(subject === k ? null : k)} />
         <FacetGroup title="Who it affects" items={facets.audience.slice(0, 9)} active={audience}
           onPick={(k) => setAudience(audience === k ? null : k)} />
-        <div className="mt-3 border-t px-2 pt-3 text-[11px] leading-relaxed"
-             style={{ borderColor: "var(--line)", color: "var(--faint)" }}>
-          {corpus.counts.recovered} of {corpus.counts.gazettes} recovered from the
-          Internet Archive. {corpus.counts.unresolved_threads} rule
-          {corpus.counts.unresolved_threads === 1 ? " has" : "s have"} a hole in its history.
+        <div className="mt-3 flex flex-col gap-2 border-t px-2 pt-3"
+             style={{ borderColor: "var(--line)" }}>
+          <ScopeNote />
+          <p className="text-[11px] leading-relaxed" style={{ color: "var(--faint)" }}>
+            {corpus.counts.recovered} of {corpus.counts.gazettes} recovered from the
+            Internet Archive. {corpus.counts.unresolved_threads} rule
+            {corpus.counts.unresolved_threads === 1 ? " has" : "s have"} a hole in its history.
+          </p>
         </div>
       </aside>
 
