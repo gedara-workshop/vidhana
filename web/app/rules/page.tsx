@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { allThreads, gazetteMap, threadMembers } from "@/lib/corpus";
+import { ScopeNote } from "@/components/Scope";
 import { rulePath } from "@/lib/rules";
 import { formatDate } from "@/lib/standing";
 
@@ -27,6 +28,7 @@ export default function RulesPage() {
           {threads.length} rules across the corpus. Each is a set of gazettes that between them
           define one thing over time — the current state usually exists in none of them alone.
         </p>
+        <ScopeNote className="mt-2 max-w-[640px]" />
 
         <div className="mt-5 overflow-hidden rounded-[8px] border" style={{ borderColor: "var(--line)" }}>
           <table className="w-full text-left">

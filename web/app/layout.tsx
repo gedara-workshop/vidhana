@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { SCOPE_SHORT } from "@/components/Scope";
 import ThemeToggle from "@/components/ThemeToggle";
 import { ORIGIN } from "@/lib/site";
 import "./globals.css";
@@ -76,7 +77,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </nav>
             <span className="grow" />
             <span className="mono hidden text-[11px] md:inline" style={{ color: "var(--faint)" }}>
-              144 gazettes · 2006–2026
+              144 {SCOPE_SHORT} · 2006–2026
             </span>
             <span className="mx-1 hidden h-4 w-px md:inline-block" style={{ background: "var(--line)" }} />
             <ThemeToggle />

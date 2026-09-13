@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { ScopeNote } from "@/components/Scope";
 import { corpus, facetCounts } from "@/lib/corpus";
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
@@ -28,6 +29,7 @@ export default function FeedsPage() {
           which document is currently the rule — and where a rule’s history has a hole, it says
           that too.
         </p>
+        <ScopeNote className="mt-2 max-w-[600px]" />
 
         <div className="mt-5 overflow-hidden rounded-[8px] border" style={{ borderColor: "var(--line)" }}>
           <a className="flex items-center justify-between gap-4 border-b px-4 py-3 hover:bg-[var(--raised)]"

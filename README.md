@@ -1,8 +1,19 @@
 # Vidhana
 
-AI-powered search and alerts for Sri Lanka's government gazettes.
+AI-powered search and alerts for Sri Lankan **Inland Revenue tax and VAT
+gazettes** — one department, deliberately, until the pipeline is proven.
 
 Part of [Gedara Workshop](https://github.com/gedara-workshop).
+
+**Scope, stated plainly.** A gazette number is `<weekly issue>/<n-th
+Extraordinary of that week>`, so week 2500 alone published at least 106
+Extraordinary gazettes; this corpus holds one of them. Across the 95 weeks it
+touches at all, at least 2,115 exist. What it does hold is close to complete
+for its own subject: of every gazette referenced by a document in the corpus,
+six predate the listing and exactly one in-range document is missing, and 19 of
+20 rules have an unbroken history. Customs, labour, imports and other
+ministries are out of scope, and a tax change made by amending an Act never
+appears as a gazette at all.
 
 ## The problem
 

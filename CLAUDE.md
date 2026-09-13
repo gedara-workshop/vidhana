@@ -13,6 +13,15 @@ one topic. Customs, Labour and general Extraordinary gazettes are explicitly out
 of scope until the pipeline is proven here. Push back on scope creep — the
 narrowness is a design decision, not an oversight.
 
+**And the scope must be stated wherever the corpus is described**
+(`web/components/Scope.tsx`, the header count, the README). A gazette number is
+`<weekly issue>/<n-th Extraordinary of that week>`: week 2500 alone published at
+least 106 Extraordinary gazettes and this corpus holds one. The site said "144
+gazettes" and "Sri Lanka's government gazettes" until 2026-09-13, which reads as
+all of them. Disclosed holes are per rule; this is the hole the corpus cannot
+see from inside — a reader acting on the absence of a document that was never in
+scope. Do not write a count without its subject.
+
 ## Where things stand
 
 **Corpus completeness is answered** (`COMPLETENESS.md`). The corpus is **144
