@@ -418,10 +418,17 @@ Build these three instead. The first exists:
    on a stale one. Add a field only when a real case needs it.
 2. **PR-on-warning in the nightly job** — a new gazette that is clean publishes
    itself; one with a parse warning or a low-confidence summary opens a PR and
-   waits. That is the actual job an admin UI would have done.
-3. **A public corpus-health page** on the Pages site — validation scores, parse
-   warnings, missing gazettes, last run. No auth, no backend, and it suits
-   building in public better than hiding the numbers behind a login.
+   waits. That is the actual job an admin UI would have done. **Not built.**
+3. **A public corpus-health page** — **built**: `/health/`, from
+   `vidhana/health.py` via `docs/data/health.json`. Validation scores with any
+   disagreement named, known gaps, confidence spread, answer freshness. Two
+   rules for it: `health.report` is **read-only** (it grades through
+   `structure.grade`, never `check`, so building a page cannot write to the
+   database), and **it carries no timestamp** — health.json is committed, and a
+   per-run field would make the nightly job commit every night. The build date
+   is stamped into the page instead.
+
+Two of the three are built; PR-on-warning is the one left.
 
 **The front end is built.** A lesson worth keeping from how it went: "production
 grade" meant a real application stack that can be extended, and it was first

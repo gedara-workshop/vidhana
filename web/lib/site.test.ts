@@ -67,6 +67,6 @@ test("every page the site renders appears exactly once", () => {
   const entries = sitemapEntries(gazettes, threads);
   const urls = entries.map((e) => e.url);
   assert.equal(new Set(urls).size, urls.length, "duplicate URL in the sitemap");
-  // three fixed routes + one per rule + one per gazette
-  assert.equal(entries.length, 3 + threads.length + gazettes.length);
+  // four fixed routes + one per rule + one per gazette
+  assert.equal(entries.length, 4 + threads.length + gazettes.length);
 });

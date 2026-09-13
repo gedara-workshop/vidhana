@@ -60,6 +60,7 @@ export function sitemapEntries(gazettes: Gazette[], threads: Thread[]): SitemapE
     { url: url("/"), lastModified: corpusDate, priority: 1.0, changeFrequency: "daily" },
     { url: url("/rules/"), lastModified: corpusDate, priority: 0.9, changeFrequency: "daily" },
     { url: url("/feeds/"), lastModified: corpusDate, priority: 0.5, changeFrequency: "monthly" },
+    { url: url("/health/"), lastModified: corpusDate, priority: 0.4, changeFrequency: "daily" },
   ];
 
   for (const t of threads) {

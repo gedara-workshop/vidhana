@@ -119,9 +119,12 @@ def build(con) -> tuple[dict, dict]:
 
 def export(con, out_dir: str = "docs/data") -> dict:
     os.makedirs(out_dir, exist_ok=True)
+    from . import health
+
     index, bodies = build(con)
     out = {}
-    for name, payload in (("index.json", index), ("bodies.json", bodies)):
+    for name, payload in (("index.json", index), ("bodies.json", bodies),
+                          ("health.json", health.report(con))):
         path = os.path.join(out_dir, name)
         # Separators without spaces, keys sorted: the file is committed, so a
         # rebuild that changed nothing must produce a byte-identical diff.
