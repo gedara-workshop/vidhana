@@ -419,8 +419,14 @@ def _same_person(a: str | None, b: str | None) -> bool:
     return bool(la) and (la == lb or la in nb or lb in na)
 
 
-def check(con: sqlite3.Connection) -> dict:
-    """Grade the model against fields Phase 1 derived by rule.
+FIELDS = ("effective_date", "enabling_act", "authority", "audience_grounded")
+
+
+def grade(con: sqlite3.Connection) -> list[dict]:
+    """Every comparison between the model and what Phase 1 derived by rule.
+
+    Pure: reads the database and writes nothing, so the corpus-health export can
+    grade without a side effect. `check` persists what this returns.
 
     This is the whole point of asking the model for things we already know. The
     reference summaries in PHASE0.md were Claude-written and never hand-corrected,
@@ -428,13 +434,20 @@ def check(con: sqlite3.Connection) -> dict:
     These three fields do not have that problem: they come from regexes over the
     source text, and they cover exactly where being wrong is expensive.
     """
-    con.execute("DELETE FROM summary_check")
+    from .resolve import stated_effective
+    from .search import ground_audience
+
+    out: list[dict] = []
+
+    def row(no, field, deterministic, model_value, agrees):
+        out.append(dict(no=no, field=field, deterministic=deterministic,
+                        model_value=model_value, agrees=int(agrees)))
+
     rows = con.execute(
         "SELECT g.no, g.effective_from, g.enabling_act, g.authority, "
         "       s.effective_date AS m_eff, s.enabling_act AS m_act, s.authority AS m_auth, "
         "       s.audience AS m_audience, g.subject "
         "FROM gazette g JOIN gazette_summary s ON s.no=g.no").fetchall()
-    from .resolve import stated_effective
     for r in rows:
         # Only compare effective dates where Phase 1 actually found one stated;
         # its fallback to the publication date is a floor, not a claim. Graded
@@ -442,48 +455,52 @@ def check(con: sqlite3.Connection) -> dict:
         # value the product shows rather than a second opinion of its own.
         stated = stated_effective(con, r["no"])
         if stated:
-            con.execute(
-                "INSERT OR REPLACE INTO summary_check VALUES (?,?,?,?,?)",
-                (r["no"], "effective_date", stated, r["m_eff"], int(stated == r["m_eff"])))
+            row(r["no"], "effective_date", stated, r["m_eff"], stated == r["m_eff"])
         # Where neither side found a value there is nothing to compare, so the
         # row is skipped rather than counted as a disagreement. 1599/13 is a
         # full-page scan with no text layer: both correctly return nothing, and
         # scoring that as a miss would understate accuracy and hide the real
         # problem, which is that the document needs OCR.
         if r["enabling_act"] or r["m_act"]:
-            con.execute("INSERT OR REPLACE INTO summary_check VALUES (?,?,?,?,?)",
-                        (r["no"], "enabling_act", r["enabling_act"], r["m_act"],
-                         int(_norm_act(r["m_act"]) in _norm_act(r["enabling_act"])
-                             or _norm_act(r["enabling_act"]) in _norm_act(r["m_act"])
-                             if r["enabling_act"] and r["m_act"] else 0)))
+            agrees = (_norm_act(r["m_act"]) in _norm_act(r["enabling_act"])
+                      or _norm_act(r["enabling_act"]) in _norm_act(r["m_act"])
+                      if r["enabling_act"] and r["m_act"] else 0)
+            row(r["no"], "enabling_act", r["enabling_act"], r["m_act"], agrees)
         if r["authority"] or r["m_auth"]:
-            con.execute("INSERT OR REPLACE INTO summary_check VALUES (?,?,?,?,?)",
-                        (r["no"], "authority", r["authority"], r["m_auth"],
-                         int(_same_person(r["authority"], r["m_auth"]))))
+            row(r["no"], "authority", r["authority"], r["m_auth"],
+                _same_person(r["authority"], r["m_auth"]))
         # Audience is the one field with no deterministic counterpart in the
         # text — it is not in the documents at all. What can be checked is
         # whether the model stayed inside the candidate list it was given, which
         # is the instruction most likely to be quietly disobeyed. Documents
         # whose Act has no map are skipped: there was nothing to obey, and
         # scoring them would grade our curation as the model's error.
-        from .search import ground_audience
         cands = audience_candidates((r["enabling_act"] or "").replace("The ", ""), r["subject"])
         strings = json.loads(r["m_audience"] or "[]")
         if cands and strings:
             results = [ground_audience(r["enabling_act"], a, r["subject"], no=r["no"])
                        for a in strings]
-            con.execute("INSERT OR REPLACE INTO summary_check VALUES (?,?,?,?,?)",
-                        (r["no"], "audience_grounded", "; ".join(cands),
-                         "; ".join(strings),
-                         int(all(why in ("grounded", "reviewed") for _, why in results))))
-    con.commit()
-    out = {}
-    for f in ("effective_date", "enabling_act", "authority", "audience_grounded"):
-        tot = con.execute("SELECT COUNT(*) c FROM summary_check WHERE field=?", (f,)).fetchone()["c"]
-        ok = con.execute("SELECT COUNT(*) c FROM summary_check WHERE field=? AND agrees=1",
-                         (f,)).fetchone()["c"]
-        out[f] = (ok, tot)
+            row(r["no"], "audience_grounded", "; ".join(cands), "; ".join(strings),
+                all(why in ("grounded", "reviewed") for _, why in results))
     return out
+
+
+def scores(rows: list[dict]) -> dict[str, tuple[int, int]]:
+    """(agreed, compared) per field, in report order."""
+    return {f: (sum(r["agrees"] for r in rows if r["field"] == f),
+                sum(1 for r in rows if r["field"] == f))
+            for f in FIELDS}
+
+
+def check(con: sqlite3.Connection) -> dict:
+    """Grade, and record the comparisons in `summary_check`."""
+    rows = grade(con)
+    con.execute("DELETE FROM summary_check")
+    con.executemany(
+        "INSERT OR REPLACE INTO summary_check (no, field, deterministic, model_value, agrees) "
+        "VALUES (:no, :field, :deterministic, :model_value, :agrees)", rows)
+    con.commit()
+    return scores(rows)
 
 
 # ---------------------------------------------------------------------------
