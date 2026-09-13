@@ -428,7 +428,7 @@ Build these three instead. The first exists:
    per-run field would make the nightly job commit every night. The build date
    is stamped into the page instead.
 
-That leaves one of the three unbuilt:
+Two of the three are built; PR-on-warning is the one left.
 
 **The front end is built.** A lesson worth keeping from how it went: "production
 grade" meant a real application stack that can be extended, and it was first
